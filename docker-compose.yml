@@ -1,0 +1,27 @@
+version: '3.8'
+
+volumes:
+  pg-data:
+  
+services:
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    restart: on-failure
+    depends_on:
+      - pg
+    env_file:
+      - ./.env
+  
+  pg:
+    image: postgres:14.5-alpine
+    ports:
+      - "5433:5432"
+    restart: on-failure
+    environment:
+      - POSTGRES_USER=blindate
+      - POSTGRES_PASSWORD=pa55word
+      - POSTGRES_DB=blindate
+    volumes:
+      - pg-data:/var/lib/postgresql/data    

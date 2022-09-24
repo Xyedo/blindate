@@ -3,6 +3,7 @@ package pkg
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -12,9 +13,10 @@ import (
 	myhttp "github.com/xyedo/blindate/pkg/http"
 )
 
-func NewServer() error {
+func NewServer(cfg Config) error {
 	srv := &http.Server{
-		Addr:         ":8080",
+		//todo add this to the config
+		Addr:         fmt.Sprintf("0.0.0.0:%d", cfg.Port),
 		Handler:      myhttp.Routes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
