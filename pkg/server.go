@@ -9,15 +9,13 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
-	myhttp "github.com/xyedo/blindate/pkg/http"
 )
 
-func NewServer(cfg Config) error {
+func NewServer(port int, h http.Handler) error {
 	srv := &http.Server{
-		//todo add this to the config
-		Addr:         fmt.Sprintf("0.0.0.0:%d", cfg.Port),
-		Handler:      myhttp.Routes(),
+
+		Addr:         fmt.Sprintf("0.0.0.0:%d", port),
+		Handler:      h,
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,

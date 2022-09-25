@@ -2,7 +2,7 @@ FROM golang:1.19-alpine as builder
 
 LABEL maintainer="xyedo | Hafid Mahdi"
 
-RUN apk update && apk add --no-caache git
+RUN apk update && apk add --no-cache git
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o webapi -race ./cmd/web
+RUN CGO_ENABLED=0 GOOS=linux go build -o webapi  ./cmd/web
 
 FROM golang:1.19-alpine
 

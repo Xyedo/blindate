@@ -6,7 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func HealthCheckHandler(ctx *gin.Context) {
+func New() *Healthcheck {
+	return &Healthcheck{}
+}
+
+type Healthcheck struct{}
+
+func (h *Healthcheck) HealthCheckHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"status": "availible",
 		"system_info": map[string]string{

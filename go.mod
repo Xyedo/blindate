@@ -2,6 +2,8 @@ module github.com/xyedo/blindate
 
 go 1.19
 
+require github.com/lib/pq v1.10.7
+
 require (
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect

@@ -17,11 +17,21 @@ services:
   pg:
     image: postgres:14.5-alpine
     ports:
-      - "5433:5432"
+      - "5432:5432"
     restart: on-failure
     environment:
       - POSTGRES_USER=blindate
       - POSTGRES_PASSWORD=pa55word
       - POSTGRES_DB=blindate
     volumes:
-      - pg-data:/var/lib/postgresql/data    
+      - pg-data:/var/lib/postgresql/data
+
+  migrate:
+    image: migrate/migrate
+    depends_on:
+      - pg
+    links:
+      - pg
+    volumes:
+      - ./pkg/repository/migrations:/migrations
+    command: ["-path", "/migrations", "-database" , "postgres://blindate:pa55word@pg/blindate?sslmode=disable", "up"]
