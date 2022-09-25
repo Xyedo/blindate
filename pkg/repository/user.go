@@ -27,9 +27,9 @@ func (u *userCon) InsertUser(user *domain.User) error {
 	user.Password = string(hashedPass)
 
 	query := `
-	INSERT INTO users(email, password, dob, created_at, updated_at)
-	VALUES($1,$2,$3,$4, $4) RETURNING user_id`
-	args := []any{user.Email, user.Password, user.Dob, time.Now()}
+	INSERT INTO users(full_name, email, password, dob, created_at, updated_at)
+	VALUES($1,$2,$3,$4,$5,$5) RETURNING user_id`
+	args := []any{user.FullName, user.Email, user.Password, user.Dob, time.Now()}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

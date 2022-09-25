@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
@@ -20,20 +21,26 @@ type User struct {
 }
 
 func (u *User) PostUserHandler(c *gin.Context) {
+
 	var input struct {
-		Email    string    `json:"email" binding:"required, email"`
-		Password string    `json:"password" binding:"required, min=8"`
-		Dob      time.Time `json:"dob" binding:"required, datetime=2000-23-08"`
+		FullName string    `json:"fullName" binding:"required"`
+		Email    string    `json:"email" binding:"required,email"`
+		Password string    `json:"password" binding:"required,min=8"`
+		Dob      time.Time `json:"dob" binding:"required"`
 	}
 
-	c.BindJSON(&input)
+	err := c.BindJSON(&input)
+	if err != nil {
+		log.Println(err.Error())
+	}
 
 	user := domain.User{
+		FullName: input.FullName,
 		Email:    input.Email,
 		Password: input.Password,
 		Dob:      input.Dob,
 	}
-	err := u.userService.CreateUser(&user)
+	err = u.userService.CreateUser(&user)
 	if err != nil {
 		if errors.Is(err, domain.ErrDuplicateEmail) {
 			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
@@ -49,6 +56,8 @@ func (u *User) PostUserHandler(c *gin.Context) {
 			})
 			return
 		}
+		c.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
