@@ -1,4 +1,3 @@
-cc=gcc
 
 PATH=./pkg/repository/migrations
 DSN=postgres://blindate:pa55word@localhost:5432/blindate?sslmode=disable

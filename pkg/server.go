@@ -28,12 +28,15 @@ func NewServer(port int, h http.Handler) error {
 	if !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
+	defer close(shutdownErr)
 	return <-shutdownErr
 
 }
 
 func gracefulShutDown(shutdownError chan<- error, server *http.Server) {
 	quit := make(chan os.Signal, 1)
+	defer close(quit)
+
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 

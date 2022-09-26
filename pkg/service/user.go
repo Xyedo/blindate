@@ -25,7 +25,8 @@ func (u *User) CreateUser(user *domain.User) error {
 	if err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
-			if pqErr.Code == "42701" && strings.Contains(pqErr.Message, "email") {
+			log.Println(pqErr.Code, pqErr.Message)
+			if pqErr.Code == "23505" && strings.Contains(pqErr.Message, "users_email") {
 				return domain.ErrDuplicateEmail
 			}
 			//unhandled postgre error
