@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"github.com/xyedo/blindate/pkg/domain/validation"
 	"github.com/xyedo/blindate/pkg/http/healthcheck"
 	"github.com/xyedo/blindate/pkg/http/user"
-	"github.com/xyedo/blindate/pkg/validation"
 )
 
 type Route struct {

@@ -14,8 +14,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/xyedo/blindate/mock"
+	"github.com/xyedo/blindate/pkg/domain/validation"
 	"github.com/xyedo/blindate/pkg/http/user"
-	"github.com/xyedo/blindate/pkg/validation"
 )
 
 func Test_PostUserHandler(t *testing.T) {

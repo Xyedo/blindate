@@ -3,6 +3,8 @@ package domain
 import "errors"
 
 var (
-	ErrDuplicateEmail    = errors.New("database: duplicate email")
-	ErrTooLongAccesingDB = errors.New("database: too long accessing DB")
+	ErrDuplicateEmail     = errors.New("database: duplicate email")
+	ErrNotMatchCredential = errors.New("database: not match credential")
+	ErrTooLongAccesingDB  = errors.New("database: too long accessing DB")
+	ErrDuplicateToken     = errors.New("database: duplicate token")
 )

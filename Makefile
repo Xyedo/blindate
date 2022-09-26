@@ -1,6 +1,6 @@
 
 PATH=./pkg/repository/migrations
-DSN=postgres://blindate:pa55word@localhost:5432/blindate?sslmode=disable
+DSN=postgres://blindate:pa55word@localhost:5433/blindate?sslmode=disable
 
 migrate-up: 
 	migrate -path $(PATH) -database $(DSN) up

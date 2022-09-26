@@ -17,3 +17,18 @@ func (u UserService) CreateUser(user *domain.User) error {
 	return nil
 
 }
+
+func (u UserService) VerifyCredential(email, password string) error {
+	switch email {
+	case "notFound@example.com":
+		return domain.ErrNotMatchCredential
+	default:
+		switch password {
+		case "pa55word":
+			return nil
+		default:
+			return domain.ErrNotMatchCredential
+		}
+	}
+
+}

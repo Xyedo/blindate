@@ -27,7 +27,7 @@ func (u *userCon) InsertUser(user *domain.User) error {
 	user.Password = string(hashedPass)
 
 	query := `
-	INSERT INTO users(full_name, email, password, dob, created_at, updated_at)
+	INSERT INTO users(full_name, email, "password", dob, created_at, updated_at)
 	VALUES($1,$2,$3,$4,$5,$5) RETURNING id`
 	args := []any{user.FullName, user.Email, user.Password, user.Dob, time.Now()}
 
@@ -40,4 +40,23 @@ func (u *userCon) InsertUser(user *domain.User) error {
 	}
 
 	return nil
+}
+
+func (u *userCon) GetUserByEmail(email string) (*domain.User, error) {
+	query := `
+		SELECT 
+			id, email, "password"
+		FROM users WHERE email = $1`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var user domain.User
+	err := u.DB.QueryRowxContext(ctx, query, email).Scan(&user.ID, &user.Email, &user.Password)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
 }
