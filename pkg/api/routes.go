@@ -1,4 +1,4 @@
-package http
+package api
 
 import (
 	"net/http"
@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+	"github.com/xyedo/blindate/pkg/api/healthcheck"
+	"github.com/xyedo/blindate/pkg/api/user"
 	"github.com/xyedo/blindate/pkg/domain/validation"
-	"github.com/xyedo/blindate/pkg/http/healthcheck"
-	"github.com/xyedo/blindate/pkg/http/user"
 )
 
 type Route struct {
@@ -40,7 +40,8 @@ func Routes(route Route) http.Handler {
 		}
 
 		v1.POST("/users", ru.PostUserHandler)
-
+		v1.GET("/users/:id", ru.GetUserByIdHandler)
+		v1.PATCH("/users/:id", ru.PatchUserByIdHandler)
 	}
 
 	r.NoMethod(noMethod)

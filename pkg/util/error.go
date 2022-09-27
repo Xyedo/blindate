@@ -10,15 +10,20 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-func ReadValidationErr(err error) map[string]string {
-	errMap := make(map[string]string)
-	var validationErr *validator.ValidationErrors
-	if !errors.As(err, &validationErr) {
-		return nil
-	}
-	for _, err := range *validationErr {
-		if _, exist := errMap[err.Field()]; !exist {
-			errMap[err.Field()] = fmt.Sprintf("failed on the %s", err.Tag())
+func ReadValidationErr(err error, validation map[string]string) map[string]string {
+	errMap := map[string]string{}
+	var validationErr validator.ValidationErrors
+	if errors.As(err, &validationErr) {
+		for _, err := range validationErr {
+			if _, exist := errMap[err.Namespace()]; !exist {
+				errMes, exist := validation[err.Namespace()]
+				if exist {
+					errMap[err.Namespace()] = errMes
+				} else {
+					errMap[err.Namespace()] = fmt.Sprintf("eror validation on %s", err.Field())
+				}
+
+			}
 		}
 	}
 	return errMap

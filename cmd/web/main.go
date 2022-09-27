@@ -10,10 +10,10 @@ import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg"
-	ihttp "github.com/xyedo/blindate/pkg/http"
+	"github.com/xyedo/blindate/pkg/api"
 
-	"github.com/xyedo/blindate/pkg/http/healthcheck"
-	"github.com/xyedo/blindate/pkg/http/user"
+	"github.com/xyedo/blindate/pkg/api/healthcheck"
+	"github.com/xyedo/blindate/pkg/api/user"
 	"github.com/xyedo/blindate/pkg/repository"
 	"github.com/xyedo/blindate/pkg/service"
 )
@@ -54,12 +54,12 @@ func main() {
 
 	healthcheckHander := healthcheck.New()
 
-	route := ihttp.Route{
+	route := api.Route{
 		User:        userHandler,
 		Healthcheck: healthcheckHander,
 	}
 
-	h := ihttp.Routes(route)
+	h := api.Routes(route)
 
 	err = pkg.NewServer(cfg.port, h)
 	if err != nil {
