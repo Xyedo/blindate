@@ -1,4 +1,4 @@
-package user
+package api
 
 import (
 	"errors"
@@ -7,20 +7,21 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/xyedo/blindate/pkg/domain"
+	"github.com/xyedo/blindate/pkg/service"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
-func New(userSvc domain.UserService) *User {
-	return &User{
+func NewUser(userSvc service.User) *user {
+	return &user{
 		userService: userSvc,
 	}
 }
 
-type User struct {
-	userService domain.UserService
+type user struct {
+	userService service.User
 }
 
-func (u *User) PostUserHandler(c *gin.Context) {
+func (u *user) postUserHandler(c *gin.Context) {
 	var input struct {
 		FullName string    `json:"fullName" binding:"required"`
 		Email    string    `json:"email" binding:"required,email"`
@@ -31,7 +32,7 @@ func (u *User) PostUserHandler(c *gin.Context) {
 	if err := c.ShouldBindJSON(&input); err != nil {
 		err1 := util.ReadJSONDecoderErr(err)
 		if err1 != nil {
-			domain.ErrorJSONBindingResponse(c, err1)
+			errorJSONBindingResponse(c, err1)
 			return
 		}
 		errMap := util.ReadValidationErr(err, map[string]string{
@@ -40,11 +41,11 @@ func (u *User) PostUserHandler(c *gin.Context) {
 			"Dob":      "must between today and after 1990",
 		})
 		if errMap != nil {
-			domain.ErrorValidationResponse(c, errMap)
+			errorValidationResponse(c, errMap)
 			return
 		}
 
-		domain.ErrorServerResponse(c, err)
+		errorServerResponse(c, err)
 		return
 	}
 
@@ -64,10 +65,10 @@ func (u *User) PostUserHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			domain.ErrorRequestTimeout(c)
+			errorRequestTimeout(c)
 			return
 		}
-		domain.ErrorServerResponse(c, err)
+		errorServerResponse(c, err)
 		return
 	}
 
@@ -80,7 +81,7 @@ func (u *User) PostUserHandler(c *gin.Context) {
 	})
 }
 
-func (u *User) GetUserByIdHandler(c *gin.Context) {
+func (u *user) getUserByIdHandler(c *gin.Context) {
 	var url struct {
 		Id string `uri:"id" binding:"required,uuid"`
 	}
@@ -94,7 +95,7 @@ func (u *User) GetUserByIdHandler(c *gin.Context) {
 	}
 	user, err := u.userService.GetUserById(url.Id)
 	if err != nil {
-		if errors.Is(err, domain.ErrUserNotFound) {
+		if errors.Is(err, domain.ErrResourceNotFound) {
 			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
 				"status":  "fail",
 				"message": "id not found!",
@@ -102,10 +103,10 @@ func (u *User) GetUserByIdHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			domain.ErrorRequestTimeout(c)
+			errorRequestTimeout(c)
 			return
 		}
-		domain.ErrorServerResponse(c, err)
+		errorServerResponse(c, err)
 		return
 	}
 
@@ -117,7 +118,7 @@ func (u *User) GetUserByIdHandler(c *gin.Context) {
 	})
 }
 
-func (u *User) PatchUserByIdHandler(c *gin.Context) {
+func (u *user) patchUserByIdHandler(c *gin.Context) {
 	var url struct {
 		Id string `uri:"id" binding:"required,uuid"`
 	}
@@ -131,7 +132,7 @@ func (u *User) PatchUserByIdHandler(c *gin.Context) {
 	}
 	user, err := u.userService.GetUserById(url.Id)
 	if err != nil {
-		if errors.Is(err, domain.ErrUserNotFound) {
+		if errors.Is(err, domain.ErrResourceNotFound) {
 			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
 				"status":  "fail",
 				"message": "id not found!",
@@ -139,10 +140,10 @@ func (u *User) PatchUserByIdHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			domain.ErrorRequestTimeout(c)
+			errorRequestTimeout(c)
 			return
 		}
-		domain.ErrorServerResponse(c, err)
+		errorServerResponse(c, err)
 		return
 	}
 	var input struct {
@@ -157,7 +158,7 @@ func (u *User) PatchUserByIdHandler(c *gin.Context) {
 	if err != nil {
 		err1 := util.ReadJSONDecoderErr(err)
 		if err1 != nil {
-			domain.ErrorJSONBindingResponse(c, err1)
+			errorJSONBindingResponse(c, err1)
 			return
 		}
 		errMap := util.ReadValidationErr(err, map[string]string{
@@ -167,16 +168,16 @@ func (u *User) PatchUserByIdHandler(c *gin.Context) {
 			"Dob":         "Must betwen today and more than 1990",
 		})
 		if errMap != nil {
-			domain.ErrorValidationResponse(c, errMap)
+			errorValidationResponse(c, errMap)
 			return
 		}
-		domain.ErrorServerResponse(c, err)
+		errorServerResponse(c, err)
 		return
 	}
 	if input.NewPassword != nil && input.OldPassword != nil {
 		err := u.userService.VerifyCredential(user.Email, *input.OldPassword)
 		if err != nil {
-			domain.ErrorInvalidCredsResponse(c, "email or password do not match")
+			errorInvalidCredsResponse(c, "email or password do not match")
 			return
 		}
 		user.Password = *input.NewPassword
@@ -195,15 +196,15 @@ func (u *User) PatchUserByIdHandler(c *gin.Context) {
 
 	err = u.userService.UpdateUser(user)
 	if err != nil {
-		if errors.Is(err, domain.ErrUserNotFound) {
-			domain.ErrorResourceNotFound(c, "users.Id not found!")
+		if errors.Is(err, domain.ErrResourceNotFound) {
+			errorResourceNotFound(c, "users.Id not found!")
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			domain.ErrorRequestTimeout(c)
+			errorRequestTimeout(c)
 			return
 		}
-		domain.ErrorServerResponse(c, err)
+		errorServerResponse(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{

@@ -8,6 +8,13 @@ import (
 	"github.com/xyedo/blindate/pkg/domain"
 )
 
+type User interface {
+	InsertUser(user *domain.User) error
+	GetUserByEmail(email string) (*domain.User, error)
+	GetUserById(id string) (*domain.User, error)
+	UpdateUser(user *domain.User) error
+}
+
 func NewUser(db *sqlx.DB) *userCon {
 	return &userCon{
 		db,

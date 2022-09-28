@@ -9,28 +9,36 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
+	"github.com/xyedo/blindate/pkg/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func NewUser(userRepo domain.UserRepository) *User {
-	return &User{
+type User interface {
+	CreateUser(newUser *domain.User) error
+	VerifyCredential(email, password string) error
+	GetUserById(id string) (*domain.User, error)
+	UpdateUser(user *domain.User) error
+}
+
+func NewUser(userRepo repository.User) *user {
+	return &user{
 		userRepository: userRepo,
 	}
 }
 
-type User struct {
-	userRepository domain.UserRepository
+type user struct {
+	userRepository repository.User
 }
 
-func (u *User) CreateUser(user *domain.User) error {
-	hashedPass, err := hashAndSalt(user.Password)
+func (u *user) CreateUser(newUser *domain.User) error {
+	hashedPass, err := hashAndSalt(newUser.Password)
 	if err != nil {
 		return err
 	}
-	user.HashedPassword = hashedPass
-	user.Password = ""
+	newUser.HashedPassword = hashedPass
+	newUser.Password = ""
 
-	err = u.userRepository.InsertUser(user)
+	err = u.userRepository.InsertUser(newUser)
 	if err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
@@ -47,11 +55,11 @@ func (u *User) CreateUser(user *domain.User) error {
 	}
 	return nil
 }
-func (u *User) GetUserById(id string) (*domain.User, error) {
+func (u *user) GetUserById(id string) (*domain.User, error) {
 	user, err := u.userRepository.GetUserById(id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domain.ErrUserNotFound
+			return nil, domain.ErrResourceNotFound
 		}
 		if errors.Is(err, context.Canceled) {
 			return nil, domain.ErrTooLongAccesingDB
@@ -60,7 +68,7 @@ func (u *User) GetUserById(id string) (*domain.User, error) {
 	}
 	return user, nil
 }
-func (u *User) VerifyCredential(email, password string) error {
+func (u *user) VerifyCredential(email, password string) error {
 	user, err := u.userRepository.GetUserByEmail(email)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
@@ -82,7 +90,7 @@ func (u *User) VerifyCredential(email, password string) error {
 	return nil
 
 }
-func (u *User) UpdateUser(user *domain.User) error {
+func (u *user) UpdateUser(user *domain.User) error {
 	if user.Password != "" {
 		hashedPass, err := hashAndSalt(user.Password)
 		if err != nil {
@@ -97,7 +105,7 @@ func (u *User) UpdateUser(user *domain.User) error {
 			return domain.ErrTooLongAccesingDB
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return domain.ErrUserNotFound
+			return domain.ErrResourceNotFound
 		}
 		return err
 	}

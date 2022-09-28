@@ -1,4 +1,4 @@
-package user_test
+package api
 
 import (
 	"bytes"
@@ -11,26 +11,19 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/gin-gonic/gin/binding"
-	"github.com/go-playground/validator/v10"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/xyedo/blindate/mock"
-	"github.com/xyedo/blindate/pkg/api/user"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/domain/validation"
 	"github.com/xyedo/blindate/pkg/service"
 )
 
 func Test_PostUserHandler(t *testing.T) {
 	userService := service.NewUser(mock.UserRepository{})
-	userH := user.New(userService)
+	userH := NewUser(userService)
 
 	gin.SetMode(gin.TestMode)
-	v, ok := binding.Validator.Engine().(*validator.Validate)
-	assert.True(t, ok)
-	err := v.RegisterValidation("validdob", validation.ValidDob)
-	assert.NoError(t, err)
+	registerValidDObValidator()
 	var (
 		validFullName = "Uncle Bob"
 		validEmail    = "bob23@gmail.com"
@@ -223,7 +216,7 @@ func Test_PostUserHandler(t *testing.T) {
 			assert.NoError(t, err)
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/users", bytes.NewBuffer(bodyStr))
 			c.Request = req
-			userH.PostUserHandler(c)
+			userH.postUserHandler(c)
 			assert.Equal(t, tt.wantCode, rr.Code)
 			assert.Contains(t, rr.Header().Get("Content-Type"), tt.wantHeader["Content-Type"])
 			if tt.wantResp != nil {
@@ -236,7 +229,7 @@ func Test_PostUserHandler(t *testing.T) {
 }
 func Test_GetUserByIdHandler(t *testing.T) {
 	userService := service.NewUser(mock.UserRepository{})
-	userH := user.New(userService)
+	userH := NewUser(userService)
 
 	gin.SetMode(gin.TestMode)
 	var (
@@ -292,7 +285,7 @@ func Test_GetUserByIdHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rr := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(rr)
-			r.GET("/api/v1/users/:id", userH.GetUserByIdHandler)
+			r.GET("/api/v1/users/:id", userH.getUserByIdHandler)
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/users/%s", tt.id), nil)
 			c.Request = req
 			r.ServeHTTP(rr, c.Request)
@@ -310,7 +303,7 @@ func Test_GetUserByIdHandler(t *testing.T) {
 
 func Test_PatchUserById(t *testing.T) {
 	userService := service.NewUser(mock.UserRepository{})
-	userH := user.New(userService)
+	userH := NewUser(userService)
 
 	gin.SetMode(gin.TestMode)
 	// var (
@@ -409,7 +402,7 @@ func Test_PatchUserById(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rr := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(rr)
-			r.PATCH("/api/v1/users/:id", userH.PatchUserByIdHandler)
+			r.PATCH("/api/v1/users/:id", userH.patchUserByIdHandler)
 
 			req := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/api/v1/users/%s", tt.id), strings.NewReader(tt.reqBody))
 			c.Request = req

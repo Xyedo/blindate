@@ -8,19 +8,26 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
+	"github.com/xyedo/blindate/pkg/repository"
 )
 
-func NewAuth(auth domain.AuthRepository) *Auth {
-	return &Auth{
-		authRepo: auth,
+type AuthService interface {
+	AddRefreshToken(token string) error
+	VerifyRefreshToken(token string) error
+	DeleteRefreshToken(token string) error
+}
+
+func NewAuth(authR repository.Auth) *auth {
+	return &auth{
+		authRepo: authR,
 	}
 }
 
-type Auth struct {
-	authRepo domain.AuthRepository
+type auth struct {
+	authRepo repository.Auth
 }
 
-func (a *Auth) AddRefreshToken(token string) error {
+func (a *auth) AddRefreshToken(token string) error {
 	_, err := a.authRepo.AddRefreshToken(token)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
@@ -40,7 +47,7 @@ func (a *Auth) AddRefreshToken(token string) error {
 	return nil
 }
 
-func (a *Auth) VerifyRefreshToken(token string) error {
+func (a *auth) VerifyRefreshToken(token string) error {
 	err := a.authRepo.VerifyRefreshToken(token)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
@@ -54,7 +61,7 @@ func (a *Auth) VerifyRefreshToken(token string) error {
 	return nil
 }
 
-func (a *Auth) DeleteRefreshToken(token string) error {
+func (a *auth) DeleteRefreshToken(token string) error {
 	rows, err := a.authRepo.DeleteRefreshToken(token)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {

@@ -11,9 +11,6 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg"
 	"github.com/xyedo/blindate/pkg/api"
-
-	"github.com/xyedo/blindate/pkg/api/healthcheck"
-	"github.com/xyedo/blindate/pkg/api/user"
 	"github.com/xyedo/blindate/pkg/repository"
 	"github.com/xyedo/blindate/pkg/service"
 )
@@ -50,9 +47,9 @@ func main() {
 
 	userRepo := repository.NewUser(db)
 	userSvc := service.NewUser(userRepo)
-	userHandler := user.New(userSvc)
+	userHandler := api.NewUser(userSvc)
 
-	healthcheckHander := healthcheck.New()
+	healthcheckHander := api.NewHealthCheck()
 
 	route := api.Route{
 		User:        userHandler,

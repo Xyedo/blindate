@@ -5,7 +5,9 @@ volumes:
   
 services:
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "8080:8080"
     restart: on-failure
@@ -13,9 +15,10 @@ services:
       - pg
     env_file:
       - ./.env
-  
   pg:
-    image: postgres:14.5-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile-pg
     ports:
       - "5433:5432"
     restart: on-failure
