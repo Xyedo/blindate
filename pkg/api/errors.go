@@ -47,3 +47,29 @@ func errorResourceNotFound(c *gin.Context, message string) {
 		"message": message,
 	})
 }
+
+func errCookieNotFound(c *gin.Context) {
+	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+		"status":  "fail",
+		"message": "Cookie not found in your browser, must be login",
+	})
+}
+
+func errExpiredAccesToken(c *gin.Context) {
+	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+		"status":  "fail",
+		"message": "token is expired, please login!",
+	})
+}
+func errAccesTokenInvalid(c *gin.Context) {
+	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+		"status":  "fail",
+		"message": "token is invalid, please login!",
+	})
+}
+func errorInvalidIdTokenResponse(c *gin.Context) {
+	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+		"status":  "fail",
+		"message": "you should not access this resoures",
+	})
+}

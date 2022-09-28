@@ -82,18 +82,8 @@ func (u *user) postUserHandler(c *gin.Context) {
 }
 
 func (u *user) getUserByIdHandler(c *gin.Context) {
-	var url struct {
-		Id string `uri:"id" binding:"required,uuid"`
-	}
-	err := c.ShouldBindUri(&url)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"status":  "fail",
-			"message": "must have uuid in uri!",
-		})
-		return
-	}
-	user, err := u.userService.GetUserById(url.Id)
+	userId := c.GetString("userId")
+	user, err := u.userService.GetUserById(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
 			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
@@ -119,18 +109,8 @@ func (u *user) getUserByIdHandler(c *gin.Context) {
 }
 
 func (u *user) patchUserByIdHandler(c *gin.Context) {
-	var url struct {
-		Id string `uri:"id" binding:"required,uuid"`
-	}
-	err := c.ShouldBindUri(&url)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"status":  "fail",
-			"message": "must have uuid in uri!",
-		})
-		return
-	}
-	user, err := u.userService.GetUserById(url.Id)
+	userId := c.GetString("userId")
+	user, err := u.userService.GetUserById(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
 			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
@@ -175,7 +155,7 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 		return
 	}
 	if input.NewPassword != nil && input.OldPassword != nil {
-		err := u.userService.VerifyCredential(user.Email, *input.OldPassword)
+		_, err := u.userService.VerifyCredential(user.Email, *input.OldPassword)
 		if err != nil {
 			errorInvalidCredsResponse(c, "email or password do not match")
 			return

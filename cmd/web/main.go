@@ -51,9 +51,19 @@ func main() {
 
 	healthcheckHander := api.NewHealthCheck()
 
+	basicInfoRepo := repository.NewBasicInfo(db)
+	basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
+	basicInfoHandler := api.NewBasicInfo(basicInfoSvc)
+
+	locationRepo := repository.NewLocation(db)
+	locationService := service.NewLocation(locationRepo)
+	locationHandler := api.NewLocation(locationService)
+
 	route := api.Route{
 		User:        userHandler,
 		Healthcheck: healthcheckHander,
+		BasicInfo:   basicInfoHandler,
+		Location:    locationHandler,
 	}
 
 	h := api.Routes(route)

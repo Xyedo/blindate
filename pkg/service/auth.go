@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
@@ -38,10 +37,7 @@ func (a *auth) AddRefreshToken(token string) error {
 			if pqErr.Code == "23505" {
 				return domain.ErrDuplicateToken
 			}
-			log.Panicln(err.Error())
-
 		}
-		log.Panicln(err.Error())
 		return err
 	}
 	return nil
@@ -56,7 +52,7 @@ func (a *auth) VerifyRefreshToken(token string) error {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.ErrNotMatchCredential
 		}
-		log.Panicln(err.Error())
+		return err
 	}
 	return nil
 }
@@ -67,7 +63,7 @@ func (a *auth) DeleteRefreshToken(token string) error {
 		if errors.Is(err, context.Canceled) {
 			return domain.ErrTooLongAccesingDB
 		}
-		log.Panicln(err)
+		return err
 	}
 	if rows == 0 {
 		return domain.ErrNotMatchCredential

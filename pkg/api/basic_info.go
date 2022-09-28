@@ -10,8 +10,10 @@ import (
 	"github.com/xyedo/blindate/pkg/util"
 )
 
-func NewBasicInfo() *basicinfo {
-	return &basicinfo{}
+func NewBasicInfo(basicInfoService service.BasicInfo) *basicinfo {
+	return &basicinfo{
+		basicinfoService: basicInfoService,
+	}
 }
 
 type basicinfo struct {
@@ -19,17 +21,7 @@ type basicinfo struct {
 }
 
 func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
-	var url struct {
-		Id string `uri:"id" binding:"required,uuid"`
-	}
-	err := c.ShouldBindUri(&url)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"status":  "fail",
-			"message": "must have uuid in uri!",
-		})
-		return
-	}
+	userId := c.GetString("userId")
 	var input struct {
 		Gender           string  `json:"gender" binding:"required,max=25"`
 		FromLoc          *string `json:"fromLoc" binding:"binding:required,max=25"`
@@ -71,7 +63,7 @@ func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
 	}
 
 	basicInfo := domain.BasicInfo{
-		UserId:           url.Id,
+		UserId:           userId,
 		Gender:           input.Gender,
 		FromLoc:          input.FromLoc,
 		Height:           input.Height,
@@ -85,7 +77,7 @@ func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
 		Work:             input.Work,
 	}
 
-	err = b.basicinfoService.CreateBasicInfo(&basicInfo)
+	err := b.basicinfoService.CreateBasicInfo(&basicInfo)
 	if err != nil {
 		res := referencesDbErr(err)
 		if res != nil {
@@ -106,18 +98,8 @@ func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
 }
 
 func (b *basicinfo) getBasicInfoHandler(c *gin.Context) {
-	var url struct {
-		Id string `uri:"id" binding:"required,uuid"`
-	}
-	err := c.ShouldBindUri(&url)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"status":  "fail",
-			"message": "must have uuid in uri!",
-		})
-		return
-	}
-	basicInfo, err := b.basicinfoService.GetBasicInfoByUserId(url.Id)
+	userId := c.GetString("userId")
+	basicInfo, err := b.basicinfoService.GetBasicInfoByUserId(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
 			errorRequestTimeout(c)
@@ -139,18 +121,8 @@ func (b *basicinfo) getBasicInfoHandler(c *gin.Context) {
 }
 
 func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
-	var url struct {
-		Id string `uri:"id" binding:"required,uuid"`
-	}
-	err := c.ShouldBindUri(&url)
-	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"status":  "fail",
-			"message": "must have uuid in uri!",
-		})
-		return
-	}
-	basicInfo, err := b.basicinfoService.GetBasicInfoByUserId(url.Id)
+	userId := c.GetString("userId")
+	basicInfo, err := b.basicinfoService.GetBasicInfoByUserId(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
 			errorRequestTimeout(c)

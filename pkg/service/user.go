@@ -15,7 +15,7 @@ import (
 
 type User interface {
 	CreateUser(newUser *domain.User) error
-	VerifyCredential(email, password string) error
+	VerifyCredential(email, password string) (string, error)
 	GetUserById(id string) (*domain.User, error)
 	UpdateUser(user *domain.User) error
 }
@@ -68,26 +68,26 @@ func (u *user) GetUserById(id string) (*domain.User, error) {
 	}
 	return user, nil
 }
-func (u *user) VerifyCredential(email, password string) error {
+func (u *user) VerifyCredential(email, password string) (string, error) {
 	user, err := u.userRepository.GetUserByEmail(email)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return "", domain.ErrTooLongAccesingDB
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return domain.ErrNotMatchCredential
+			return "", domain.ErrNotMatchCredential
 		}
-		return err
+		return "", err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return domain.ErrNotMatchCredential
+			return "", domain.ErrNotMatchCredential
 		}
-		return err
+		return "", err
 	}
-	return nil
+	return user.ID, nil
 
 }
 func (u *user) UpdateUser(user *domain.User) error {
