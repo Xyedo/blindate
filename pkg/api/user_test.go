@@ -21,9 +21,6 @@ import (
 func Test_PostUserHandler(t *testing.T) {
 	userService := service.NewUser(mock.UserRepository{})
 	userH := NewUser(userService)
-
-	gin.SetMode(gin.TestMode)
-	registerValidDObValidator()
 	var (
 		validFullName = "Uncle Bob"
 		validEmail    = "bob23@gmail.com"
@@ -271,24 +268,15 @@ func Test_GetUserByIdHandler(t *testing.T) {
 				"message": "id not found!",
 			},
 		},
-		{
-			name:     "Invalid URL Params",
-			id:       "1",
-			wantCode: http.StatusBadRequest,
-			wantResp: map[string]any{
-				"status":  "fail",
-				"message": "must have uuid in uri!",
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rr := httptest.NewRecorder()
-			c, r := gin.CreateTestContext(rr)
-			r.GET("/api/v1/users/:id", userH.getUserByIdHandler)
+			c, _ := gin.CreateTestContext(rr)
+			c.Set("userId", tt.id)
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/users/%s", tt.id), nil)
 			c.Request = req
-			r.ServeHTTP(rr, c.Request)
+			userH.getUserByIdHandler(c)
 
 			assert.Equal(t, tt.wantCode, rr.Code)
 			assert.Contains(t, rr.Header().Get("Content-Type"), "application/json")
@@ -387,26 +375,15 @@ func Test_PatchUserById(t *testing.T) {
 				"message": "id not found!",
 			},
 		},
-		{
-			name:     "Invalid URL Params",
-			id:       "1",
-			wantCode: http.StatusBadRequest,
-			reqBody:  `{"fullName":"Bob Martin"}`,
-			wantResp: map[string]any{
-				"status":  "fail",
-				"message": "must have uuid in uri!",
-			},
-		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rr := httptest.NewRecorder()
-			c, r := gin.CreateTestContext(rr)
-			r.PATCH("/api/v1/users/:id", userH.patchUserByIdHandler)
-
+			c, _ := gin.CreateTestContext(rr)
+			c.Set("userId", tt.id)
 			req := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/api/v1/users/%s", tt.id), strings.NewReader(tt.reqBody))
 			c.Request = req
-			r.ServeHTTP(rr, c.Request)
+			userH.patchUserByIdHandler(c)
 
 			assert.Equal(t, tt.wantCode, rr.Code)
 			assert.Contains(t, rr.Header().Get("Content-Type"), "application/json")

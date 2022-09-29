@@ -62,7 +62,7 @@ func errExpiredAccesToken(c *gin.Context) {
 	})
 }
 func errAccesTokenInvalid(c *gin.Context) {
-	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 		"status":  "fail",
 		"message": "token is invalid, please login!",
 	})

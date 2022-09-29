@@ -24,6 +24,12 @@ type config struct {
 		maxIdleConns int
 		maxIdleTime  string
 	}
+	token struct {
+		accessSecret   string
+		refreshSecret  string
+		accessExpires  string
+		refreshExpires string
+	}
 }
 
 func main() {
@@ -36,6 +42,11 @@ func main() {
 	flag.IntVar(&cfg.db.maxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
 	flag.IntVar(&cfg.db.maxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
 	flag.StringVar(&cfg.db.maxIdleTime, "db-max-idle-time", "15m", "PostgreSQL max connection idle time")
+
+	flag.StringVar(&cfg.token.accessSecret, "jwt-access-secret", os.Getenv("JWT_ACCESS_SECRET_KEY"), "Jwt Access")
+	flag.StringVar(&cfg.token.refreshSecret, "jwt-refresh-secret", os.Getenv("JWT_REFRESH_SECRET_KEY"), "Jwt Access")
+	flag.StringVar(&cfg.token.accessExpires, "jwt-access-expires", os.Getenv("JWT_ACCESS_EXPIRES"), "Jwt Access")
+	flag.StringVar(&cfg.token.refreshExpires, "jwt-refresh-expires", os.Getenv("JWT_REFRESH_EXPIRES"), "Jwt Access")
 
 	flag.Parse()
 
@@ -59,11 +70,19 @@ func main() {
 	locationService := service.NewLocation(locationRepo)
 	locationHandler := api.NewLocation(locationService)
 
+	tokenSvc := service.NewJwt(cfg.token.accessSecret, cfg.token.refreshSecret, cfg.token.accessExpires, cfg.token.refreshExpires)
+
+	authRepo := repository.NewAuth(db)
+	authSvc := service.NewAuth(authRepo)
+	authHandler := api.NewAuth(authSvc, userSvc, tokenSvc)
+
 	route := api.Route{
-		User:        userHandler,
-		Healthcheck: healthcheckHander,
-		BasicInfo:   basicInfoHandler,
-		Location:    locationHandler,
+		User:           userHandler,
+		Healthcheck:    healthcheckHander,
+		BasicInfo:      basicInfoHandler,
+		Location:       locationHandler,
+		Authentication: authHandler,
+		Tokenizer:      tokenSvc,
 	}
 
 	h := api.Routes(route)

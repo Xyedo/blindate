@@ -14,7 +14,7 @@ type BasicInfo struct {
 	RelationshipPref *string   `json:"relationshipPref"`
 	LookingFor       string    `json:"lookingFor"`
 	Zodiac           *string   `json:"zodiac"`
-	Kids             int       `json:"kids"`
+	Kids             *int      `json:"kids"`
 	Work             *string   `json:"work"`
 	CreatedAt        time.Time `json:"createdAt"`
 	UpdatedAt        time.Time `json:"updatedAt"`

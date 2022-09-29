@@ -45,7 +45,7 @@ func (u *userCon) InsertUser(user *domain.User) error {
 func (u *userCon) UpdateUser(user *domain.User) error {
 	query := `
 		UPDATE users
-		SET full_name = $1, email = $2, "password" = $3, dob=$4, active=$5 updated_at = $6
+		SET full_name = $1, email = $2, "password" = $3, dob=$4, active=$5, updated_at = $6
 		WHERE id = $7
 		RETURNING id`
 	args := []any{user.FullName, user.Email, user.HashedPassword, user.Dob, user.Active, time.Now(), user.ID}

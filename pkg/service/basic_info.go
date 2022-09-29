@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
@@ -47,22 +48,20 @@ func (b *basicInfo) CreateBasicInfo(bInfo *domain.BasicInfo) error {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			if pqErr.Code == "23503" {
-				switch pqErr.Column {
-				case "user_id":
+				switch {
+				case strings.Contains(pqErr.Constraint, "user_id"):
 					return ErrUserIdField
-				case "gender":
+				case strings.Contains(pqErr.Constraint, "gender"):
 					return ErrGenderField
-				case "education_level":
+				case strings.Contains(pqErr.Constraint, "education_level"):
 					return ErrEducationLevelField
-				case "drinking":
+				case strings.Contains(pqErr.Constraint, "drinking"):
 					return ErrDrinkingField
-				case "smoking":
+				case strings.Contains(pqErr.Constraint, "smoking"):
 					return ErrSmokingField
-				case "relationship_pref":
+				case strings.Contains(pqErr.Constraint, "relationship_pref"):
 					return ErrrRelationshipPrefField
-				case "looking_for":
-					return ErrLookingForField
-				case "zodiac":
+				case strings.Contains(pqErr.Constraint, "zodiac"):
 					return ErrZodiacField
 				}
 			}
@@ -121,7 +120,7 @@ func entityToDomain(basicInfo *entity.BasicInfo) *domain.BasicInfo {
 		RelationshipPref: newString(basicInfo.RelationshipPref),
 		LookingFor:       basicInfo.LookingFor,
 		Zodiac:           newString(basicInfo.Zodiac),
-		Kids:             basicInfo.Kids,
+		Kids:             newInt(basicInfo.Kids),
 		Work:             newString(basicInfo.Work),
 		CreatedAt:        basicInfo.CreatedAt,
 		UpdatedAt:        basicInfo.UpdatedAt,
@@ -140,7 +139,7 @@ func domainToEntity(basicInfo *domain.BasicInfo) *entity.BasicInfo {
 		RelationshipPref: newNullString(basicInfo.RelationshipPref),
 		LookingFor:       basicInfo.LookingFor,
 		Zodiac:           newNullString(basicInfo.Zodiac),
-		Kids:             basicInfo.Kids,
+		Kids:             newNullSmallInt(basicInfo.Kids),
 		Work:             newNullString(basicInfo.Work),
 		CreatedAt:        basicInfo.CreatedAt,
 		UpdatedAt:        basicInfo.UpdatedAt,

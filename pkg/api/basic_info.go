@@ -32,7 +32,7 @@ func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
 		RelationshipPref *string `json:"relationshipPref" binding:"omitempty,max=49"`
 		LookingFor       string  `json:"lookingFor" binding:"required,max=25"`
 		Zodiac           *string `json:"zodiac" binding:"omitempty,max=50"`
-		Kids             int     `json:"kids" binding:"required,max=100"`
+		Kids             *int    `json:"kids" binding:"omitempty,min=0,max=100"`
 		Work             *string `json:"work" binding:"omitempty,max=50"`
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -203,7 +203,7 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 		basicInfo.Zodiac = input.Zodiac
 	}
 	if input.Kids != nil {
-		basicInfo.Kids = *input.Kids
+		basicInfo.Kids = input.Kids
 	}
 	if input.Work != nil {
 		basicInfo.Work = input.Work

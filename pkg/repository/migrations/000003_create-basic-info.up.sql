@@ -94,7 +94,7 @@ CREATE TABLE basic_info(
   relationship_pref VARCHAR(50) REFERENCES relationship_preferences(preferences) ON UPDATE CASCADE,
   looking_for VARCHAR(25) NOT NULL REFERENCES valid_gender(gender) ON UPDATE CASCADE,
   zodiac VARCHAR(50) REFERENCES zodiac_lookups(zodiac) ON UPDATE CASCADE,
-  kids SMALLINT NOT NULL DEFAULT 0,
+  kids SMALLINT,
   work VARCHAR(50),
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL

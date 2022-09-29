@@ -1,0 +1,190 @@
+package repository
+
+import (
+	"database/sql"
+	"strings"
+	"testing"
+
+	"github.com/lib/pq"
+	"github.com/stretchr/testify/assert"
+	"github.com/xyedo/blindate/pkg/entity"
+)
+
+func Test_InsertBasicInfo(t *testing.T) {
+	repo := NewBasicInfo(testQuery)
+	tests := []struct {
+		name         string
+		setupFunc    func() *entity.BasicInfo
+		expectedFunc func(t *testing.T, affectedRow int64, err error)
+	}{
+		{
+			name: "Valid BasicInfo",
+			setupFunc: func() *entity.BasicInfo {
+				return createBasicInfo(t)
+			},
+			expectedFunc: func(t *testing.T, row int64, err error) {
+				assert.NoError(t, err)
+				assert.Equal(t, 1, int(row))
+			},
+		},
+		{
+			name: "Invalid Gender Columns",
+			setupFunc: func() *entity.BasicInfo {
+				validBasicInfo := createBasicInfo(t)
+				validBasicInfo.Gender = "Non-binary"
+				return validBasicInfo
+			},
+			expectedFunc: func(t *testing.T, row int64, err error) {
+				var pqErr *pq.Error
+				assert.ErrorAs(t, err, &pqErr)
+				assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
+				assert.True(t, strings.Contains(pqErr.Constraint, "gender"))
+				assert.Zero(t, row)
+			},
+		},
+		{
+			name: "Invalid User_Id Columns",
+			setupFunc: func() *entity.BasicInfo {
+				validBasicInfo := createBasicInfo(t)
+				validBasicInfo.UserId = "e590666c-3ea8-4fda-958c-c2dc6c2599b5"
+				return validBasicInfo
+			},
+			expectedFunc: func(t *testing.T, row int64, err error) {
+				var pqErr *pq.Error
+				assert.ErrorAs(t, err, &pqErr)
+				assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
+				assert.True(t, strings.Contains(pqErr.Constraint, "user_id"))
+				assert.Zero(t, row)
+			},
+		},
+		{
+			name: "Invalid Education_level Columns",
+			setupFunc: func() *entity.BasicInfo {
+				validBasicInfo := createBasicInfo(t)
+				validBasicInfo.EducationLevel = sql.NullString{
+					Valid:  true,
+					String: "IDK man",
+				}
+				return validBasicInfo
+			},
+			expectedFunc: func(t *testing.T, row int64, err error) {
+				var pqErr *pq.Error
+				assert.ErrorAs(t, err, &pqErr)
+				assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
+				assert.True(t, strings.Contains(pqErr.Constraint, "education_level"))
+				assert.Zero(t, row)
+			},
+		},
+		{
+			name: "Invalid Drinking Columns",
+			setupFunc: func() *entity.BasicInfo {
+				validBasicInfo := createBasicInfo(t)
+				validBasicInfo.Drinking = sql.NullString{
+					Valid:  true,
+					String: "IDK Man",
+				}
+				return validBasicInfo
+			},
+			expectedFunc: func(t *testing.T, row int64, err error) {
+				var pqErr *pq.Error
+				assert.ErrorAs(t, err, &pqErr)
+				assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
+				assert.True(t, strings.Contains(pqErr.Constraint, "drinking"))
+				assert.Zero(t, row)
+			},
+		},
+		{
+			name: "Invalid Smoking Columns",
+			setupFunc: func() *entity.BasicInfo {
+				validBasicInfo := createBasicInfo(t)
+				validBasicInfo.Smoking = sql.NullString{
+					Valid:  true,
+					String: "IDK man",
+				}
+				return validBasicInfo
+			},
+			expectedFunc: func(t *testing.T, row int64, err error) {
+				var pqErr *pq.Error
+				assert.ErrorAs(t, err, &pqErr)
+				assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
+				assert.True(t, strings.Contains(pqErr.Constraint, "smoking"))
+				assert.Zero(t, row)
+			},
+		},
+		{
+			name: "Invalid relationship_pref Columns",
+			setupFunc: func() *entity.BasicInfo {
+				validBasicInfo := createBasicInfo(t)
+				validBasicInfo.RelationshipPref = sql.NullString{
+					Valid:  true,
+					String: "IDK MANS",
+				}
+				return validBasicInfo
+			},
+			expectedFunc: func(t *testing.T, row int64, err error) {
+				var pqErr *pq.Error
+				assert.ErrorAs(t, err, &pqErr)
+				assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
+				assert.True(t, strings.Contains(pqErr.Constraint, "relationship_pref"))
+				assert.Zero(t, row)
+			},
+		},
+		{
+			name: "Invalid zodiac Columns",
+			setupFunc: func() *entity.BasicInfo {
+				validBasicInfo := createBasicInfo(t)
+				validBasicInfo.Zodiac = sql.NullString{
+					Valid:  true,
+					String: "Non-zodiac",
+				}
+				return validBasicInfo
+			},
+			expectedFunc: func(t *testing.T, row int64, err error) {
+				var pqErr *pq.Error
+				assert.ErrorAs(t, err, &pqErr)
+				assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
+				assert.True(t, strings.Contains(pqErr.Constraint, "zodiac"))
+				assert.Zero(t, row)
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			basicInfo := tt.setupFunc()
+			row, err := repo.InsertBasicInfo(basicInfo)
+			tt.expectedFunc(t, row, err)
+		})
+	}
+}
+
+func createBasicInfo(t *testing.T) *entity.BasicInfo {
+	repo := NewBasicInfo(testQuery)
+	user := createNewAccount(t)
+	basicInfo := &entity.BasicInfo{
+		UserId: user.ID,
+		Gender: "Male",
+		FromLoc: sql.NullString{
+			Valid:  true,
+			String: "Jakarta, Indonesia",
+		},
+		Height: sql.NullInt16{
+			Valid: true,
+			Int16: 173,
+		},
+		EducationLevel:   sql.NullString{},
+		Drinking:         sql.NullString{},
+		Smoking:          sql.NullString{},
+		RelationshipPref: sql.NullString{},
+		LookingFor:       "Female",
+		Zodiac:           sql.NullString{},
+		Kids:             sql.NullInt16{},
+		Work: sql.NullString{
+			Valid:  true,
+			String: "Software Developer",
+		},
+	}
+	rows, err := repo.InsertBasicInfo(basicInfo)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, int(rows))
+	return basicInfo
+}

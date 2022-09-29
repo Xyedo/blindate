@@ -17,7 +17,7 @@ type BasicInfo struct {
 	RelationshipPref sql.NullString `db:"relationship_pref"`
 	LookingFor       string         `db:"looking_for"`
 	Zodiac           sql.NullString `db:"zodiac"`
-	Kids             int            `db:"kids"`
+	Kids             sql.NullInt16  `db:"kids"`
 	Work             sql.NullString `db:"work"`
 	CreatedAt        time.Time      `db:"created_at"`
 	UpdatedAt        time.Time      `db:"updated_at"`

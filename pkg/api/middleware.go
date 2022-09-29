@@ -2,28 +2,47 @@ package api
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xyedo/blindate/internal/tokenizer"
+	"github.com/xyedo/blindate/pkg/service"
 )
 
-func validateUser(jwtService tokenizer.Jwt) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		authorization := c.GetHeader("Authorization")
-		accessToken := strings.TrimPrefix(authorization, "Bearer ")
+const (
+	authorizationHeaderKey = "Authorization"
+)
 
+func validateUser(jwtService service.Jwt) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authorizationHeader := c.GetHeader(authorizationHeaderKey)
+		fields := strings.Fields(authorizationHeader)
+		if len(fields) < 2 {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"status":  "fail",
+				"message": "Invalid Authorization Header format",
+			})
+			return
+		}
+		if !strings.EqualFold("Bearer", fields[0]) {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"status":  "fail",
+				"message": fmt.Sprintf("Unsupported Authorization type %s", fields[0]),
+			})
+			return
+		}
+
+		accessToken := fields[1]
 		id, err := jwtService.ValidateAccessToken(accessToken)
 		if err != nil {
-			if errors.Is(err, tokenizer.ErrTokenExpired) {
+			if errors.Is(err, service.ErrTokenExpired) {
 				errExpiredAccesToken(c)
-				return
 			}
-			if errors.Is(err, tokenizer.ErrNotValidCredential) {
+			if errors.Is(err, service.ErrTokenNotValid) {
 				errAccesTokenInvalid(c)
-				return
 			}
+			return
 		}
 
 		var url struct {

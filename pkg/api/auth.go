@@ -5,13 +5,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xyedo/blindate/internal/tokenizer"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/service"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
-func NewAuth(authService service.AuthService, userService service.User, token tokenizer.Jwt) *auth {
+func NewAuth(authService service.AuthService, userService service.User, token service.Jwt) *auth {
 	return &auth{
 		authService: authService,
 		userService: userService,
@@ -22,7 +21,7 @@ func NewAuth(authService service.AuthService, userService service.User, token to
 type auth struct {
 	authService service.AuthService
 	userService service.User
-	tokenizer   tokenizer.Jwt
+	tokenizer   service.Jwt
 }
 
 func (a *auth) postAuthHandler(c *gin.Context) {
@@ -118,7 +117,7 @@ func (a *auth) putAuthHandler(c *gin.Context) {
 	}
 	id, err := a.tokenizer.ValidateRefreshToken(refreshTokenCookie.Value)
 	if err != nil {
-		if errors.Is(err, tokenizer.ErrNotValidCredential) {
+		if errors.Is(err, service.ErrTokenNotValid) {
 			errorInvalidCredsResponse(c, "invalid credentials")
 			return
 		}
