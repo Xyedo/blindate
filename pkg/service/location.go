@@ -85,7 +85,7 @@ func (l *location) GetLocation(id string) (*domain.Location, error) {
 	}
 	latlng := strings.TrimPrefix(location.Geog, "Point(")
 	latlng = strings.TrimSuffix(latlng, ")")
-	res := strings.Split(latlng, " ")
+	res := strings.Fields(latlng)
 
 	return &domain.Location{
 		UserId: location.UserId,

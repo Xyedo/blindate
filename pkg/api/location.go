@@ -34,7 +34,7 @@ func (l *location) postLocationByUserIdHandler(c *gin.Context) {
 			return
 		}
 		errMap := util.ReadValidationErr(err, map[string]string{
-			"lat": "required and must be valid lat geometry",
+			"Lat": "required and must be valid lat geometry",
 			"Lng": "required and must be valid lng geometry",
 		})
 		if errMap != nil {
@@ -47,7 +47,7 @@ func (l *location) postLocationByUserIdHandler(c *gin.Context) {
 	err = l.locationService.CreateNewLocation(&domain.Location{UserId: userId, Lat: input.Lat, Lng: input.Lng})
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		if errors.Is(err, service.ErrUserIdField) {
@@ -58,7 +58,7 @@ func (l *location) postLocationByUserIdHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
-		"status":  "succes",
+		"status":  "success",
 		"message": "location created",
 	})
 }
@@ -67,7 +67,7 @@ func (l *location) getLocationByUserIdHandler(c *gin.Context) {
 	location, err := l.locationService.GetLocation(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		if errors.Is(err, domain.ErrResourceNotFound) {
@@ -78,7 +78,7 @@ func (l *location) getLocationByUserIdHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"status": "succes",
+		"status": "success",
 		"data": gin.H{
 			"location": location,
 		},
@@ -99,7 +99,7 @@ func (l *location) patchLocationByUserIdHandler(c *gin.Context) {
 			return
 		}
 		errMap := util.ReadValidationErr(err, map[string]string{
-			"lat": "must be valid lat geometry",
+			"Lat": "must be valid lat geometry",
 			"Lng": "must be valid lng geometry",
 		})
 		if errMap != nil {
@@ -112,7 +112,7 @@ func (l *location) patchLocationByUserIdHandler(c *gin.Context) {
 	location, err := l.locationService.GetLocation(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		if errors.Is(err, domain.ErrResourceNotFound) {
@@ -132,7 +132,7 @@ func (l *location) patchLocationByUserIdHandler(c *gin.Context) {
 	err = l.locationService.UpdateLocation(location)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		if errors.Is(err, domain.ErrResourceNotFound) {

@@ -2,9 +2,12 @@ package util
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const alphabet = "qwertyuiopasdfghjklzxcvbnm"
@@ -34,6 +37,28 @@ func RandomString(n int) string {
 
 	return sb.String()
 }
+
+func RandomUUID() string {
+	uid := uuid.New()
+	return uid.String()
+}
+
+func RandomPoint(precision int) string {
+	return fmt.Sprintf("POINT(%f %f)", randomFloat(-90, 90, precision), randomFloat(-180, 180, precision))
+}
+
+func RandomLat() float64 {
+	return float64(-90) + rand.Float64()*float64(180)
+}
+func RandomLng() float64 {
+	return float64(-180) + rand.Float64()*float64(360)
+}
 func randomInt(min, max int64) int64 {
-	return min * rand.Int63n(max-min+1)
+	return min + rand.Int63n(max-min+1)
+}
+func randomFloat(min, max, precision int) float64 {
+	output := math.Pow(10, float64(precision))
+	num := float64(min) + rand.Float64()*float64(max-min)
+	round := int(num*output + math.Copysign(0.5, num*output))
+	return float64(round) / output
 }

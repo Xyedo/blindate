@@ -17,7 +17,7 @@ func errorValidationResponse(c *gin.Context, errMap map[string]string) {
 	c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
 		"status":  "fail",
 		"message": "please refer to the documentation",
-		"error":   errMap,
+		"errors":  errMap,
 	})
 }
 
@@ -35,14 +35,14 @@ func errorInvalidCredsResponse(c *gin.Context, message string) {
 		"message": message,
 	})
 }
-func errorRequestTimeout(c *gin.Context) {
-	c.AbortWithStatusJSON(http.StatusRequestTimeout, gin.H{
+func errorDeadLockResponse(c *gin.Context) {
+	c.AbortWithStatusJSON(http.StatusConflict, gin.H{
 		"status":  "fail",
-		"message": "request timeout, please refer to the documentation",
+		"message": "request conflicted, please try again",
 	})
 }
 func errorResourceNotFound(c *gin.Context, message string) {
-	c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+	c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
 		"status":  "fail",
 		"message": message,
 	})

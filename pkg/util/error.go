@@ -20,7 +20,7 @@ func ReadValidationErr(err error, validation map[string]string) map[string]strin
 				if exist {
 					errMap[err.Namespace()] = errMes
 				} else {
-					errMap[err.Namespace()] = fmt.Sprintf("eror validation on %s", err.Field())
+					errMap[err.Namespace()] = fmt.Sprintf("error validation on %s", err.Field())
 				}
 
 			}

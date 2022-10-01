@@ -50,7 +50,7 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 	id, err := a.userService.VerifyCredential(input.Email, input.Password)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		if errors.Is(err, domain.ErrNotMatchCredential) {
@@ -73,7 +73,7 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 	err = a.authService.AddRefreshToken(refreshToken)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		if errors.Is(err, domain.ErrDuplicateToken) {
@@ -105,7 +105,7 @@ func (a *auth) putAuthHandler(c *gin.Context) {
 	err = a.authService.VerifyRefreshToken(refreshTokenCookie.Value)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		if errors.Is(err, domain.ErrNotMatchCredential) {
@@ -144,7 +144,7 @@ func (a *auth) deleteAuthHandler(c *gin.Context) {
 	err = a.authService.VerifyRefreshToken(refreshTokenCookie.Name)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		if errors.Is(err, domain.ErrNotMatchCredential) {
@@ -157,7 +157,7 @@ func (a *auth) deleteAuthHandler(c *gin.Context) {
 	err = a.authService.DeleteRefreshToken(refreshTokenCookie.Value)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		if errors.Is(err, domain.ErrNotMatchCredential) {

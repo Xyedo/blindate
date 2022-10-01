@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"log"
 	"strings"
 
 	"github.com/lib/pq"
@@ -42,8 +41,7 @@ func (u *user) CreateUser(newUser *domain.User) error {
 	if err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
-			log.Println(pqErr.Code, pqErr.Message)
-			if pqErr.Code == "23505" && strings.Contains(pqErr.Message, "users_email") {
+			if pqErr.Code == "23505" && strings.Contains(pqErr.Constraint, "users_email") {
 				return domain.ErrDuplicateEmail
 			}
 			return err

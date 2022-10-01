@@ -45,27 +45,8 @@ func (b *basicInfo) CreateBasicInfo(bInfo *domain.BasicInfo) error {
 		if errors.Is(err, context.Canceled) {
 			return domain.ErrTooLongAccesingDB
 		}
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) {
-			if pqErr.Code == "23503" {
-				switch {
-				case strings.Contains(pqErr.Constraint, "user_id"):
-					return ErrUserIdField
-				case strings.Contains(pqErr.Constraint, "gender"):
-					return ErrGenderField
-				case strings.Contains(pqErr.Constraint, "education_level"):
-					return ErrEducationLevelField
-				case strings.Contains(pqErr.Constraint, "drinking"):
-					return ErrDrinkingField
-				case strings.Contains(pqErr.Constraint, "smoking"):
-					return ErrSmokingField
-				case strings.Contains(pqErr.Constraint, "relationship_pref"):
-					return ErrrRelationshipPrefField
-				case strings.Contains(pqErr.Constraint, "zodiac"):
-					return ErrZodiacField
-				}
-			}
-			return pqErr
+		if err := parsingPostgreError(err); err != nil {
+			return err
 		}
 		return err
 	}
@@ -99,6 +80,9 @@ func (b *basicInfo) UpdateBasicInfo(bInfo *domain.BasicInfo) error {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.ErrResourceNotFound
 		}
+		if err := parsingPostgreError(err); err != nil {
+			return err
+		}
 		return err
 	}
 	if rows == 0 {
@@ -116,7 +100,7 @@ func entityToDomain(basicInfo *entity.BasicInfo) *domain.BasicInfo {
 		Height:           newInt(basicInfo.Height),
 		EducationLevel:   newString(basicInfo.EducationLevel),
 		Drinking:         newString(basicInfo.Drinking),
-		Smoking:          newString(basicInfo.Drinking),
+		Smoking:          newString(basicInfo.Smoking),
 		RelationshipPref: newString(basicInfo.RelationshipPref),
 		LookingFor:       basicInfo.LookingFor,
 		Zodiac:           newString(basicInfo.Zodiac),
@@ -178,4 +162,32 @@ func newInt(v sql.NullInt16) *int {
 	}
 	val := int(v.Int16)
 	return &val
+}
+
+func parsingPostgreError(err error) error {
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		if pqErr.Code == "23503" {
+			switch {
+			case strings.Contains(pqErr.Constraint, "user_id"):
+				return ErrUserIdField
+			case strings.Contains(pqErr.Constraint, "gender"):
+				return ErrGenderField
+			case strings.Contains(pqErr.Constraint, "education_level"):
+				return ErrEducationLevelField
+			case strings.Contains(pqErr.Constraint, "drinking"):
+				return ErrDrinkingField
+			case strings.Contains(pqErr.Constraint, "smoking"):
+				return ErrSmokingField
+			case strings.Contains(pqErr.Constraint, "relationship_pref"):
+				return ErrrRelationshipPrefField
+			case strings.Contains(pqErr.Constraint, "looking_for"):
+				return ErrLookingForField
+			case strings.Contains(pqErr.Constraint, "zodiac"):
+				return ErrZodiacField
+			}
+		}
+		return pqErr
+	}
+	return nil
 }

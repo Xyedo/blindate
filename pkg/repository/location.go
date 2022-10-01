@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/entity"
 )
 
@@ -12,6 +13,7 @@ type Location interface {
 	InsertNewLocation(location *entity.Location) (int64, error)
 	UpdateLocation(location *entity.Location) (int64, error)
 	GetLocationByUserId(id string) (*entity.Location, error)
+	GetClosestUser(userId string, limit int) ([]domain.User, error)
 }
 
 func NewLocation(db *sqlx.DB) *location {
@@ -26,11 +28,14 @@ type location struct {
 
 func (l *location) InsertNewLocation(location *entity.Location) (int64, error) {
 	query := `
-		INSERT INTO locations(user_id, geog)
-		VALUES($1, ST_GeomFromText($2))`
+		INSERT INTO locations(user_id, geog, created_at, updated_at)
+		VALUES($1, ST_GeomFromText($2), $3, $3)`
+	now := time.Now()
+	args := []any{location.UserId, location.Geog, now}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	rows, err := l.ExecContext(ctx, query, location.UserId, location.Geog)
+	rows, err := l.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -38,17 +43,21 @@ func (l *location) InsertNewLocation(location *entity.Location) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+	location.CreatedAt = now
+	location.UpdatedAt = now
 	return ret, nil
 }
 
 func (l *location) UpdateLocation(location *entity.Location) (int64, error) {
 	query := `
-		UPDATE locations SET geog = ST_GeomFromText($1)
-		WHERE user_id = $2`
+		UPDATE locations SET geog = ST_GeomFromText($1), updated_at = $2
+		WHERE user_id = $3`
+	args := []any{location.Geog, time.Now(), location.UserId}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	res, err := l.ExecContext(ctx, query, location.Geog, location.UserId)
+	res, err := l.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, nil
 	}
@@ -61,17 +70,43 @@ func (l *location) UpdateLocation(location *entity.Location) (int64, error) {
 
 func (l *location) GetLocationByUserId(id string) (*entity.Location, error) {
 	query := `
-		SELECT ST_AsText(geog) as geog FROM locations WHERE user_id=$1`
+		SELECT 
+			ST_AsText(geog) as geog,
+			created_at, 
+			updated_at 
+		FROM locations 
+		WHERE user_id=$1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	var location entity.Location
-	err := l.GetContext(ctx, &location.Geog, query, id)
+	err := l.GetContext(ctx, &location, query, id)
 	if err != nil {
 		return nil, err
 	}
 	location.UserId = id
 	return &location, nil
 
+}
+
+func (l *location) GetClosestUser(geom string, limit int) ([]domain.User, error) {
+	query := `
+		SELECT 
+			users.*
+		FROM locations
+		JOIN users
+			ON users.id = locations.user_id
+		ORDER BY locations.geog <-> ST_GeomFromText($1)
+		LIMIT $2`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	users := make([]domain.User, 0, limit)
+	err := l.SelectContext(ctx, &users, query, geom, limit)
+	if err != nil {
+		return []domain.User{}, err
+	}
+	return users, nil
 }

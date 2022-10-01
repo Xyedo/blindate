@@ -65,7 +65,7 @@ func (u *user) postUserHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		errorServerResponse(c, err)
@@ -93,7 +93,7 @@ func (u *user) getUserByIdHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		errorServerResponse(c, err)
@@ -120,7 +120,7 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		errorServerResponse(c, err)
@@ -181,7 +181,7 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		errorServerResponse(c, err)

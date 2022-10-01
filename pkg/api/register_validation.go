@@ -12,6 +12,8 @@ func registerValidDObValidator() {
 		if err != nil {
 			panic(err)
 		}
+	} else {
+		panic("not ok validator")
 	}
 }
 
@@ -21,6 +23,8 @@ func registerValidLatValidator() {
 		if err != nil {
 			panic(err)
 		}
+	} else {
+		panic("not ok validator")
 	}
 }
 func registerValidLngValidator() {
@@ -29,5 +33,7 @@ func registerValidLngValidator() {
 		if err != nil {
 			panic(err)
 		}
+	} else {
+		panic("not ok validator")
 	}
 }

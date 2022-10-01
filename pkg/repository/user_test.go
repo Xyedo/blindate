@@ -2,8 +2,10 @@ package repository
 
 import (
 	"database/sql"
+	"strings"
 	"testing"
 
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/util"
@@ -11,7 +13,20 @@ import (
 )
 
 func Test_InsertUser(t *testing.T) {
-	createNewAccount(t)
+	t.Run("Valid NewAcc", func(t *testing.T) {
+		createNewAccount(t)
+	})
+	t.Run("Duplicate Email", func(t *testing.T) {
+		user := createNewAccount(t)
+		repo := NewUser(testQuery)
+		err := repo.InsertUser(user)
+		var pqErr *pq.Error
+		assert.Error(t, err)
+		assert.ErrorAs(t, err, &pqErr)
+		assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
+		assert.True(t, strings.Contains(pqErr.Constraint, "users_email"))
+	})
+
 }
 func Test_UpdateUser(t *testing.T) {
 	repo := NewUser(testQuery)

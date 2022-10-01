@@ -24,7 +24,7 @@ func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	var input struct {
 		Gender           string  `json:"gender" binding:"required,max=25"`
-		FromLoc          *string `json:"fromLoc" binding:"binding:required,max=25"`
+		FromLoc          *string `json:"fromLoc" binding:"omitempty,max=25"`
 		Height           *int    `json:"height" binding:"omitempty,min=0,max=300"`
 		EducationLevel   *string `json:"educationLevel" binding:"omitempty,max=49"`
 		Drinking         *string `json:"drinking" binding:"omitempty,max=49"`
@@ -85,7 +85,7 @@ func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		errorServerResponse(c, err)
@@ -102,7 +102,7 @@ func (b *basicinfo) getBasicInfoHandler(c *gin.Context) {
 	basicInfo, err := b.basicinfoService.GetBasicInfoByUserId(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		if errors.Is(err, domain.ErrResourceNotFound) {
@@ -113,7 +113,7 @@ func (b *basicinfo) getBasicInfoHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"status": "succes",
+		"status": "success",
 		"data": gin.H{
 			"basicInfo": basicInfo,
 		},
@@ -125,7 +125,7 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 	basicInfo, err := b.basicinfoService.GetBasicInfoByUserId(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		if errors.Is(err, domain.ErrResourceNotFound) {
@@ -137,7 +137,7 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 	}
 	var input struct {
 		Gender           *string `json:"gender" binding:"omitempty,max=25"`
-		FromLoc          *string `json:"fromLoc" binding:"binding:omitempty,max=25"`
+		FromLoc          *string `json:"fromLoc" binding:"omitempty,max=25"`
 		Height           *int    `json:"height" binding:"omitempty,min=0,max=300"`
 		EducationLevel   *string `json:"educationLevel" binding:"omitempty,max=49"`
 		Drinking         *string `json:"drinking" binding:"omitempty,max=49"`
@@ -216,7 +216,7 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorRequestTimeout(c)
+			errorDeadLockResponse(c)
 			return
 		}
 		errorServerResponse(c, err)
@@ -228,33 +228,41 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 	})
 
 }
-func referencesDbErr(err error) map[string]string {
-	res := map[string]string{}
+func referencesDbErr(err error) map[string]any {
+	res := make(map[string]any)
 	switch {
 	case errors.Is(err, service.ErrUserIdField):
 		res["status"] = "fail"
-		res["message"] = "userid not found!"
+		res["message"] = "please refer to the documentation"
+		res["errors"] = map[string]string{"user_id": "not found"}
 	case errors.Is(err, service.ErrGenderField):
 		res["status"] = "fail"
-		res["message"] = "gender property is not valid enums, refer to the documentation!"
+		res["message"] = "please refer to the documentation"
+		res["errors"] = map[string]string{"gender": "not valid enums"}
 	case errors.Is(err, service.ErrEducationLevelField):
 		res["status"] = "fail"
-		res["message"] = "educationLevel property is not valid enums, refer to the documentation!"
+		res["message"] = "please refer to the documentation"
+		res["errors"] = map[string]string{"educationLevel": "not valid enums"}
 	case errors.Is(err, service.ErrDrinkingField):
 		res["status"] = "fail"
-		res["message"] = "drinking property is not valid enums, refer to the documentation!"
+		res["message"] = "please refer to the documentation"
+		res["errors"] = map[string]string{"drinking": "not valid enums"}
 	case errors.Is(err, service.ErrSmokingField):
 		res["status"] = "fail"
-		res["message"] = "smoking property is not valid enums, refer to the documentation!"
+		res["message"] = "please refer to the documentation"
+		res["errors"] = map[string]string{"smoking": "not valid enums"}
 	case errors.Is(err, service.ErrrRelationshipPrefField):
 		res["status"] = "fail"
-		res["message"] = "relationshipPref property is not valid enums, refer to the documentation!"
+		res["message"] = "please refer to the documentation"
+		res["errors"] = map[string]string{"relationshipPref": "not valid enums"}
 	case errors.Is(err, service.ErrLookingForField):
 		res["status"] = "fail"
-		res["message"] = "lookingFor property is not valid enums, refer to the documentation!"
+		res["message"] = "please refer to the documentation"
+		res["errors"] = map[string]string{"lookingFor": "not valid enums"}
 	case errors.Is(err, service.ErrZodiacField):
 		res["status"] = "fail"
-		res["message"] = "zodiac property is not valid enums, refer to the documentation!"
+		res["message"] = "please refer to the documentation"
+		res["errors"] = map[string]string{"zodiac": "not valid enums"}
 	default:
 		res = nil
 	}
