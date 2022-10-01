@@ -38,7 +38,7 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 		}
 		errMap := util.ReadValidationErr(err, map[string]string{
 			"Email":    "required and must be valid email",
-			"Password": "required",
+			"Password": "required and must be over 8 character",
 		})
 		if errMap != nil {
 			errorValidationResponse(c, errMap)
@@ -86,23 +86,23 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 		errorServerResponse(c, err)
 		return
 	}
-	c.SetCookie("refreshToken", refreshToken, 2592000, "/api/v1", "localhost:8080", true, true)
+	c.SetCookie("refreshToken", refreshToken, 2592000, "/api/v1", "localhost", true, true)
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
 		"data": gin.H{
-			"acccessToken": accessToken,
+			"accessToken": accessToken,
 		},
 	})
 }
 
 func (a *auth) putAuthHandler(c *gin.Context) {
-	refreshTokenCookie, err := c.Request.Cookie("refreshToken")
+	refreshTokenCookie, err := c.Cookie("refreshToken")
 	if err != nil {
 		errCookieNotFound(c)
 		return
 	}
-	err = a.authService.VerifyRefreshToken(refreshTokenCookie.Value)
+	err = a.authService.VerifyRefreshToken(refreshTokenCookie)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
 			errorDeadLockResponse(c)
@@ -115,7 +115,7 @@ func (a *auth) putAuthHandler(c *gin.Context) {
 		errorServerResponse(c, err)
 		return
 	}
-	id, err := a.tokenizer.ValidateRefreshToken(refreshTokenCookie.Value)
+	id, err := a.tokenizer.ValidateRefreshToken(refreshTokenCookie)
 	if err != nil {
 		if errors.Is(err, service.ErrTokenNotValid) {
 			errorInvalidCredsResponse(c, "invalid credentials")
@@ -136,12 +136,12 @@ func (a *auth) putAuthHandler(c *gin.Context) {
 
 }
 func (a *auth) deleteAuthHandler(c *gin.Context) {
-	refreshTokenCookie, err := c.Request.Cookie("refreshToken")
+	refreshTokenCookie, err := c.Cookie("refreshToken")
 	if err != nil {
 		errCookieNotFound(c)
 		return
 	}
-	err = a.authService.VerifyRefreshToken(refreshTokenCookie.Name)
+	err = a.authService.VerifyRefreshToken(refreshTokenCookie)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
 			errorDeadLockResponse(c)
@@ -154,7 +154,7 @@ func (a *auth) deleteAuthHandler(c *gin.Context) {
 		errorServerResponse(c, err)
 		return
 	}
-	err = a.authService.DeleteRefreshToken(refreshTokenCookie.Value)
+	err = a.authService.DeleteRefreshToken(refreshTokenCookie)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
 			errorDeadLockResponse(c)
@@ -167,8 +167,8 @@ func (a *auth) deleteAuthHandler(c *gin.Context) {
 		errorServerResponse(c, err)
 		return
 	}
-	c.SetCookie("refreshToken", "", -1, "/api/v1", "localhost:8080", true, true)
-	c.JSON(http.StatusAccepted, gin.H{
+	c.SetCookie("refreshToken", "", -1, "/api/v1", "localhost", true, true)
+	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "log out success",
 	})

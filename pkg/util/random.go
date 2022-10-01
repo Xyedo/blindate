@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
 )
 
@@ -52,6 +53,20 @@ func RandomLat() float64 {
 }
 func RandomLng() float64 {
 	return float64(-180) + rand.Float64()*float64(360)
+}
+
+func RandomToken(secret string, expires time.Duration) (string, error) {
+	claims := jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(expires)),
+		ID:        RandomUUID(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	encodedToken, err := token.SignedString([]byte(secret))
+	if err != nil {
+		return "", err
+	}
+	return encodedToken, nil
+
 }
 func randomInt(min, max int64) int64 {
 	return min + rand.Int63n(max-min+1)
