@@ -3,14 +3,29 @@ package entity
 import "time"
 
 type Interest struct {
-	Id             string    `db:"id"`
-	UserId         string    `db:"user_id"`
-	Hobbies        []string  `db:"hobbies"`
-	MoviesSeries   []string  `db:"movie_series"`
-	Traveling      []string  `db:"traveling"`
-	Sport          []string  `db:"sport"`
-	Bio            string    `db:"bio"`
-	SpotifyConnect string    `db:"spotify_connect"`
-	CreatedAt      time.Time `db:"created_at"`
-	UpdatedAt      time.Time `db:"updated_at"`
+	Id           string `db:"id"`
+	UserId       string `db:"user_id"`
+	Hobbies      []Hobies
+	MoviesSeries []MovieSeries
+	Traveling    []Traveling
+	Sports       []Sports
+	Bio          string    `db:"bio"`
+	CreatedAt    time.Time `db:"created_at"`
+	UpdatedAt    time.Time `db:"updated_at"`
+}
+type Hobies struct {
+	Id     string `db:"id"`
+	Hobbie string `db:"hobbie"`
+}
+type MovieSeries struct {
+	Id         string `db:"id"`
+	MovieSerie string `db:"movie_serie"`
+}
+type Traveling struct {
+	Id     string `db:"id"`
+	Travel string `db:"travel"`
+}
+type Sports struct {
+	Id    string `db:"id"`
+	Sport string `db:"sport"`
 }
