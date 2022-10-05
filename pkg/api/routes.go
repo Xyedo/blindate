@@ -14,6 +14,7 @@ type Route struct {
 	Location       *location
 	Authentication *auth
 	Tokenizer      service.Jwt
+	Interest       *interest
 }
 
 func Routes(route Route) http.Handler {
@@ -39,7 +40,7 @@ func Routes(route Route) http.Handler {
 		registerValidDObValidator()
 		ru := route.User
 		v1.POST("/users", ru.postUserHandler)
-		auth := v1.Group("/users/:id", validateUser(route.Tokenizer))
+		auth := v1.Group("/users/:userId", validateUser(route.Tokenizer))
 		{
 			auth.GET("/", ru.getUserByIdHandler)
 			auth.PATCH("/", ru.patchUserByIdHandler)
@@ -49,12 +50,22 @@ func Routes(route Route) http.Handler {
 			auth.GET("/basic-info", rb.getBasicInfoHandler)
 			auth.PATCH("/basic-info", rb.patchBasicInfoHandler)
 
-			registerValidLatValidator()
-			registerValidLngValidator()
 			rl := route.Location
 			auth.POST("/location", rl.postLocationByUserIdHandler)
 			auth.GET("/location", rl.getLocationByUserIdHandler)
 			auth.PATCH("/location", rl.patchLocationByUserIdHandler)
+
+			ri := route.Interest
+			auth.GET("/interest", ri.GetInterestHandler)
+			auth.POST("/interest/bio", ri.PostInterestBioHandler)
+			auth.PUT("/interest/bio", ri.PutInterestBioHandler)
+			interest := auth.Group("/interest/:interestId", validateInterest())
+			{
+				interest.POST("/hobbies", ri.PostInterestHobbiesHandler)
+				interest.POST("/movie-series", ri.PostInterestMovieSeriesHandler)
+				interest.POST("/traveling", ri.PostInterestTravelingHandler)
+				interest.POST("/sport", ri.PostInterestSportHandler)
+			}
 		}
 
 	}

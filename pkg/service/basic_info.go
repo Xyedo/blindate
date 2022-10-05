@@ -40,7 +40,7 @@ type basicInfo struct {
 }
 
 func (b *basicInfo) CreateBasicInfo(bInfo *domain.BasicInfo) error {
-	rows, err := b.BasicInfoRepo.InsertBasicInfo(domainToEntity(bInfo))
+	rows, err := b.BasicInfoRepo.InsertBasicInfo(b.domainToEntity(bInfo))
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			return domain.ErrTooLongAccesingDB
@@ -68,11 +68,11 @@ func (b *basicInfo) GetBasicInfoByUserId(id string) (*domain.BasicInfo, error) {
 		return nil, err
 
 	}
-	return entityToDomain(basicInfo), nil
+	return b.entityToDomain(basicInfo), nil
 }
 
 func (b *basicInfo) UpdateBasicInfo(bInfo *domain.BasicInfo) error {
-	rows, err := b.BasicInfoRepo.UpdateBasicInfo(domainToEntity(bInfo))
+	rows, err := b.BasicInfoRepo.UpdateBasicInfo(b.domainToEntity(bInfo))
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			return domain.ErrTooLongAccesingDB
@@ -91,7 +91,7 @@ func (b *basicInfo) UpdateBasicInfo(bInfo *domain.BasicInfo) error {
 	return nil
 }
 
-func entityToDomain(basicInfo *entity.BasicInfo) *domain.BasicInfo {
+func (*basicInfo) entityToDomain(basicInfo *entity.BasicInfo) *domain.BasicInfo {
 	return &domain.BasicInfo{
 		Id:               basicInfo.Id,
 		UserId:           basicInfo.UserId,
@@ -110,7 +110,7 @@ func entityToDomain(basicInfo *entity.BasicInfo) *domain.BasicInfo {
 		UpdatedAt:        basicInfo.UpdatedAt,
 	}
 }
-func domainToEntity(basicInfo *domain.BasicInfo) *entity.BasicInfo {
+func (*basicInfo) domainToEntity(basicInfo *domain.BasicInfo) *entity.BasicInfo {
 	return &entity.BasicInfo{
 		Id:               basicInfo.Id,
 		UserId:           basicInfo.UserId,

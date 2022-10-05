@@ -8,8 +8,8 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func execTx(conn *sqlx.DB, ctx context.Context, cb func(q *sqlx.DB) error) error {
-	tx, err := conn.BeginTxx(ctx, &sql.TxOptions{Isolation: sql.LevelReadCommitted, ReadOnly: false})
+func execGeneric(conn *sqlx.DB, ctx context.Context, cb func(q *sqlx.DB) error, option *sql.TxOptions) error {
+	tx, err := conn.BeginTxx(ctx, option)
 	if err != nil {
 		return err
 	}

@@ -23,8 +23,8 @@ type location struct {
 func (l *location) postLocationByUserIdHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	var input struct {
-		Lat string `json:"lat" binding:"required,validlat"`
-		Lng string `json:"lng" binding:"required,validlng"`
+		Lat string `json:"lat" binding:"required,latitude"`
+		Lng string `json:"lng" binding:"required,longitude"`
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
@@ -88,8 +88,8 @@ func (l *location) getLocationByUserIdHandler(c *gin.Context) {
 func (l *location) patchLocationByUserIdHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	var input struct {
-		Lat *string `json:"lat" binding:"omitempty,validlat"`
-		Lng *string `json:"lng" binding:"omitempty,validlng"`
+		Lat *string `json:"lat" binding:"omitempty,latitude"`
+		Lng *string `json:"lng" binding:"omitempty,longitude"`
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {

@@ -21,9 +21,9 @@ func RandomEmail(n int) string {
 	return fmt.Sprintf("%s@example.com", RandomString(n))
 }
 func RandDOB(minYear, maxYear int64) time.Time {
-	year := int(randomInt(minYear, maxYear))
-	month := randomInt(1, 12)
-	day := int(randomInt(1, 28))
+	year := int(RandomInt(minYear, maxYear))
+	month := RandomInt(1, 12)
+	day := int(RandomInt(1, 28))
 
 	return time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.Local)
 }
@@ -68,7 +68,7 @@ func RandomToken(secret string, expires time.Duration) (string, error) {
 	return encodedToken, nil
 
 }
-func randomInt(min, max int64) int64 {
+func RandomInt(min, max int64) int64 {
 	return min + rand.Int63n(max-min+1)
 }
 func randomFloat(min, max, precision int) float64 {

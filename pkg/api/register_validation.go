@@ -16,24 +16,3 @@ func registerValidDObValidator() {
 		panic("not ok validator")
 	}
 }
-
-func registerValidLatValidator() {
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		err := v.RegisterValidation("validlat", validation.ValidLat)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		panic("not ok validator")
-	}
-}
-func registerValidLngValidator() {
-	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		err := v.RegisterValidation("validlng", validation.ValidLng)
-		if err != nil {
-			panic(err)
-		}
-	} else {
-		panic("not ok validator")
-	}
-}
