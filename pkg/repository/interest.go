@@ -9,21 +9,31 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/xyedo/blindate/pkg/domain"
+	"github.com/xyedo/blindate/pkg/util"
 )
 
 type Interest interface {
 	GetInterest(userId string) (*domain.Interest, error)
+
 	InsertInterestBio(intr *domain.Bio) error
 	SelectInterestBio(userId string) (*domain.Bio, error)
 	UpdateInterestBio(intr *domain.Bio) error
+
 	InsertInterestHobbies(interestId string, hobbies []domain.Hobbie) error
 	UpdateInterestHobbies(interestId string, hobbies []domain.Hobbie) (int64, error)
+	DeleteInterestHobbies(ids []string) (int64, error)
+
 	InsertInterestMovieSeries(interestId string, movieSeries []domain.MovieSerie) error
 	UpdateInterestMovieSeries(interestId string, movieSeries []domain.MovieSerie) (int64, error)
+	DeleteInterestMovieSeries(ids []string) (int64, error)
+
 	InsertInterestTraveling(interestId string, travels []domain.Travel) error
 	UpdateInterestTraveling(interestId string, travels []domain.Travel) (int64, error)
+	DeleteInterestTraveling(ids []string) (int64, error)
+
 	InsertInterestSports(interestId string, sports []domain.Sport) error
 	UpdateInterestSport(interestId string, sports []domain.Sport) (int64, error)
+	DeleteInterestSports(ids []string) (int64, error)
 }
 
 func NewInterest(db *sqlx.DB) *interest {
@@ -50,7 +60,7 @@ func (i *interest) GetInterest(userId string) (*domain.Interest, error) {
 	defer cancel()
 
 	var intr domain.Interest
-	err := i.GetContext(ctx, &intr, query, userId)
+	err := i.GetContext(ctx, &intr.Bio, query, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -144,6 +154,7 @@ func (i *interest) InsertInterestHobbies(interestId string, hobbies []domain.Hob
 	stmt := ``
 	args := make([]any, 0, len(hobbies))
 	args = append(args, interestId)
+
 	for i, val := range hobbies {
 		stmt += fmt.Sprintf("($%d, $%d),", 1, i+2)
 		args = append(args, val.Hobbie)
@@ -156,8 +167,22 @@ func (i *interest) InsertInterestHobbies(interestId string, hobbies []domain.Hob
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := i.SelectContext(ctx, &hobbies, query, args...)
+	rows, err := i.QueryxContext(ctx, query, args...)
 	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	iter := 0
+	for rows.Next() {
+		if err := rows.Scan(&hobbies[iter].Id); err != nil {
+			return err
+		}
+
+		iter++
+	}
+	if err := rows.Err(); err != nil {
 		return err
 	}
 	return nil
@@ -168,7 +193,10 @@ func (i *interest) UpdateInterestHobbies(interestId string, hobbies []domain.Hob
 	stmnt := ``
 	for i, val := range hobbies {
 		p1 := i * 2
-		stmnt += fmt.Sprintf("(uuid($%d::TEXT), uuid($%d::TEXT), $%d,),", 1, p1+2, p1+3)
+		stmnt += fmt.Sprintf("(uuid($%d::TEXT), uuid($%d::TEXT), $%d),", 1, p1+2, p1+3)
+		if val.Id == "" {
+			val.Id = util.RandomUUID()
+		}
 		args = append(args, val.Id, val.Hobbie)
 	}
 	stmnt = stmnt[:len(stmnt)-1]
@@ -178,7 +206,7 @@ func (i *interest) UpdateInterestHobbies(interestId string, hobbies []domain.Hob
 		WITH new_values(interest_id, id,hobbie) AS (
 			VALUES
 				%s
-		)
+		),
 		UPSERT AS
 		(
 			UPDATE hobbies h
@@ -188,7 +216,8 @@ func (i *interest) UpdateInterestHobbies(interestId string, hobbies []domain.Hob
 			RETURNING h.*
 		)
 		INSERT INTO hobbies(interest_id,hobbie)
-		SELECT interest_id,hobbie FROM new_values
+		SELECT interest_id, hobbie 
+		FROM new_values
 		WHERE NOT EXISTS (
 			SELECT 1
 			FROM upsert up
@@ -205,7 +234,31 @@ func (i *interest) UpdateInterestHobbies(interestId string, hobbies []domain.Hob
 		return 0, err
 	}
 	return row, nil
+}
 
+func (i *interest) DeleteInterestHobbies(ids []string) (int64, error) {
+	query := `
+	DELETE FROM hobbies
+	WHERE id IN (`
+	args := make([]any, 0, len(ids))
+	for i, id := range ids {
+		query += fmt.Sprintf("$%d,", i+1)
+		args = append(args, id)
+	}
+	query = query[:len(query)-1] + ")"
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	res, err := i.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, err
+	}
+	row, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return row, nil
 }
 
 func (i *interest) InsertInterestMovieSeries(interestId string, movieSeries []domain.MovieSerie) error {
@@ -226,8 +279,22 @@ func (i *interest) InsertInterestMovieSeries(interestId string, movieSeries []do
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := i.SelectContext(ctx, &movieSeries, query, args...)
+	rows, err := i.QueryxContext(ctx, query, args...)
 	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	iter := 0
+	for rows.Next() {
+		if err := rows.Scan(&movieSeries[iter].Id); err != nil {
+			return err
+		}
+
+		iter++
+	}
+	if err := rows.Err(); err != nil {
 		return err
 	}
 	return nil
@@ -239,7 +306,10 @@ func (i *interest) UpdateInterestMovieSeries(interestId string, movieSeries []do
 	stmnt := ``
 	for i, val := range movieSeries {
 		p1 := i * 2
-		stmnt += fmt.Sprintf("(uuid($%d::TEXT), uuid($%d::TEXT), $%d,),", 1, p1+2, p1+3)
+		stmnt += fmt.Sprintf("(uuid($%d::TEXT), uuid($%d::TEXT), $%d),", 1, p1+2, p1+3)
+		if val.Id == "" {
+			val.Id = util.RandomUUID()
+		}
 		args = append(args, val.Id, val.MovieSerie)
 	}
 	stmnt = stmnt[:len(stmnt)-1]
@@ -249,7 +319,7 @@ func (i *interest) UpdateInterestMovieSeries(interestId string, movieSeries []do
 		WITH new_values(interest_id, id, movie_serie) AS (
 			VALUES
 				%s
-		)
+		),
 		UPSERT AS
 		(
 			UPDATE movie_series m
@@ -259,13 +329,38 @@ func (i *interest) UpdateInterestMovieSeries(interestId string, movieSeries []do
 			RETURNING m.*
 		)
 		INSERT INTO movie_series(interest_id,movie_serie)
-		SELECT interest_id, movie_serie FROM new_values
+		SELECT interest_id, movie_serie 
+		FROM new_values
 		WHERE NOT EXISTS (
 			SELECT 1
 			FROM upsert up
 			WHERE up.id = new_values.id)`, stmnt)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	res, err := i.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, err
+	}
+	row, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return row, nil
+}
+func (i *interest) DeleteInterestMovieSeries(ids []string) (int64, error) {
+	query := `
+	DELETE FROM movie_series
+	WHERE id IN (`
+	args := make([]any, 0, len(ids))
+	for i, id := range ids {
+		query += fmt.Sprintf("$%d,", i+1)
+		args = append(args, id)
+	}
+	query = query[:len(query)-1] + ")"
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	res, err := i.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, err
@@ -293,8 +388,22 @@ func (i *interest) InsertInterestTraveling(interestId string, travels []domain.T
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := i.SelectContext(ctx, &travels, query, args...)
+	rows, err := i.QueryxContext(ctx, query, args...)
 	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	iter := 0
+	for rows.Next() {
+		if err := rows.Scan(&travels[iter].Id); err != nil {
+			return err
+		}
+
+		iter++
+	}
+	if err := rows.Err(); err != nil {
 		return err
 	}
 	return nil
@@ -306,7 +415,10 @@ func (i *interest) UpdateInterestTraveling(interestId string, travels []domain.T
 	stmnt := ``
 	for i, val := range travels {
 		p1 := i * 2
-		stmnt += fmt.Sprintf("(uuid($%d::TEXT), uuid($%d::TEXT), $%d,),", 1, p1+2, p1+3)
+		stmnt += fmt.Sprintf("(uuid($%d::TEXT), uuid($%d::TEXT), $%d),", 1, p1+2, p1+3)
+		if val.Id == "" {
+			val.Id = util.RandomUUID()
+		}
 		args = append(args, val.Id, val.Travel)
 	}
 	stmnt = stmnt[:len(stmnt)-1]
@@ -316,7 +428,7 @@ func (i *interest) UpdateInterestTraveling(interestId string, travels []domain.T
 		WITH new_values(interest_id, id,travel) AS (
 			VALUES
 				%s
-		)
+		),
 		UPSERT AS
 		(
 			UPDATE traveling t
@@ -333,6 +445,30 @@ func (i *interest) UpdateInterestTraveling(interestId string, travels []domain.T
 			WHERE up.id = new_values.id)`, stmnt)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	res, err := i.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, err
+	}
+	row, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return row, nil
+}
+func (i *interest) DeleteInterestTraveling(ids []string) (int64, error) {
+	query := `
+	DELETE FROM traveling
+	WHERE id IN (`
+	args := make([]any, 0, len(ids))
+	for i, id := range ids {
+		query += fmt.Sprintf("$%d,", i+1)
+		args = append(args, id)
+	}
+	query = query[:len(query)-1] + ")"
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
 	res, err := i.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, err
@@ -362,8 +498,22 @@ func (i *interest) InsertInterestSports(interestId string, sports []domain.Sport
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := i.SelectContext(ctx, &sports, query, args...)
+	rows, err := i.QueryxContext(ctx, query, args...)
 	if err != nil {
+		return err
+	}
+
+	defer rows.Close()
+
+	iter := 0
+	for rows.Next() {
+		if err := rows.Scan(&sports[iter].Id); err != nil {
+			return err
+		}
+
+		iter++
+	}
+	if err := rows.Err(); err != nil {
 		return err
 	}
 	return nil
@@ -374,7 +524,10 @@ func (i *interest) UpdateInterestSport(interestId string, sports []domain.Sport)
 	stmnt := ``
 	for i, val := range sports {
 		p1 := i * 2
-		stmnt += fmt.Sprintf("(uuid($%d::TEXT), uuid($%d::TEXT), $%d,),", 1, p1+2, p1+3)
+		stmnt += fmt.Sprintf("(uuid($%d::TEXT), uuid($%d::TEXT), $%d),", 1, p1+2, p1+3)
+		if val.Id == "" {
+			val.Id = util.RandomUUID()
+		}
 		args = append(args, val.Id, val.Sport)
 	}
 	stmnt = stmnt[:len(stmnt)-1]
@@ -384,11 +537,11 @@ func (i *interest) UpdateInterestSport(interestId string, sports []domain.Sport)
 		WITH new_values(interest_id, id,sport) AS (
 			VALUES
 				%s
-		)
+		),
 		UPSERT AS
 		(
 			UPDATE sports s
-				SET sport = nv.hobbie
+				SET sport = nv.sport
 			FROM new_values nv
 			WHERE s.id =nv.id
 			RETURNING s.*
@@ -412,126 +565,31 @@ func (i *interest) UpdateInterestSport(interestId string, sports []domain.Sport)
 	}
 	return row, nil
 }
+func (i *interest) DeleteInterestSports(ids []string) (int64, error) {
+	query := `
+	DELETE FROM sports
+	WHERE id IN (`
+	args := make([]any, 0, len(ids))
+	for i, id := range ids {
+		query += fmt.Sprintf("$%d,", i+1)
+		args = append(args, id)
+	}
+	query = query[:len(query)-1] + ")"
 
-// func (i *interest) UpdateInterest(intr *domain.Interest) error {
-// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-// 	defer cancel()
-// 	err := i.execTx(ctx, func(q *sqlx.DB) error {
-// 		query := `UPDATE interests SET bio = $1, updated_at=$2  WHERE user_id = $3 RETURNING id`
-// 		err := q.GetContext(ctx, &intr.Id, query, intr.Bio, time.Now(), intr.UserId)
-// 		if err != nil {
-// 			return err
-// 		}
-// 		selectQuery := `SELECT`
-// 		stmnt := ``
-// 		args := make([]any, 0, len(intr.Hobbies))
-// 		args = append(args, intr.Id)
-// 		for i, val := range intr.Hobbies {
-// 			p1 := i * 2
-// 			stmnt += fmt.Sprintf("(uuid($%d::TEXT), uuid($%d::TEXT), $%d,),", 1, p1+2, p1+3)
-// 			args = append(args, val.Id, val.Hobbie)
-// 		}
-// 		stmnt = stmnt[:len(stmnt)-1]
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
-// 		query = fmt.Sprintf(`
-// 			WITH new_values(interest_id, id,hobbie) AS (
-// 				VALUES
-// 					%s
-// 			)
-// 			UPSERT AS
-// 			(
-// 				UPDATE hobbies h
-// 					SET hobbie = nv.hobbie
-// 				FROM new_values nv
-// 				WHERE h.id =nv.id
-// 				RETURNING h.*
-// 			)
-// 			INSERT INTO hobbies(interest_id,hobbie)
-// 			SELECT hobbie FROM new_values
-// 			WHERE NOT EXISTS (
-// 				SELECT 1
-// 				FROM upsert up
-// 				WHERE up.id = new_values.id)`, stmnt)
-
-// 		_, err = q.ExecContext(ctx, query, args...)
-// 		if err != nil {
-// 			return err
-// 		}
-
-// 		if len(intr.MovieSeries) > 0 {
-// 			stmnt := ``
-// 			args := make([]any, 0, len(intr.MovieSeries))
-// 			for i, val := range intr.MovieSeries {
-// 				p1 := i * 2
-// 				stmnt += fmt.Sprintf("(uuid($%d::TEXT), $%d),", p1+1, p1+2)
-// 				args = append(args, val.Id, val.MovieSerie)
-// 			}
-// 			stmnt = stmnt[:len(stmnt)-1]
-
-// 			query = fmt.Sprintf(`
-// 			UPDATE movie_series as m SET
-// 				movie_serie = m2.movie_serie
-// 			FROM (VALUES
-// 				%s
-// 			) AS m2(id, movie_serie)
-// 			WHERE m2.id  = m.id`, stmnt)
-// 			_, err = q.ExecContext(ctx, query, args...)
-// 			if err != nil {
-// 				return err
-// 			}
-// 		}
-// 		if len(intr.Travels) > 0 {
-// 			stmnt := ``
-// 			args := make([]any, 0, len(intr.Travels))
-// 			for i, val := range intr.Travels {
-// 				p1 := i * 2
-// 				stmnt += fmt.Sprintf("(uuid($%d::TEXT), $%d),", p1+1, p1+2)
-// 				args = append(args, val.Id, val.Travel)
-// 			}
-// 			stmnt = stmnt[:len(stmnt)-1]
-
-// 			query = fmt.Sprintf(`
-// 			UPDATE traveling as t SET
-// 				travel = t2.travel
-// 			FROM (VALUES
-// 				%s
-// 			) AS t2(id, travel)
-// 			WHERE t2.id = t.id`, stmnt)
-// 			_, err = q.ExecContext(ctx, query, args...)
-// 			if err != nil {
-// 				return err
-// 			}
-// 		}
-// 		if len(intr.Sports) > 0 {
-// 			stmnt := ``
-// 			args := make([]any, 0, len(intr.Sports))
-// 			for i, val := range intr.Sports {
-// 				p1 := i * 2
-// 				stmnt += fmt.Sprintf("(uuid($%d::TEXT), $%d),", p1+1, p1+2)
-// 				args = append(args, val.Id, val.Sport)
-// 			}
-// 			stmnt = stmnt[:len(stmnt)-1]
-
-// 			query = fmt.Sprintf(`
-// 			UPDATE sports as s SET
-// 				sport = s2.sport
-// 			FROM (VALUES
-// 				%s
-// 			) AS s2(id, sport)
-// 			WHERE s2.id = s.id`, stmnt)
-// 			_, err = q.ExecContext(ctx, query, args...)
-// 			if err != nil {
-// 				return err
-// 			}
-// 		}
-// 		return nil
-// 	})
-// 	if err != nil {
-// 		return err
-// 	}
-// 	return nil
-
-// }
-func (i *interest) execTx(ctx context.Context, q func(q *sqlx.DB) error) error {
-	return execGeneric(i.DB, ctx, q, &sql.TxOptions{Isolation: sql.LevelReadCommitted, ReadOnly: false})
+	res, err := i.ExecContext(ctx, query, args...)
+	if err != nil {
+		return 0, err
+	}
+	row, err := res.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+	return row, nil
 }
+
+// func (i *interest) execTx(ctx context.Context, q func(q *sqlx.DB) error) error {
+// 	return execGeneric(i.DB, ctx, q, &sql.TxOptions{Isolation: sql.LevelReadCommitted, ReadOnly: false})
+// }

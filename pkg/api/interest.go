@@ -27,6 +27,31 @@ type interest struct {
 // "MovieSeries": "each movieSeries must be unique and has more than 2 and less than 50 character",
 // "Travels":     "each travels must be unique and has more than 2 and less than 50 character",
 // "Sports":      "each travels must be unique and has more than 2 and less than 50 character",
+func (i *interest) GetInterestHandler(c *gin.Context) {
+	userId := c.GetString("userId")
+	intr, err := i.interestSvc.GetInterest(userId)
+	if err != nil {
+		if errors.Is(err, domain.ErrResourceNotFound) {
+
+			errorResourceNotFound(c, "userId is not match with our resource")
+			return
+		}
+		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+			errorDeadLockResponse(c)
+			return
+		}
+		errorServerResponse(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data": gin.H{
+			"interest": intr,
+		},
+	})
+}
+
 func (i *interest) PostInterestBioHandler(c *gin.Context) {
 	var input struct {
 		Bio string `json:"bio" binding:"omitempty,max=300"`
@@ -75,7 +100,7 @@ func (i *interest) PostInterestBioHandler(c *gin.Context) {
 	// 	})
 	// }
 
-	err = i.interestSvc.CreateNewInterestBio(&bio)
+	err = i.interestSvc.CreateNewBio(&bio)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
 			errorDeadLockResponse(c)
@@ -95,38 +120,11 @@ func (i *interest) PostInterestBioHandler(c *gin.Context) {
 	})
 
 }
-
-func (i *interest) GetInterestHandler(c *gin.Context) {
-	userId := c.GetString("userId")
-	intr, err := i.interestSvc.GetInterest(userId)
-	if err != nil {
-		if errors.Is(err, domain.ErrResourceNotFound) {
-
-			errorResourceNotFound(c, "userId is not match with our resource")
-			return
-		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
-			return
-		}
-		errorServerResponse(c, err)
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"status": "success",
-		"data": gin.H{
-			"interest": intr,
-		},
-	})
-}
-
 func (i *interest) PutInterestBioHandler(c *gin.Context) {
 	userId := c.GetString("userId")
-	bio, err := i.interestSvc.GetInterestBio(userId)
+	bio, err := i.interestSvc.GetBio(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
-
 			errorResourceNotFound(c, "userId is not match with our resource")
 			return
 		}
@@ -173,7 +171,7 @@ func (i *interest) PutInterestBioHandler(c *gin.Context) {
 			"message": "nothing changed",
 		})
 	}
-	err = i.interestSvc.PutInterestBio(bio)
+	err = i.interestSvc.PutBio(bio)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
 			errorDeadLockResponse(c)
@@ -193,10 +191,11 @@ func (i *interest) PutInterestBioHandler(c *gin.Context) {
 	})
 
 }
+
 func (i *interest) PostInterestHobbiesHandler(c *gin.Context) {
 	interestId := c.GetString("interestId")
 	var input struct {
-		Hobbies []string `json:"hobbies" binding:"required,unique,dive,min=2,max=50"`
+		Hobbies []string `json:"hobbies" binding:"required,max=5,unique,dive,min=2,max=50"`
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
@@ -205,7 +204,6 @@ func (i *interest) PostInterestHobbiesHandler(c *gin.Context) {
 			errorJSONBindingResponse(c, err1)
 			return
 		}
-
 		errMap := util.ReadValidationErr(err, map[string]string{
 			"Hobbies": "each hobbies must be unique and has more than 2 and less than 50 character",
 		})
@@ -216,5 +214,30 @@ func (i *interest) PostInterestHobbiesHandler(c *gin.Context) {
 		errorServerResponse(c, err)
 		return
 	}
+	hobbies := make([]domain.Hobbie, 0, len(input.Hobbies))
+	for _, hobbie := range input.Hobbies {
+		hobbies = append(hobbies, domain.Hobbie{
+			Hobbie: hobbie,
+		})
+	}
+	err = i.interestSvc.CreateNewHobbies(interestId, hobbies)
+	if err != nil {
+		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+			errorDeadLockResponse(c)
+			return
+		}
+		if errors.Is(err, service.ErrInterestIdNotFound) {
+			errorResourceNotFound(c, "interestId is not found")
+			return
+		}
+		errorServerResponse(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{
+		"status": "success",
+		"data": gin.H{
+			"hobbies": hobbies,
+		},
+	})
 
 }

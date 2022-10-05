@@ -59,12 +59,25 @@ func Routes(route Route) http.Handler {
 			auth.GET("/interest", ri.GetInterestHandler)
 			auth.POST("/interest/bio", ri.PostInterestBioHandler)
 			auth.PUT("/interest/bio", ri.PutInterestBioHandler)
+
+			//TODO: CREATE HANDLER AND TEST INTEREST ID
 			interest := auth.Group("/interest/:interestId", validateInterest())
 			{
 				interest.POST("/hobbies", ri.PostInterestHobbiesHandler)
+				interest.PUT("/hobbies", ri.PutInterestHobbiesHandler)
+				interest.DELETE("/hobbies", ri.DeleteInterestHobbiesHandler)
+
 				interest.POST("/movie-series", ri.PostInterestMovieSeriesHandler)
+				interest.PUT("/movie-series", ri.PutInterestMovieSeriesHandler)
+				interest.DELETE("/movie-series", ri.DeleteInterestMovieSeriesHandler)
+
 				interest.POST("/traveling", ri.PostInterestTravelingHandler)
+				interest.PUT("/traveling", ri.PutInterestTravelingHandler)
+				interest.DELETE("/traveling", ri.DeleteInterestTravelingHandler)
+
 				interest.POST("/sport", ri.PostInterestSportHandler)
+				interest.PUT("/sport", ri.PutInterestSportHandler)
+				interest.DELETE("/sport", ri.DeleteInterestSportHandler)
 			}
 		}
 

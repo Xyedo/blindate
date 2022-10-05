@@ -10,7 +10,7 @@ type Bio struct {
 	UpdatedAt time.Time `json:"updatedAt" db:"updated_at"`
 }
 type Interest struct {
-	Bio
+	Bio         `json:"-" db:"-"`
 	Hobbies     []Hobbie     `json:"hobbies" db:"-"`
 	MovieSeries []MovieSerie `json:"movieSeries" db:"-"`
 	Travels     []Travel     `json:"travels" db:"-"`
