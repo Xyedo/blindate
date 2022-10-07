@@ -20,13 +20,6 @@ type interest struct {
 	interestSvc service.Interest
 }
 
-// 		MovieSeries []string `json:"movieSeries" binding:"omitempty,unique,dive,min=2,max=50"`
-// 		Travels     []string `json:"travels" binding:"omitempty,unique,dive,min=2,max=50"`
-// 		Sports      []string `json:"sports" binding:"omitempty,unique,dive,min=2,max=50"`
-
-// "MovieSeries": "each movieSeries must be unique and has more than 2 and less than 50 character",
-// "Travels":     "each travels must be unique and has more than 2 and less than 50 character",
-// "Sports":      "each travels must be unique and has more than 2 and less than 50 character",
 func (i *interest) getInterestHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	intr, err := i.interestSvc.GetInterest(userId)
@@ -79,26 +72,6 @@ func (i *interest) postInterestBioHandler(c *gin.Context) {
 		UserId: userId,
 		Bio:    input.Bio,
 	}
-	// for _, hobbie := range input.Hobbies {
-	// 	intr.Hobbies = append(intr.Hobbies, domain.Hobbie{
-	// 		Hobbie: hobbie,
-	// 	})
-	// }
-	// for _, movieSerie := range input.MovieSeries {
-	// 	intr.MovieSeries = append(intr.MovieSeries, domain.MovieSerie{
-	// 		MovieSerie: movieSerie,
-	// 	})
-	// }
-	// for _, travel := range input.Travels {
-	// 	intr.Travels = append(intr.Travels, domain.Travel{
-	// 		Travel: travel,
-	// 	})
-	// }
-	// for _, sport := range input.Sports {
-	// 	intr.Sports = append(intr.Sports, domain.Sport{
-	// 		Sport: sport,
-	// 	})
-	// }
 
 	err = i.interestSvc.CreateNewBio(&bio)
 	if err != nil {
@@ -137,10 +110,6 @@ func (i *interest) putInterestBioHandler(c *gin.Context) {
 	}
 	var input struct {
 		Bio *string `json:"bio" binding:"omitempty,max=300"`
-		// Hobbies     []domain.Hobbie `json:"hobbies" binding:"omitempty,unique=Id,unique=Hobbie"`
-		// MovieSeries []domain.MovieSerie `json:"movieSeries" binding:"omitempty,unique=Id,unique=MovieSerie"`
-		// Travels     []domain.Travel `json:"travels" binding:"omitempty,unique=Id,unique=Travel"`
-		// Sports      []domain.Sport `json:"sports" binding:"omitempty,unique=Id,unique=Sport"`
 	}
 	err = c.ShouldBindJSON(&input)
 	if err != nil {
@@ -151,10 +120,6 @@ func (i *interest) putInterestBioHandler(c *gin.Context) {
 		}
 		errMap := util.ReadValidationErr(err, map[string]string{
 			"Bio": "maximal character length is less than 300",
-			// "Hobbies":     "each hobbies must be unique and has more than 2 and less than 50 character",
-			// "MovieSeries": "each movieSeries must be unique and has more than 2 and less than 50 character",
-			// "Travels":     "each travels must be unique and has more than 2 and less than 50 character",
-			// "Sports":      "each travels must be unique and has more than 2 and less than 50 character",
 		})
 		if errMap != nil {
 			errorValidationResponse(c, errMap)

@@ -9,7 +9,6 @@ import (
 	"github.com/xyedo/blindate/pkg/domain"
 )
 
-// TODO: TEST Online Repository
 type Online interface {
 	InsertNewOnline(on *domain.Online) error
 	UpdateOnline(userId string, online bool) error
