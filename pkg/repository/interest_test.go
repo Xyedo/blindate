@@ -351,7 +351,7 @@ func Test_DeleteSports(t *testing.T) {
 
 func Test_GetInterest(t *testing.T) {
 	repo := NewInterest(testQuery)
-	t.Run("Valid Id", func(t *testing.T) {
+	t.Run("Valid Id AND Using All", func(t *testing.T) {
 		user := createNewAccount(t)
 		bio := createNewInterestBio(t, user.ID)
 		hobbies := createNewInterestHobbie(t, bio.Id)
@@ -385,6 +385,82 @@ func Test_GetInterest(t *testing.T) {
 			assert.NotZero(t, res.Sports[0].Sport)
 			assert.NotZero(t, res.Sports[0].Id)
 		}
+	})
+	t.Run("Valid Id But Partial hobbies", func(t *testing.T) {
+		user := createNewAccount(t)
+		bio := createNewInterestBio(t, user.ID)
+		hobbies := createNewInterestHobbie(t, bio.Id)
+		res, err := repo.GetInterest(bio.UserId)
+		assert.NoError(t, err)
+		assert.Equal(t, bio.Id, res.Id)
+		assert.Equal(t, bio.UserId, res.UserId)
+		assert.Equal(t, bio.Bio, res.Bio.Bio)
+
+		assert.NotZero(t, hobbies[0].Hobbie)
+		assert.NotZero(t, res.Hobbies[0].Hobbie)
+		assert.NotZero(t, res.Hobbies[0].Id)
+
+		assert.Zero(t, res.MovieSeries)
+		assert.Zero(t, res.Travels)
+		assert.Zero(t, res.Sports)
+
+	})
+	t.Run("Valid Id But Partial MovieSeries", func(t *testing.T) {
+		user := createNewAccount(t)
+		bio := createNewInterestBio(t, user.ID)
+		movieSeries := createNewInterestMovieSeries(t, bio.Id)
+		res, err := repo.GetInterest(bio.UserId)
+		assert.NoError(t, err)
+		assert.Equal(t, bio.Id, res.Id)
+		assert.Equal(t, bio.UserId, res.UserId)
+		assert.Equal(t, bio.Bio, res.Bio.Bio)
+
+		assert.NotZero(t, movieSeries[0].MovieSerie)
+		assert.NotZero(t, res.MovieSeries[0].MovieSerie)
+		assert.NotZero(t, res.MovieSeries[0].Id)
+
+		assert.Zero(t, res.Hobbies)
+		assert.Zero(t, res.Travels)
+		assert.Zero(t, res.Sports)
+
+	})
+	t.Run("Valid Id But Partial travels", func(t *testing.T) {
+		user := createNewAccount(t)
+		bio := createNewInterestBio(t, user.ID)
+		travels := createNewInterestTraveling(t, bio.Id)
+		res, err := repo.GetInterest(bio.UserId)
+		assert.NoError(t, err)
+		assert.Equal(t, bio.Id, res.Id)
+		assert.Equal(t, bio.UserId, res.UserId)
+		assert.Equal(t, bio.Bio, res.Bio.Bio)
+
+		assert.NotZero(t, travels[0].Travel)
+		assert.NotZero(t, res.Travels[0].Travel)
+		assert.NotZero(t, res.Travels[0].Id)
+
+		assert.Zero(t, res.Hobbies)
+		assert.Zero(t, res.MovieSeries)
+		assert.Zero(t, res.Sports)
+
+	})
+	t.Run("Valid Id But Partial sports", func(t *testing.T) {
+		user := createNewAccount(t)
+		bio := createNewInterestBio(t, user.ID)
+		sports := createNewInterestSport(t, bio.Id)
+		res, err := repo.GetInterest(bio.UserId)
+		assert.NoError(t, err)
+		assert.Equal(t, bio.Id, res.Id)
+		assert.Equal(t, bio.UserId, res.UserId)
+		assert.Equal(t, bio.Bio, res.Bio.Bio)
+
+		assert.NotZero(t, sports[0].Sport)
+		assert.NotZero(t, res.Sports[0].Sport)
+		assert.NotZero(t, res.Sports[0].Id)
+
+		assert.Zero(t, res.Hobbies)
+		assert.Zero(t, res.MovieSeries)
+		assert.Zero(t, res.Travels)
+
 	})
 	t.Run("Invalid Id", func(t *testing.T) {
 		res, err := repo.GetInterest(util.RandomUUID())

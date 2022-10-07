@@ -502,7 +502,6 @@ func Test_postBasicInfoHandler(t *testing.T) {
 
 func Test_getBasicInfoHandler(t *testing.T) {
 	validBasicInfo := domain.BasicInfo{
-		Id:         util.RandomUUID(),
 		UserId:     util.RandomUUID(),
 		Gender:     "Female",
 		LookingFor: "Male",
@@ -520,7 +519,6 @@ func Test_getBasicInfoHandler(t *testing.T) {
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfo := &entity.BasicInfo{
-					Id:         validBasicInfo.Id,
 					UserId:     validBasicInfo.UserId,
 					Gender:     validBasicInfo.Gender,
 					LookingFor: validBasicInfo.LookingFor,

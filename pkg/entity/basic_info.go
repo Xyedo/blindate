@@ -6,7 +6,6 @@ import (
 )
 
 type BasicInfo struct {
-	Id               string         `db:"id"`
 	UserId           string         `db:"user_id"`
 	Gender           string         `db:"gender"`
 	FromLoc          sql.NullString `db:"from_loc"`

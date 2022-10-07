@@ -93,7 +93,6 @@ func (b *basicInfo) UpdateBasicInfo(bInfo *domain.BasicInfo) error {
 
 func (*basicInfo) entityToDomain(basicInfo *entity.BasicInfo) *domain.BasicInfo {
 	return &domain.BasicInfo{
-		Id:               basicInfo.Id,
 		UserId:           basicInfo.UserId,
 		Gender:           basicInfo.Gender,
 		FromLoc:          newString(basicInfo.FromLoc),
@@ -112,7 +111,6 @@ func (*basicInfo) entityToDomain(basicInfo *entity.BasicInfo) *domain.BasicInfo 
 }
 func (*basicInfo) domainToEntity(basicInfo *domain.BasicInfo) *entity.BasicInfo {
 	return &entity.BasicInfo{
-		Id:               basicInfo.Id,
 		UserId:           basicInfo.UserId,
 		Gender:           basicInfo.Gender,
 		FromLoc:          newNullString(basicInfo.FromLoc),
@@ -186,6 +184,9 @@ func parsingPostgreError(err error) error {
 			case strings.Contains(pqErr.Constraint, "zodiac"):
 				return ErrZodiacField
 			}
+		}
+		if pqErr.Code == "23505" && strings.Contains(pqErr.Constraint, "user_id") {
+			return ErrUniqueConstrainUserId
 		}
 		return pqErr
 	}

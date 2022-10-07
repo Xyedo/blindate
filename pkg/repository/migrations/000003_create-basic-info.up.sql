@@ -83,8 +83,7 @@ VALUES
   ('Pisces');
 
 CREATE TABLE basic_info(
-  id UUID PRIMARY KEY NOT NULL DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   gender VARCHAR(25) NOT NULL REFERENCES valid_gender(gender) ON UPDATE CASCADE,
   from_loc VARCHAR(100),
   height SMALLINT,

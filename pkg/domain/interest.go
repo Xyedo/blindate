@@ -17,18 +17,18 @@ type Interest struct {
 	Sports      []Sport      `json:"sports" db:"-"`
 }
 type Hobbie struct {
-	Id     string `json:"id,omitempty" db:"id"`
-	Hobbie string `json:"hobbie" db:"hobbie"`
+	Id     string `json:"id,omitempty" db:"id" binding:"omitempty,uuid"`
+	Hobbie string `json:"hobbie" db:"hobbie" binding:"required,min=2,max=50"`
 }
 type MovieSerie struct {
-	Id         string `json:"id,omitempty" db:"id"`
-	MovieSerie string `json:"movieSerie" db:"movie_serie"`
+	Id         string `json:"id,omitempty" db:"id" binding:"omitempty,uuid"`
+	MovieSerie string `json:"movieSerie" db:"movie_serie" binding:"required,min=2,max=50"`
 }
 type Travel struct {
-	Id     string `json:"id,omitempty" db:"id"`
-	Travel string `json:"travel" db:"travel"`
+	Id     string `json:"id,omitempty" db:"id" binding:"omitempty,uuid"`
+	Travel string `json:"travel" db:"travel" binding:"required,min=2,max=50"`
 }
 type Sport struct {
-	Id    string `json:"id,omitempty" db:"id"`
-	Sport string `json:"sport" db:"sport"`
+	Id    string `json:"id,omitempty" db:"id" binding:"omitempty,uuid"`
+	Sport string `json:"sport" db:"sport" binding:"required,min=2,max=50"`
 }

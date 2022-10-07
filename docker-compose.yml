@@ -32,7 +32,7 @@ services:
   migrate:
     image: migrate/migrate
     depends_on:
-      - pg
+      - api
     links:
       - pg
     volumes:

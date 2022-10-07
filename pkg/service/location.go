@@ -44,6 +44,9 @@ func (l *location) CreateNewLocation(location *domain.Location) error {
 			if pqErr.Code == "23503" {
 				return ErrUserIdField
 			}
+			if pqErr.Code == "23505" {
+				return ErrUniqueConstrainUserId
+			}
 		}
 		return err
 	}

@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	ErrInterestIdNotFound          = errors.New("database: not found interest_id")
-	ErrNotUniqueInterestIdResource = errors.New("database: violates unique constrain on interest id")
+	ErrInterestIdNotFound        = errors.New("database: not found interest_id")
+	ErrUniqueConstrainInterestId = errors.New("database: violates unique constrain on interest_id")
+	ErrUniqueConstrainUserId     = errors.New("database: violates unique constrain on user_id")
 )
 
 type Interest interface {
@@ -103,9 +104,12 @@ func (i *interest) PutHobbies(interestId string, hobbies []domain.Hobbie) error 
 }
 
 func (i *interest) DeleteHobbies(ids []string) error {
-	_, err := i.interestRepo.DeleteInterestHobbies(ids)
+	rows, err := i.interestRepo.DeleteInterestHobbies(ids)
 	if err != nil {
 		return i.parsingError(err)
+	}
+	if rows == 0 {
+		return domain.ErrResourceNotFound
 	}
 	return nil
 }
@@ -206,7 +210,10 @@ func (*interest) parsingError(err error) error {
 		}
 		if pqErr.Code == "23505" {
 			if strings.Contains(pqErr.Constraint, "interest_id") {
-				return ErrNotUniqueInterestIdResource
+				return ErrUniqueConstrainInterestId
+			}
+			if strings.Contains(pqErr.Constraint, "user_id") {
+				return ErrUniqueConstrainUserId
 			}
 			return err
 		}

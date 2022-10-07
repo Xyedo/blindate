@@ -73,3 +73,9 @@ func errorInvalidIdTokenResponse(c *gin.Context) {
 		"message": "you should not access this resoures",
 	})
 }
+func errorBadRequest(c *gin.Context, message string) {
+	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+		"status":  "fail",
+		"message": message,
+	})
+}

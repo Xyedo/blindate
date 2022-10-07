@@ -51,6 +51,7 @@ func (u *user) CreateUser(newUser *domain.User) error {
 		}
 		return err
 	}
+
 	return nil
 }
 func (u *user) GetUserById(id string) (*domain.User, error) {

@@ -15,6 +15,7 @@ type Route struct {
 	Authentication *auth
 	Tokenizer      service.Jwt
 	Interest       *interest
+	Online         *online
 }
 
 func Routes(route Route) http.Handler {
@@ -45,6 +46,12 @@ func Routes(route Route) http.Handler {
 			auth.GET("/", ru.getUserByIdHandler)
 			auth.PATCH("/", ru.patchUserByIdHandler)
 
+			ro := route.Online
+			//TODO: TEST Online HANDLER
+			auth.POST("/online", ro.postUserOnlineHandler)
+			auth.GET("/online", ro.getUserOnlineHandler)
+			auth.PUT("/online", ro.putuserOnlineHandler)
+
 			rb := route.BasicInfo
 			auth.POST("/basic-info", rb.postBasicInfoHandler)
 			auth.GET("/basic-info", rb.getBasicInfoHandler)
@@ -56,28 +63,28 @@ func Routes(route Route) http.Handler {
 			auth.PATCH("/location", rl.patchLocationByUserIdHandler)
 
 			ri := route.Interest
-			auth.GET("/interest", ri.GetInterestHandler)
-			auth.POST("/interest/bio", ri.PostInterestBioHandler)
-			auth.PUT("/interest/bio", ri.PutInterestBioHandler)
+			auth.GET("/interests", ri.getInterestHandler)
+			auth.POST("/interests/bio", ri.postInterestBioHandler)
+			auth.PUT("/interests/bio", ri.putInterestBioHandler)
 
-			//TODO: CREATE HANDLER AND TEST INTEREST ID
+			//TODO: TEST INTEREST HANDLER
 			interest := auth.Group("/interest/:interestId", validateInterest())
 			{
-				interest.POST("/hobbies", ri.PostInterestHobbiesHandler)
-				interest.PUT("/hobbies", ri.PutInterestHobbiesHandler)
-				interest.DELETE("/hobbies", ri.DeleteInterestHobbiesHandler)
+				interest.POST("/hobbies", ri.postInterestHobbiesHandler)
+				interest.PUT("/hobbies", ri.putInterestHobbiesHandler)
+				interest.DELETE("/hobbies", ri.deleteInterestHobbiesHandler)
 
-				interest.POST("/movie-series", ri.PostInterestMovieSeriesHandler)
-				interest.PUT("/movie-series", ri.PutInterestMovieSeriesHandler)
-				interest.DELETE("/movie-series", ri.DeleteInterestMovieSeriesHandler)
+				interest.POST("/movie-series", ri.postInterestMovieSeriesHandler)
+				interest.PUT("/movie-series", ri.putInterestMovieSeriesHandler)
+				interest.DELETE("/movie-series", ri.deleteInterestMovieSeriesHandler)
 
-				interest.POST("/traveling", ri.PostInterestTravelingHandler)
-				interest.PUT("/traveling", ri.PutInterestTravelingHandler)
-				interest.DELETE("/traveling", ri.DeleteInterestTravelingHandler)
+				interest.POST("/travels", ri.postInterestTravelingHandler)
+				interest.PUT("/travels", ri.putInterestTravelingHandler)
+				interest.DELETE("/travels", ri.deleteInterestTravelingHandler)
 
-				interest.POST("/sport", ri.PostInterestSportHandler)
-				interest.PUT("/sport", ri.PutInterestSportHandler)
-				interest.DELETE("/sport", ri.DeleteInterestSportHandler)
+				interest.POST("/sports", ri.postInterestSportHandler)
+				interest.PUT("/sports", ri.putInterestSportHandler)
+				interest.DELETE("/sports", ri.deleteInterestSportHandler)
 			}
 		}
 

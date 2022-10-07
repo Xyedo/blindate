@@ -3,7 +3,6 @@ package domain
 import "time"
 
 type BasicInfo struct {
-	Id               string    `json:"id"`
 	UserId           string    `json:"userId"`
 	Gender           string    `json:"gender"`
 	FromLoc          *string   `json:"fromLoc"`
