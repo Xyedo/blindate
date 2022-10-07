@@ -231,35 +231,35 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 func referencesDbErr(err error) map[string]any {
 	res := make(map[string]any)
 	switch {
-	case errors.Is(err, service.ErrUserIdField):
+	case errors.Is(err, service.ErrRefUserIdField):
 		res["status"] = "fail"
 		res["message"] = "please refer to the documentation"
 		res["errors"] = map[string]string{"user_id": "not found"}
-	case errors.Is(err, service.ErrGenderField):
+	case errors.Is(err, service.ErrRefGenderField):
 		res["status"] = "fail"
 		res["message"] = "please refer to the documentation"
 		res["errors"] = map[string]string{"gender": "not valid enums"}
-	case errors.Is(err, service.ErrEducationLevelField):
+	case errors.Is(err, service.ErrRefEducationLevelField):
 		res["status"] = "fail"
 		res["message"] = "please refer to the documentation"
 		res["errors"] = map[string]string{"educationLevel": "not valid enums"}
-	case errors.Is(err, service.ErrDrinkingField):
+	case errors.Is(err, service.ErrRefDrinkingField):
 		res["status"] = "fail"
 		res["message"] = "please refer to the documentation"
 		res["errors"] = map[string]string{"drinking": "not valid enums"}
-	case errors.Is(err, service.ErrSmokingField):
+	case errors.Is(err, service.ErrRefSmokingField):
 		res["status"] = "fail"
 		res["message"] = "please refer to the documentation"
 		res["errors"] = map[string]string{"smoking": "not valid enums"}
-	case errors.Is(err, service.ErrrRelationshipPrefField):
+	case errors.Is(err, service.ErrRefRelationshipPrefField):
 		res["status"] = "fail"
 		res["message"] = "please refer to the documentation"
 		res["errors"] = map[string]string{"relationshipPref": "not valid enums"}
-	case errors.Is(err, service.ErrLookingForField):
+	case errors.Is(err, service.ErrRefLookingForField):
 		res["status"] = "fail"
 		res["message"] = "please refer to the documentation"
 		res["errors"] = map[string]string{"lookingFor": "not valid enums"}
-	case errors.Is(err, service.ErrZodiacField):
+	case errors.Is(err, service.ErrRefZodiacField):
 		res["status"] = "fail"
 		res["message"] = "please refer to the documentation"
 		res["errors"] = map[string]string{"zodiac": "not valid enums"}

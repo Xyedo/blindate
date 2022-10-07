@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/lib/pq"
@@ -12,9 +13,9 @@ import (
 )
 
 var (
-	ErrInterestIdNotFound        = errors.New("database: not found interest_id")
-	ErrUniqueConstrainInterestId = errors.New("database: violates unique constrain on interest_id")
-	ErrUniqueConstrainUserId     = errors.New("database: violates unique constrain on user_id")
+	ErrRefInterestField          = fmt.Errorf("%w::interest_id", domain.ErrRefNotFound23503)
+	ErrUniqueConstrainInterestId = fmt.Errorf("%w::interest_id", domain.ErrUniqueConstraint23505)
+	ErrUniqueConstrainUserId     = fmt.Errorf("%w::user_id", domain.ErrUniqueConstraint23505)
 )
 
 type Interest interface {
@@ -201,10 +202,10 @@ func (*interest) parsingError(err error) error {
 	case errors.As(err, &pqErr):
 		if pqErr.Code == "23503" {
 			if strings.Contains(pqErr.Constraint, "interest_id") {
-				return ErrInterestIdNotFound
+				return ErrRefInterestField
 			}
 			if strings.Contains(pqErr.Constraint, "user_id") {
-				return ErrUserIdField
+				return ErrRefUserIdField
 			}
 			return err
 		}

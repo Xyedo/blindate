@@ -79,7 +79,7 @@ func (i *interest) postInterestBioHandler(c *gin.Context) {
 			errorDeadLockResponse(c)
 			return
 		}
-		if errors.Is(err, service.ErrUserIdField) {
+		if errors.Is(err, service.ErrRefUserIdField) {
 			errorResourceNotFound(c, "userId is not match with our resource")
 			return
 		}
@@ -191,7 +191,7 @@ func (i *interest) postInterestHobbiesHandler(c *gin.Context) {
 			errorDeadLockResponse(c)
 			return
 		}
-		if errors.Is(err, service.ErrInterestIdNotFound) {
+		if errors.Is(err, service.ErrRefInterestField) {
 			errorResourceNotFound(c, "interestId is not found")
 			return
 		}
@@ -236,7 +236,7 @@ func (i *interest) putInterestHobbiesHandler(c *gin.Context) {
 			errorDeadLockResponse(c)
 			return
 		}
-		if errors.Is(err, service.ErrInterestIdNotFound) {
+		if errors.Is(err, service.ErrRefInterestField) {
 			errorResourceNotFound(c, "interestId is not found")
 			return
 		}
@@ -334,7 +334,7 @@ func (i *interest) postInterestMovieSeriesHandler(c *gin.Context) {
 			errorDeadLockResponse(c)
 			return
 		}
-		if errors.Is(err, service.ErrInterestIdNotFound) {
+		if errors.Is(err, service.ErrRefInterestField) {
 			errorResourceNotFound(c, "interestId is not found")
 			return
 		}
@@ -377,7 +377,7 @@ func (i *interest) putInterestMovieSeriesHandler(c *gin.Context) {
 			errorDeadLockResponse(c)
 			return
 		}
-		if errors.Is(err, service.ErrInterestIdNotFound) {
+		if errors.Is(err, service.ErrRefInterestField) {
 			errorResourceNotFound(c, "interestId is not found")
 			return
 		}
@@ -475,7 +475,7 @@ func (i *interest) postInterestTravelingHandler(c *gin.Context) {
 			errorDeadLockResponse(c)
 			return
 		}
-		if errors.Is(err, service.ErrInterestIdNotFound) {
+		if errors.Is(err, service.ErrRefInterestField) {
 			errorResourceNotFound(c, "interestId is not found")
 			return
 		}
@@ -519,7 +519,7 @@ func (i *interest) putInterestTravelingHandler(c *gin.Context) {
 			errorDeadLockResponse(c)
 			return
 		}
-		if errors.Is(err, service.ErrInterestIdNotFound) {
+		if errors.Is(err, service.ErrRefInterestField) {
 			errorResourceNotFound(c, "interestId is not found")
 			return
 		}
@@ -616,7 +616,7 @@ func (i *interest) postInterestSportHandler(c *gin.Context) {
 			errorDeadLockResponse(c)
 			return
 		}
-		if errors.Is(err, service.ErrInterestIdNotFound) {
+		if errors.Is(err, service.ErrRefInterestField) {
 			errorResourceNotFound(c, "interestId is not found")
 			return
 		}
@@ -659,7 +659,7 @@ func (i *interest) putInterestSportHandler(c *gin.Context) {
 			errorDeadLockResponse(c)
 			return
 		}
-		if errors.Is(err, service.ErrInterestIdNotFound) {
+		if errors.Is(err, service.ErrRefInterestField) {
 			errorResourceNotFound(c, "interestId is not found")
 			return
 		}

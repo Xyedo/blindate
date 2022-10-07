@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/service"
 )
 
@@ -39,7 +40,7 @@ func validateUser(jwtService service.Jwt) gin.HandlerFunc {
 			if errors.Is(err, service.ErrTokenExpired) {
 				errExpiredAccesToken(c)
 			}
-			if errors.Is(err, service.ErrTokenNotValid) {
+			if errors.Is(err, domain.ErrNotMatchCredential) {
 				errAccesTokenInvalid(c)
 			}
 			return
@@ -75,7 +76,7 @@ func validateInterest() gin.HandlerFunc {
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"status":  "fail",
-				"message": "must have uuid in uri!",
+				"message": "required,must have uuid in uri!",
 			})
 			return
 		}

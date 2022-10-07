@@ -35,7 +35,7 @@ func (a *auth) AddRefreshToken(token string) error {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			if pqErr.Code == "23505" {
-				return domain.ErrDuplicateToken
+				return domain.ErrUniqueConstraint23505
 			}
 		}
 		return err

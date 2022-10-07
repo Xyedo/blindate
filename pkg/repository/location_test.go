@@ -15,10 +15,25 @@ import (
 func Test_InsertNewLocation(t *testing.T) {
 	repo := NewLocation(testQuery)
 	t.Run("Valid Create new Location", func(t *testing.T) {
-		createNewLocation(t)
+		user := createNewAccount(t)
+		createNewLocation(t, user.ID)
+	})
+	t.Run("Valid but Double", func(t *testing.T) {
+		user := createNewAccount(t)
+		location := createNewLocation(t, user.ID)
+		row, err := repo.InsertNewLocation(location)
+		assert.Error(t, err)
+		var pqErr *pq.Error
+		if assert.ErrorAs(t, err, &pqErr) {
+			assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
+			assert.Contains(t, pqErr.Constraint, "locations_pkey")
+		}
+		assert.Zero(t, row)
+
 	})
 	t.Run("Invalid user_id", func(t *testing.T) {
-		location := createNewLocation(t)
+		user := createNewAccount(t)
+		location := createNewLocation(t, user.ID)
 		location.UserId = "e590666c-3ea8-4fda-958c-c2dc6c2599b6"
 		row, err := repo.InsertNewLocation(location)
 		var pqError *pq.Error
@@ -33,7 +48,8 @@ func Test_InsertNewLocation(t *testing.T) {
 
 func Test_UpdateLocation(t *testing.T) {
 	repo := NewLocation(testQuery)
-	location := createNewLocation(t)
+	user := createNewAccount(t)
+	location := createNewLocation(t, user.ID)
 	t.Run("Valid Update Location", func(t *testing.T) {
 
 		location.Geog = util.RandomPoint(5)
@@ -53,7 +69,8 @@ func Test_UpdateLocation(t *testing.T) {
 
 func Test_GetLocationByUserId(t *testing.T) {
 	repo := NewLocation(testQuery)
-	expected := createNewLocation(t)
+	user := createNewAccount(t)
+	expected := createNewLocation(t, user.ID)
 	t.Run("valid Getter", func(t *testing.T) {
 		_, err := repo.GetLocationByUserId(expected.UserId)
 		assert.NoError(t, err)
@@ -70,10 +87,12 @@ func Test_GetLocationByUserId(t *testing.T) {
 func Test_GetClosestUser(t *testing.T) {
 	limit := 5
 	repo := NewLocation(testQuery)
-	fromUser := createNewLocation(t)
+	user := createNewAccount(t)
+	fromUser := createNewLocation(t, user.ID)
 
 	for i := 0; i < limit*2; i++ {
-		createNewLocation(t)
+		useri := createNewAccount(t)
+		createNewLocation(t, useri.ID)
 	}
 	users, err := repo.GetClosestUser(fromUser.Geog, limit)
 	assert.NoError(t, err)
@@ -82,11 +101,11 @@ func Test_GetClosestUser(t *testing.T) {
 	log.Println(users)
 }
 
-func createNewLocation(t *testing.T) *entity.Location {
+func createNewLocation(t *testing.T, userId string) *entity.Location {
 	repo := NewLocation(testQuery)
-	user := createNewAccount(t)
+
 	location := entity.Location{
-		UserId: user.ID,
+		UserId: userId,
 		Geog:   util.RandomPoint(5),
 	}
 	row, err := repo.InsertNewLocation(&location)

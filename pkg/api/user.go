@@ -57,7 +57,7 @@ func (u *user) postUserHandler(c *gin.Context) {
 	}
 	err := u.userService.CreateUser(&user)
 	if err != nil {
-		if errors.Is(err, domain.ErrDuplicateEmail) {
+		if errors.Is(err, domain.ErrUniqueConstraint23505) {
 			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
 				"status":  "fail",
 				"message": "email is already taken",

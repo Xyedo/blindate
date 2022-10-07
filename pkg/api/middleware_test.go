@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/xyedo/blindate/pkg/service"
+	"github.com/xyedo/blindate/pkg/util"
 )
 
 func addAutho(t *testing.T, req *http.Request, tokennizer service.Jwt, id, typeAuth string) {
@@ -118,4 +119,43 @@ func Test_AuthMiddleware(t *testing.T) {
 			tt.checkRespose(t, rr)
 		})
 	}
+}
+
+func Test_InterestMidleware(t *testing.T) {
+	tests := []struct {
+		name         string
+		interestId   string
+		expectedCode int
+	}{
+		{
+			name:         "valid interestId",
+			interestId:   util.RandomUUID(),
+			expectedCode: http.StatusOK,
+		},
+		{
+			name:         "interestId not uuid",
+			interestId:   util.RandomString(12),
+			expectedCode: http.StatusBadRequest,
+		},
+		{
+			name:         "interestId nil",
+			interestId:   "",
+			expectedCode: http.StatusNotFound,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rr := httptest.NewRecorder()
+			c, r := gin.CreateTestContext(rr)
+			r.GET("/interests/:interestId", validateInterest(), func(ctx *gin.Context) {
+				ctx.JSON(http.StatusOK, nil)
+			})
+			req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("/interests/%s", tt.interestId), nil)
+			assert.NoError(t, err)
+			c.Request = req
+			r.ServeHTTP(rr, c.Request)
+			assert.Equal(t, tt.expectedCode, rr.Code)
+		})
+	}
+
 }

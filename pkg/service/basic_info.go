@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/lib/pq"
@@ -13,14 +14,14 @@ import (
 )
 
 var (
-	ErrUserIdField            = errors.New("database: user_id is not valid references")
-	ErrGenderField            = errors.New("database: gender is not valid references")
-	ErrEducationLevelField    = errors.New("database: education_level is not valid references")
-	ErrDrinkingField          = errors.New("database: drinking is not valid references")
-	ErrSmokingField           = errors.New("database: smoking is not valid references")
-	ErrrRelationshipPrefField = errors.New("database: relationship_pref is not valid references")
-	ErrLookingForField        = errors.New("database: looking_for is not valid references")
-	ErrZodiacField            = errors.New("database: zodiac is not valid references")
+	ErrRefUserIdField           = fmt.Errorf("%w::user_id", domain.ErrRefNotFound23503)
+	ErrRefGenderField           = fmt.Errorf("%w::gender", domain.ErrRefNotFound23503)
+	ErrRefEducationLevelField   = fmt.Errorf("%w::education", domain.ErrRefNotFound23503)
+	ErrRefDrinkingField         = fmt.Errorf("%w::drinking", domain.ErrRefNotFound23503)
+	ErrRefSmokingField          = fmt.Errorf("%w::smoking", domain.ErrRefNotFound23503)
+	ErrRefRelationshipPrefField = fmt.Errorf("%w::relationship_pref", domain.ErrRefNotFound23503)
+	ErrRefLookingForField       = fmt.Errorf("%w::looking_for", domain.ErrRefNotFound23503)
+	ErrRefZodiacField           = fmt.Errorf("%w::zodiac", domain.ErrRefNotFound23503)
 )
 
 type BasicInfo interface {
@@ -168,24 +169,24 @@ func parsingPostgreError(err error) error {
 		if pqErr.Code == "23503" {
 			switch {
 			case strings.Contains(pqErr.Constraint, "user_id"):
-				return ErrUserIdField
+				return ErrRefUserIdField
 			case strings.Contains(pqErr.Constraint, "gender"):
-				return ErrGenderField
+				return ErrRefGenderField
 			case strings.Contains(pqErr.Constraint, "education_level"):
-				return ErrEducationLevelField
+				return ErrRefEducationLevelField
 			case strings.Contains(pqErr.Constraint, "drinking"):
-				return ErrDrinkingField
+				return ErrRefDrinkingField
 			case strings.Contains(pqErr.Constraint, "smoking"):
-				return ErrSmokingField
+				return ErrRefSmokingField
 			case strings.Contains(pqErr.Constraint, "relationship_pref"):
-				return ErrrRelationshipPrefField
+				return ErrRefRelationshipPrefField
 			case strings.Contains(pqErr.Constraint, "looking_for"):
-				return ErrLookingForField
+				return ErrRefLookingForField
 			case strings.Contains(pqErr.Constraint, "zodiac"):
-				return ErrZodiacField
+				return ErrRefZodiacField
 			}
 		}
-		if pqErr.Code == "23505" && strings.Contains(pqErr.Constraint, "user_id") {
+		if pqErr.Code == "23505" {
 			return ErrUniqueConstrainUserId
 		}
 		return pqErr

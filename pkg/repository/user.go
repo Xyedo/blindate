@@ -87,11 +87,9 @@ func (u *userCon) GetUserByEmail(email string) (*domain.User, error) {
 	defer cancel()
 
 	var user domain.User
-	err := u.DB.QueryRowxContext(ctx, query, email).Scan(&user.ID, &user.Email, &user.HashedPassword)
-
+	err := u.GetContext(ctx, &user, query, email)
 	if err != nil {
 		return nil, err
 	}
-
 	return &user, nil
 }

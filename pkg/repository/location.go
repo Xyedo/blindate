@@ -71,6 +71,7 @@ func (l *location) UpdateLocation(location *entity.Location) (int64, error) {
 func (l *location) GetLocationByUserId(id string) (*entity.Location, error) {
 	query := `
 		SELECT 
+			user_id,
 			ST_AsText(geog) as geog,
 			created_at, 
 			updated_at 
@@ -85,7 +86,6 @@ func (l *location) GetLocationByUserId(id string) (*entity.Location, error) {
 	if err != nil {
 		return nil, err
 	}
-	location.UserId = id
 	return &location, nil
 
 }

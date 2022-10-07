@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/xyedo/blindate/pkg/domain"
 )
 
 var (
-	ErrTokenNotValid = errors.New("jwt: credential is not valid")
-	ErrTokenExpired  = errors.New("jwt: token expired")
+	ErrTokenExpired = errors.New("jwt: token expired")
 )
 
 type customClaims struct {
@@ -84,7 +84,7 @@ func generateCustomClaims(id string, duration time.Duration) customClaims {
 func validateToken(token, secret string) (string, error) {
 	decodedToken, err := jwt.ParseWithClaims(token, &customClaims{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, ErrTokenNotValid
+			return nil, domain.ErrNotMatchCredential
 		}
 		return []byte(secret), nil
 	})
@@ -95,11 +95,11 @@ func validateToken(token, secret string) (string, error) {
 				return "", ErrTokenExpired
 			}
 		}
-		return "", ErrTokenNotValid
+		return "", domain.ErrNotMatchCredential
 	}
 	claims, ok := decodedToken.Claims.(*customClaims)
 	if !ok || !decodedToken.Valid {
-		return "", ErrTokenNotValid
+		return "", domain.ErrNotMatchCredential
 	}
 
 	return claims.CredentialId, nil

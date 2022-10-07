@@ -50,7 +50,7 @@ func (l *location) postLocationByUserIdHandler(c *gin.Context) {
 			errorDeadLockResponse(c)
 			return
 		}
-		if errors.Is(err, service.ErrUserIdField) {
+		if errors.Is(err, service.ErrRefUserIdField) {
 			errorResourceNotFound(c, "user id is not found")
 			return
 		}

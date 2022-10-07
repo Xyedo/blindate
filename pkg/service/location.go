@@ -42,7 +42,7 @@ func (l *location) CreateNewLocation(location *domain.Location) error {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			if pqErr.Code == "23503" {
-				return ErrUserIdField
+				return ErrRefUserIdField
 			}
 			if pqErr.Code == "23505" {
 				return ErrUniqueConstrainUserId

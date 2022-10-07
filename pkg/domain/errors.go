@@ -5,9 +5,9 @@ import (
 )
 
 var (
-	ErrDuplicateEmail     = errors.New("database: duplicate email")
-	ErrNotMatchCredential = errors.New("database: not match credential")
-	ErrTooLongAccesingDB  = errors.New("database: too long accessing DB")
-	ErrDuplicateToken     = errors.New("database: duplicate token")
-	ErrResourceNotFound   = errors.New("database: resource not found")
+	ErrUniqueConstraint23505 = errors.New("database: violate unique constraint")
+	ErrRefNotFound23503      = errors.New("database: reference not found")
+	ErrNotMatchCredential    = errors.New("database: not match credential")
+	ErrTooLongAccesingDB     = errors.New("database: too long accessing DB")
+	ErrResourceNotFound      = errors.New("database: resource not found")
 )

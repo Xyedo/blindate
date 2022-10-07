@@ -76,7 +76,7 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 			errorDeadLockResponse(c)
 			return
 		}
-		if errors.Is(err, domain.ErrDuplicateToken) {
+		if errors.Is(err, domain.ErrUniqueConstraint23505) {
 			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
 				"status":  "fail",
 				"message": "token is already taken, please try again",
@@ -117,7 +117,7 @@ func (a *auth) putAuthHandler(c *gin.Context) {
 	}
 	id, err := a.tokenizer.ValidateRefreshToken(refreshTokenCookie)
 	if err != nil {
-		if errors.Is(err, service.ErrTokenNotValid) {
+		if errors.Is(err, domain.ErrNotMatchCredential) {
 			errorInvalidCredsResponse(c, "invalid credentials")
 			return
 		}

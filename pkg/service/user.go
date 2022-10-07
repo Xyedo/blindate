@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"strings"
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
@@ -41,8 +40,8 @@ func (u *user) CreateUser(newUser *domain.User) error {
 	if err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
-			if pqErr.Code == "23505" && strings.Contains(pqErr.Constraint, "users_email") {
-				return domain.ErrDuplicateEmail
+			if pqErr.Code == "23505" {
+				return domain.ErrUniqueConstraint23505
 			}
 			return err
 		}

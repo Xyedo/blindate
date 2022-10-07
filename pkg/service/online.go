@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/lib/pq"
@@ -33,13 +32,11 @@ func (o *online) CreateNewOnline(userId string) error {
 	if err != nil {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
-			if strings.Contains(pqErr.Constraint, "user_id") {
-				if pqErr.Code == "23503" {
-					return domain.ErrResourceNotFound
-				}
-				if pqErr.Code == "23505" {
-					return ErrUniqueConstrainUserId
-				}
+			if pqErr.Code == "23503" {
+				return ErrRefUserIdField
+			}
+			if pqErr.Code == "23505" {
+				return ErrUniqueConstrainUserId
 			}
 			return err
 		}
