@@ -108,7 +108,7 @@ func Test_AuthMiddleware(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rr := httptest.NewRecorder()
 			c, r := gin.CreateTestContext(rr)
-			r.GET("/api/v1/users/:id", validateUser(jwt), func(ctx *gin.Context) {
+			r.GET("/api/v1/users/:userId", validateUser(jwt), func(ctx *gin.Context) {
 				ctx.JSON(http.StatusOK, nil)
 			})
 			req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("/api/v1/users/%s", tt.id), nil)

@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/service"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func NewOnline(onlineSvc service.Online) *online {
@@ -68,19 +67,13 @@ func (o *online) putuserOnlineHandler(c *gin.Context) {
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"Online": "required and should be boolean",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 	err = o.onlineSvc.PutOnline(userId, input.Online)

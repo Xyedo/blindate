@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/service"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func NewBasicInfo(basicInfoService service.BasicInfo) *basicinfo {
@@ -36,12 +35,7 @@ func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
 		Work             *string `json:"work" binding:"omitempty,max=50"`
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"Gender":           "required and must have an gender enums",
 			"FromLoc":          "maximal character is 100",
 			"Height":           "must have valid height in cm",
@@ -54,11 +48,10 @@ func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
 			"Kids":             "minimum is 0 and maximal number is 100",
 			"Work":             "maximal character is 50",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 
@@ -150,12 +143,7 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 	}
 	err = c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"Gender":           "maximal character is 25",
 			"FromLoc":          "maximal character is 100",
 			"Height":           "must have valid height in cm",
@@ -168,11 +156,10 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 			"Kids":             "minimum is 0 and maximal number is 100",
 			"Work":             "maximal character is 50",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 	if input.Gender != nil {

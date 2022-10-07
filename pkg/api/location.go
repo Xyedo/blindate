@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/service"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func NewLocation(locationService service.Location) *location {
@@ -28,20 +27,14 @@ func (l *location) postLocationByUserIdHandler(c *gin.Context) {
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"Lat": "required and must be valid lat geometry",
 			"Lng": "required and must be valid lng geometry",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 	err = l.locationService.CreateNewLocation(&domain.Location{UserId: userId, Lat: input.Lat, Lng: input.Lng})
@@ -93,20 +86,14 @@ func (l *location) patchLocationByUserIdHandler(c *gin.Context) {
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"Lat": "must be valid lat geometry",
 			"Lng": "must be valid lng geometry",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 	location, err := l.locationService.GetLocation(userId)

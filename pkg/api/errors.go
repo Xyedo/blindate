@@ -5,8 +5,22 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/xyedo/blindate/pkg/util"
 )
 
+func jsonBindingErrResp(err error, c *gin.Context, errorMap map[string]string) error {
+	err1 := util.ReadJSONDecoderErr(err)
+	if err1 != nil {
+		errorJSONBindingResponse(c, err1)
+		return nil
+	}
+	errMap := util.ReadValidationErr(err, errorMap)
+	if errMap != nil {
+		errorValidationResponse(c, errMap)
+		return nil
+	}
+	return err
+}
 func errorJSONBindingResponse(c *gin.Context, err error) {
 	c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 		"status":  "fail",

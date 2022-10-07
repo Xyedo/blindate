@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/service"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func NewUser(userSvc service.User) *user {
@@ -30,22 +29,15 @@ func (u *user) postUserHandler(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"Email":    "must have an valid email",
 			"Password": "must have more than 8 character",
 			"Dob":      "must between today and after 1990",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-
-		errorServerResponse(c, err)
 		return
 	}
 
@@ -136,22 +128,16 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 
 	err = c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"Email":       "must be an valid email",
 			"OldPassword": "must be more than 8 character and pairing with NewPassword",
 			"NewPassword": "must be more than 8 character and pairing with OldPassword",
 			"Dob":         "Must betwen today and more than 1990",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 	if input.NewPassword != nil && input.OldPassword != nil {

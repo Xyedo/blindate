@@ -7,7 +7,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/service"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func NewInterest(interestSvc service.Interest) *interest {
@@ -25,7 +24,6 @@ func (i *interest) getInterestHandler(c *gin.Context) {
 	intr, err := i.interestSvc.GetInterest(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
-
 			errorResourceNotFound(c, "userId is not match with our resource")
 			return
 		}
@@ -51,20 +49,13 @@ func (i *interest) postInterestBioHandler(c *gin.Context) {
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"Bio": "maximal character length is less than 300",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 	userId := c.GetString("userId")
@@ -113,19 +104,13 @@ func (i *interest) putInterestBioHandler(c *gin.Context) {
 	}
 	err = c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"Bio": "maximal character length is less than 300",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 	if input.Bio != nil {
@@ -164,19 +149,13 @@ func (i *interest) postInterestHobbiesHandler(c *gin.Context) {
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"Hobbies": "each hobbies must be unique and has more than 2 and less than 50 character",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 	hobbies := make([]domain.Hobbie, 0, len(input.Hobbies))
@@ -214,19 +193,13 @@ func (i *interest) putInterestHobbiesHandler(c *gin.Context) {
 	interestId := c.GetString("interestId")
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
-			"Hobbies": "each hobbies must be unique and has more than 2 and less than 50 character. Id must match or empty when its new hobbies.",
+		errjson := jsonBindingErrResp(err, c, map[string]string{
+			"Hobbies": "each hobbies must be unique and has more than 2 and less than 50 character. Id must match or empty when its new hobbies",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 
@@ -264,19 +237,13 @@ func (i *interest) deleteInterestHobbiesHandler(c *gin.Context) {
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"Ids": "each ids must be unique and uuid character",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 	err = i.interestSvc.DeleteHobbies(input.Ids)
@@ -307,19 +274,13 @@ func (i *interest) postInterestMovieSeriesHandler(c *gin.Context) {
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"MovieSeries": "each movieSeries must be unique and has more than 2 and less than 50 character",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 	movieSeries := make([]domain.MovieSerie, 0, len(input.MovieSeries))
@@ -355,19 +316,13 @@ func (i *interest) putInterestMovieSeriesHandler(c *gin.Context) {
 	interestId := c.GetString("interestId")
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
-			"MovieSeries": "each movieSeries must be unique and has more than 2 and less than 50 character. Id must match or empty when its new movieSeries.",
+		errjson := jsonBindingErrResp(err, c, map[string]string{
+			"MovieSeries": "each movieSeries must be unique and has more than 2 and less than 50 character. Id must match or empty when its new movieSeries",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 
@@ -405,19 +360,13 @@ func (i *interest) deleteInterestMovieSeriesHandler(c *gin.Context) {
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"Ids": "each ids must be unique and uuid character",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 	err = i.interestSvc.DeleteMovieSeries(input.Ids)
@@ -448,19 +397,13 @@ func (i *interest) postInterestTravelingHandler(c *gin.Context) {
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
-			"MovieSeries": "each movieSeries must be unique and has more than 2 and less than 50 character",
+		errjson := jsonBindingErrResp(err, c, map[string]string{
+			"Travels": "each travels must be unique and has more than 2 and less than 50 character",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 	travels := make([]domain.Travel, 0, len(input.Travels))
@@ -497,19 +440,13 @@ func (i *interest) putInterestTravelingHandler(c *gin.Context) {
 	interestId := c.GetString("interestId")
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"Travels": "each travels must be unique and has more than 2 and less than 50 character. Id must match or empty when its new travel.",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 
@@ -546,19 +483,13 @@ func (i *interest) deleteInterestTravelingHandler(c *gin.Context) {
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"Ids": "each ids must be unique and uuid character",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 	err = i.interestSvc.DeleteTravels(input.Ids)
@@ -589,19 +520,13 @@ func (i *interest) postInterestSportHandler(c *gin.Context) {
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
-			"MovieSeries": "each movieSeries must be unique and has more than 2 and less than 50 character",
+		errjson := jsonBindingErrResp(err, c, map[string]string{
+			"Sports": "each sports must be unique and has more than 2 and less than 50 character",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 	sports := make([]domain.Sport, 0, len(input.Sports))
@@ -637,19 +562,13 @@ func (i *interest) putInterestSportHandler(c *gin.Context) {
 	interestId := c.GetString("interestId")
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
-			"Sports": "each sports must be unique and has more than 2 and less than 50 character. Id must match or empty when its new sport.",
+		errjson := jsonBindingErrResp(err, c, map[string]string{
+			"Sports": "each sports must be unique and has more than 2 and less than 50 character. Id must match or empty when its new sport",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 
@@ -686,19 +605,13 @@ func (i *interest) deleteInterestSportHandler(c *gin.Context) {
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		err1 := util.ReadJSONDecoderErr(err)
-		if err1 != nil {
-			errorJSONBindingResponse(c, err1)
-			return
-		}
-		errMap := util.ReadValidationErr(err, map[string]string{
+		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"Ids": "each ids must be unique and uuid character",
 		})
-		if errMap != nil {
-			errorValidationResponse(c, errMap)
+		if errjson != nil {
+			errorServerResponse(c, err)
 			return
 		}
-		errorServerResponse(c, err)
 		return
 	}
 	err = i.interestSvc.DeleteSports(input.Ids)

@@ -70,6 +70,14 @@ func main() {
 	locationService := service.NewLocation(locationRepo)
 	locationHandler := api.NewLocation(locationService)
 
+	interestRepo := repository.NewInterest(db)
+	interestSvc := service.NewInterest(interestRepo)
+	interestHandler := api.NewInterest(interestSvc)
+
+	onlineRepo := repository.NewOnline(db)
+	onlineSvc := service.NewOnline(onlineRepo)
+	onlineHandler := api.NewOnline(onlineSvc)
+
 	tokenSvc := service.NewJwt(cfg.token.accessSecret, cfg.token.refreshSecret, cfg.token.accessExpires, cfg.token.refreshExpires)
 
 	authRepo := repository.NewAuth(db)
@@ -83,6 +91,8 @@ func main() {
 		Location:       locationHandler,
 		Authentication: authHandler,
 		Tokenizer:      tokenSvc,
+		Interest:       interestHandler,
+		Online:         onlineHandler,
 	}
 
 	h := api.Routes(route)
