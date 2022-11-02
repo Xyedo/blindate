@@ -28,7 +28,7 @@ jobs:
           --health-retries 5
     steps:
     - name: Get PG Dep
-      run : sudo apt-get update && apt-get install -y postgresql-14-postgis-3
+      run : sudo apt-get update && sudo apt-get install -y postgresql-14-postgis-3
     
     - name: Set up Go 1.x
       uses: actions/setup-go@v2
