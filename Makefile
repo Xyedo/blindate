@@ -3,8 +3,6 @@ MG_PATH=./pkg/repository/migrations
 DB_DSN=postgres://blindate:pa55word@localhost:5433/blindate?sslmode=disable
 REPO_PATH=github.com/xyedo/blindate/pkg/repository
 
-
-
 migrate-up: 
 	migrate -path $(MG_PATH) -database $(DB_DSN) up
 
