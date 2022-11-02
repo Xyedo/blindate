@@ -9,12 +9,6 @@ import (
 	"github.com/xyedo/blindate/pkg/domain"
 )
 
-type Online interface {
-	InsertNewOnline(on *domain.Online) error
-	UpdateOnline(userId string, online bool) error
-	SelectOnline(userId string) (*domain.Online, error)
-}
-
 func NewOnline(db *sqlx.DB) *online {
 	return &online{
 		db,

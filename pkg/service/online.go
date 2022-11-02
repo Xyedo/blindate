@@ -8,23 +8,22 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/repository"
 )
 
-type Online interface {
-	CreateNewOnline(userId string) error
-	PutOnline(userId string, online bool) error
-	GetOnline(userId string) (*domain.Online, error)
+type onlineRepo interface {
+	InsertNewOnline(on *domain.Online) error
+	UpdateOnline(userId string, online bool) error
+	SelectOnline(userId string) (*domain.Online, error)
 }
 
-func NewOnline(onlineRepo repository.Online) *online {
+func NewOnline(onlineRepo onlineRepo) *online {
 	return &online{
 		onlineRepository: onlineRepo,
 	}
 }
 
 type online struct {
-	onlineRepository repository.Online
+	onlineRepository onlineRepo
 }
 
 func (o *online) CreateNewOnline(userId string) error {

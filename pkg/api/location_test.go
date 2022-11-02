@@ -79,6 +79,32 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 			},
 		},
 		{
+			name: "Valid Body but userId already created",
+			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68618",
+			reqBody: map[string]any{
+				"lat": "80.23231",
+				"lng": "170.12112",
+			},
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *location {
+				locationRepo := mockrepo.NewMockLocation(ctrl)
+				location := &entity.Location{
+					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68618",
+					Geog:   "Point(80.23231 170.12112)",
+				}
+				pqErr := pq.Error{
+					Code: "23505",
+				}
+				locationRepo.EXPECT().InsertNewLocation(gomock.Eq(location)).Times(1).Return(int64(0), &pqErr)
+				locationSvc := service.NewLocation(locationRepo)
+				return NewLocation(locationSvc)
+			},
+			wantCode: http.StatusUnprocessableEntity,
+			wantResp: map[string]any{
+				"status":  "fail",
+				"message": "location with this user id is already created",
+			},
+		},
+		{
 			name: "Invalid Body",
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68618",
 			reqBody: map[string]any{

@@ -9,14 +9,20 @@ import (
 	"github.com/xyedo/blindate/pkg/service"
 )
 
-func NewOnline(onlineSvc service.Online) *online {
+type onlineSvc interface {
+	CreateNewOnline(userId string) error
+	PutOnline(userId string, online bool) error
+	GetOnline(userId string) (*domain.Online, error)
+}
+
+func NewOnline(onlineSvc onlineSvc) *online {
 	return &online{
 		onlineSvc: onlineSvc,
 	}
 }
 
 type online struct {
-	onlineSvc service.Online
+	onlineSvc onlineSvc
 }
 
 func (o *online) postUserOnlineHandler(c *gin.Context) {
@@ -25,14 +31,14 @@ func (o *online) postUserOnlineHandler(c *gin.Context) {
 	err := o.onlineSvc.CreateNewOnline(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			errorResourceNotFound(c, "userId is not found!")
+			errNotFoundResp(c, "userId is not found!")
 			return
 		}
 		if errors.Is(err, service.ErrUniqueConstrainUserId) {
-			errorBadRequest(c, "users is already registered")
+			errUnprocessableEntityResp(c, "users is already registered")
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 
@@ -47,10 +53,10 @@ func (o *online) getUserOnlineHandler(c *gin.Context) {
 	onlineUser, err := o.onlineSvc.GetOnline(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			errorResourceNotFound(c, "user_id is not found")
+			errNotFoundResp(c, "user_id is not found")
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -71,7 +77,7 @@ func (o *online) putuserOnlineHandler(c *gin.Context) {
 			"Online": "required and should be boolean",
 		})
 		if errjson != nil {
-			errorServerResponse(c, err)
+			errServerResp(c, err)
 			return
 		}
 		return
@@ -79,10 +85,10 @@ func (o *online) putuserOnlineHandler(c *gin.Context) {
 	err = o.onlineSvc.PutOnline(userId, input.Online)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			errorResourceNotFound(c, "user_id is not found")
+			errNotFoundResp(c, "user_id is not found")
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{

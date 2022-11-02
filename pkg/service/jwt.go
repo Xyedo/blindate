@@ -17,13 +17,6 @@ type customClaims struct {
 	jwt.RegisteredClaims
 }
 
-type Jwt interface {
-	GenerateAccessToken(id string) (string, error)
-	GenerateRefreshToken(id string) (string, error)
-	ValidateRefreshToken(token string) (string, error)
-	ValidateAccessToken(token string) (string, error)
-}
-
 func NewJwt(accessSecret, refreshSecret, accessExpires, refreshExpires string) *jwtSvc {
 	return &jwtSvc{
 		accessSecret:   accessSecret,
@@ -71,16 +64,6 @@ func generateToken(id, secret string, expires string) (string, error) {
 	return encodedToken, nil
 }
 
-func generateCustomClaims(id string, duration time.Duration) customClaims {
-	return customClaims{
-		CredentialId: id,
-		RegisteredClaims: jwt.RegisteredClaims{
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)),
-		},
-	}
-}
-
 func validateToken(token, secret string) (string, error) {
 	decodedToken, err := jwt.ParseWithClaims(token, &customClaims{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -103,4 +86,14 @@ func validateToken(token, secret string) (string, error) {
 	}
 
 	return claims.CredentialId, nil
+}
+
+func generateCustomClaims(id string, duration time.Duration) customClaims {
+	return customClaims{
+		CredentialId: id,
+		RegisteredClaims: jwt.RegisteredClaims{
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(duration)),
+		},
+	}
 }

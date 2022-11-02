@@ -7,6 +7,7 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/util"
 )
@@ -106,6 +107,24 @@ func Test_InsertHobbies(t *testing.T) {
 		assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
 		assert.True(t, strings.Contains(pqErr.Constraint, "interest_id"))
 	})
+	t.Run("Too much bio", func(t *testing.T) {
+		user := createNewAccount(t)
+		bio := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(bio.Id)
+		require.NoError(t, err)
+		hobbies := make([]domain.Hobbie, 0)
+		for i := 0; i < 11; i++ {
+			hobbies = append(hobbies, domain.Hobbie{
+				Hobbie: util.RandomString(12),
+			})
+		}
+		err = repo.InsertInterestHobbies(bio.Id, hobbies)
+		require.Error(t, err)
+		var pqErr *pq.Error
+		require.ErrorAs(t, err, &pqErr)
+		assert.Equal(t, pq.ErrorCode("23514"), pqErr.Code)
+		assert.Contains(t, pqErr.Constraint, "hobbie_count")
+	})
 }
 func Test_UpdateHobbies(t *testing.T) {
 	repo := NewInterest(testQuery)
@@ -116,7 +135,7 @@ func Test_UpdateHobbies(t *testing.T) {
 		for i := range hobbies {
 			hobbies[i].Hobbie = util.RandomString(7)
 		}
-		for i := 0; i < 5; i++ {
+		for i := 0; i < 10-len(hobbies); i++ {
 			hobbies = append(hobbies, domain.Hobbie{
 				Hobbie: util.RandomString(15),
 			})
@@ -124,7 +143,28 @@ func Test_UpdateHobbies(t *testing.T) {
 		row, err := repo.UpdateInterestHobbies(intr.Id, hobbies)
 		assert.NoError(t, err)
 		assert.NotZero(t, row)
-
+	})
+	t.Run("Valid Update but over than 10", func(t *testing.T) {
+		user := createNewAccount(t)
+		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
+		hobbies := createNewInterestHobbie(t, intr.Id)
+		for i := range hobbies {
+			hobbies[i].Hobbie = util.RandomString(7)
+		}
+		for i := 0; i < 10; i++ {
+			hobbies = append(hobbies, domain.Hobbie{
+				Hobbie: util.RandomString(15),
+			})
+		}
+		row, err := repo.UpdateInterestHobbies(intr.Id, hobbies)
+		require.Error(t, err)
+		require.Equal(t, int64(0), row)
+		var pqErr *pq.Error
+		require.ErrorAs(t, err, &pqErr)
+		assert.Equal(t, pq.ErrorCode("23514"), pqErr.Code)
+		assert.Contains(t, pqErr.Constraint, "hobbie_count")
 	})
 }
 func Test_DeleteHobbies(t *testing.T) {
@@ -137,7 +177,7 @@ func Test_DeleteHobbies(t *testing.T) {
 		for _, hobie := range hobbies {
 			ids = append(ids, hobie.Id)
 		}
-		row, err := repo.DeleteInterestHobbies(ids)
+		row, err := repo.DeleteInterestHobbies(intr.Id, ids)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(len(hobbies)), row)
 
@@ -176,6 +216,24 @@ func Test_InsertMovieSeries(t *testing.T) {
 		assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
 		assert.True(t, strings.Contains(pqErr.Constraint, "interest_id"))
 	})
+	t.Run("Too much movies", func(t *testing.T) {
+		user := createNewAccount(t)
+		bio := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(bio.Id)
+		require.NoError(t, err)
+		movieSeries := make([]domain.MovieSerie, 0)
+		for i := 0; i <= 11; i++ {
+			movieSeries = append(movieSeries, domain.MovieSerie{
+				MovieSerie: util.RandomString(12),
+			})
+		}
+		err = repo.InsertInterestMovieSeries(bio.Id, movieSeries)
+		require.Error(t, err)
+		var pqErr *pq.Error
+		require.ErrorAs(t, err, &pqErr)
+		assert.Equal(t, pq.ErrorCode("23514"), pqErr.Code)
+		assert.Contains(t, pqErr.Constraint, "movie_serie_count")
+	})
 }
 func Test_UpdateMovieSeries(t *testing.T) {
 	repo := NewInterest(testQuery)
@@ -186,7 +244,7 @@ func Test_UpdateMovieSeries(t *testing.T) {
 		for i := range movieSeries {
 			movieSeries[i].MovieSerie = util.RandomString(19)
 		}
-		for i := 0; i < 5; i++ {
+		for i := 0; i < 10-len(movieSeries); i++ {
 			movieSeries = append(movieSeries, domain.MovieSerie{
 				MovieSerie: util.RandomString(15),
 			})
@@ -194,6 +252,28 @@ func Test_UpdateMovieSeries(t *testing.T) {
 		row, err := repo.UpdateInterestMovieSeries(intr.Id, movieSeries)
 		assert.NoError(t, err)
 		assert.NotZero(t, row)
+	})
+	t.Run("Valid Update but over than 10", func(t *testing.T) {
+		user := createNewAccount(t)
+		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
+		movieSeries := createNewInterestMovieSeries(t, intr.Id)
+		for i := range movieSeries {
+			movieSeries[i].MovieSerie = util.RandomString(7)
+		}
+		for i := 0; i < 11; i++ {
+			movieSeries = append(movieSeries, domain.MovieSerie{
+				MovieSerie: util.RandomString(15),
+			})
+		}
+		row, err := repo.UpdateInterestMovieSeries(intr.Id, movieSeries)
+		require.Error(t, err)
+		require.Equal(t, int64(0), row)
+		var pqErr *pq.Error
+		require.ErrorAs(t, err, &pqErr)
+		assert.Equal(t, pq.ErrorCode("23514"), pqErr.Code)
+		assert.Contains(t, pqErr.Constraint, "movie_serie_count")
 	})
 }
 func Test_DeleteMovieSeries(t *testing.T) {
@@ -206,7 +286,7 @@ func Test_DeleteMovieSeries(t *testing.T) {
 		for _, hobie := range movieSeries {
 			ids = append(ids, hobie.Id)
 		}
-		row, err := repo.DeleteInterestMovieSeries(ids)
+		row, err := repo.DeleteInterestMovieSeries(intr.Id, ids)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(len(movieSeries)), row)
 	})
@@ -245,6 +325,24 @@ func Test_InsertTraveling(t *testing.T) {
 		assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
 		assert.True(t, strings.Contains(pqErr.Constraint, "interest_id"))
 	})
+	t.Run("Too much travels", func(t *testing.T) {
+		user := createNewAccount(t)
+		bio := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(bio.Id)
+		require.NoError(t, err)
+		travels := make([]domain.Travel, 0)
+		for i := 0; i < 11; i++ {
+			travels = append(travels, domain.Travel{
+				Travel: util.RandomString(12),
+			})
+		}
+		err = repo.InsertInterestTraveling(bio.Id, travels)
+		require.Error(t, err)
+		var pqErr *pq.Error
+		require.ErrorAs(t, err, &pqErr)
+		assert.Equal(t, pq.ErrorCode("23514"), pqErr.Code)
+		assert.Contains(t, pqErr.Constraint, "traveling_count")
+	})
 }
 func Test_UpdateTraveling(t *testing.T) {
 	repo := NewInterest(testQuery)
@@ -255,7 +353,7 @@ func Test_UpdateTraveling(t *testing.T) {
 		for i := range travels {
 			travels[i].Travel = util.RandomString(19)
 		}
-		for i := 0; i < 5; i++ {
+		for i := 0; i < 10-len(travels); i++ {
 			travels = append(travels, domain.Travel{
 				Travel: util.RandomString(15),
 			})
@@ -263,6 +361,28 @@ func Test_UpdateTraveling(t *testing.T) {
 		row, err := repo.UpdateInterestTraveling(intr.Id, travels)
 		assert.NoError(t, err)
 		assert.NotZero(t, row)
+	})
+	t.Run("Valid Update but over than 10", func(t *testing.T) {
+		user := createNewAccount(t)
+		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
+		travels := createNewInterestTraveling(t, intr.Id)
+		for i := range travels {
+			travels[i].Travel = util.RandomString(7)
+		}
+		for i := 0; i < 10; i++ {
+			travels = append(travels, domain.Travel{
+				Travel: util.RandomString(15),
+			})
+		}
+		row, err := repo.UpdateInterestTraveling(intr.Id, travels)
+		require.Error(t, err)
+		require.Equal(t, int64(0), row)
+		var pqErr *pq.Error
+		require.ErrorAs(t, err, &pqErr)
+		assert.Equal(t, pq.ErrorCode("23514"), pqErr.Code)
+		assert.Contains(t, pqErr.Constraint, "traveling_count")
 	})
 }
 func Test_DeleteTraveling(t *testing.T) {
@@ -275,7 +395,7 @@ func Test_DeleteTraveling(t *testing.T) {
 		for _, hobie := range travels {
 			ids = append(ids, hobie.Id)
 		}
-		row, err := repo.DeleteInterestTraveling(ids)
+		row, err := repo.DeleteInterestTraveling(intr.Id, ids)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(len(travels)), row)
 	})
@@ -313,6 +433,24 @@ func Test_InsertSports(t *testing.T) {
 		assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
 		assert.True(t, strings.Contains(pqErr.Constraint, "interest_id"))
 	})
+	t.Run("Too much sports", func(t *testing.T) {
+		user := createNewAccount(t)
+		bio := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(bio.Id)
+		require.NoError(t, err)
+		sports := make([]domain.Sport, 0)
+		for i := 0; i < 11; i++ {
+			sports = append(sports, domain.Sport{
+				Sport: util.RandomString(12),
+			})
+		}
+		err = repo.InsertInterestSports(bio.Id, sports)
+		require.Error(t, err)
+		var pqErr *pq.Error
+		require.ErrorAs(t, err, &pqErr)
+		assert.Equal(t, pq.ErrorCode("23514"), pqErr.Code)
+		assert.Contains(t, pqErr.Constraint, "sport_count")
+	})
 }
 func Test_UpdateSports(t *testing.T) {
 	repo := NewInterest(testQuery)
@@ -323,7 +461,7 @@ func Test_UpdateSports(t *testing.T) {
 		for i := range sports {
 			sports[i].Sport = util.RandomString(19)
 		}
-		for i := 0; i < 5; i++ {
+		for i := 0; i < 10-len(sports); i++ {
 			sports = append(sports, domain.Sport{
 				Sport: util.RandomString(15),
 			})
@@ -331,6 +469,28 @@ func Test_UpdateSports(t *testing.T) {
 		row, err := repo.UpdateInterestSport(intr.Id, sports)
 		assert.NoError(t, err)
 		assert.NotZero(t, row)
+	})
+	t.Run("Valid Update but over than 10", func(t *testing.T) {
+		user := createNewAccount(t)
+		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
+		sports := createNewInterestSport(t, intr.Id)
+		for i := range sports {
+			sports[i].Sport = util.RandomString(7)
+		}
+		for i := 0; i < 10; i++ {
+			sports = append(sports, domain.Sport{
+				Sport: util.RandomString(15),
+			})
+		}
+		row, err := repo.UpdateInterestSport(intr.Id, sports)
+		require.Error(t, err)
+		require.Equal(t, int64(0), row)
+		var pqErr *pq.Error
+		require.ErrorAs(t, err, &pqErr)
+		assert.Equal(t, pq.ErrorCode("23514"), pqErr.Code)
+		assert.Contains(t, pqErr.Constraint, "sport_count")
 	})
 }
 func Test_DeleteSports(t *testing.T) {
@@ -343,7 +503,7 @@ func Test_DeleteSports(t *testing.T) {
 		for _, hobie := range sports {
 			ids = append(ids, hobie.Id)
 		}
-		row, err := repo.DeleteInterestSports(ids)
+		row, err := repo.DeleteInterestSports(intr.Id, ids)
 		assert.NoError(t, err)
 		assert.Equal(t, int64(len(sports)), row)
 	})

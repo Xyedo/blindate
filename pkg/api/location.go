@@ -9,14 +9,20 @@ import (
 	"github.com/xyedo/blindate/pkg/service"
 )
 
-func NewLocation(locationService service.Location) *location {
+type locationSvc interface {
+	CreateNewLocation(location *domain.Location) error
+	UpdateLocation(location *domain.Location) error
+	GetLocation(id string) (*domain.Location, error)
+}
+
+func NewLocation(locationService locationSvc) *location {
 	return &location{
 		locationService: locationService,
 	}
 }
 
 type location struct {
-	locationService service.Location
+	locationService locationSvc
 }
 
 func (l *location) postLocationByUserIdHandler(c *gin.Context) {
@@ -32,7 +38,7 @@ func (l *location) postLocationByUserIdHandler(c *gin.Context) {
 			"Lng": "required and must be valid lng geometry",
 		})
 		if errjson != nil {
-			errorServerResponse(c, err)
+			errServerResp(c, err)
 			return
 		}
 		return
@@ -40,14 +46,18 @@ func (l *location) postLocationByUserIdHandler(c *gin.Context) {
 	err = l.locationService.CreateNewLocation(&domain.Location{UserId: userId, Lat: input.Lat, Lng: input.Lng})
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
 		if errors.Is(err, service.ErrRefUserIdField) {
-			errorResourceNotFound(c, "user id is not found")
+			errNotFoundResp(c, "user id is not found")
 			return
 		}
-		errorServerResponse(c, err)
+		if errors.Is(err, service.ErrUniqueConstrainUserId) {
+			errUnprocessableEntityResp(c, "location with this user id is already created")
+			return
+		}
+		errServerResp(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
@@ -60,14 +70,14 @@ func (l *location) getLocationByUserIdHandler(c *gin.Context) {
 	location, err := l.locationService.GetLocation(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			errorResourceNotFound(c, "user id is not found")
+			errNotFoundResp(c, "user id is not found")
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -91,7 +101,7 @@ func (l *location) patchLocationByUserIdHandler(c *gin.Context) {
 			"Lng": "must be valid lng geometry",
 		})
 		if errjson != nil {
-			errorServerResponse(c, err)
+			errServerResp(c, err)
 			return
 		}
 		return
@@ -99,14 +109,14 @@ func (l *location) patchLocationByUserIdHandler(c *gin.Context) {
 	location, err := l.locationService.GetLocation(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			errorResourceNotFound(c, "user id is not found")
+			errNotFoundResp(c, "user id is not found")
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	if input.Lat != nil {
@@ -119,14 +129,14 @@ func (l *location) patchLocationByUserIdHandler(c *gin.Context) {
 	err = l.locationService.UpdateLocation(location)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			errorResourceNotFound(c, "user id is not found")
+			errNotFoundResp(c, "user id is not found")
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{

@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xyedo/blindate/pkg/service"
 )
 
 type Route struct {
@@ -13,7 +12,7 @@ type Route struct {
 	BasicInfo      *basicinfo
 	Location       *location
 	Authentication *auth
-	Tokenizer      service.Jwt
+	Tokenizer      jwtSvc
 	Interest       *interest
 	Online         *online
 }

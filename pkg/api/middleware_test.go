@@ -13,7 +13,7 @@ import (
 	"github.com/xyedo/blindate/pkg/util"
 )
 
-func addAutho(t *testing.T, req *http.Request, tokennizer service.Jwt, id, typeAuth string) {
+func addAutho(t *testing.T, req *http.Request, tokennizer jwtSvc, id, typeAuth string) {
 	token, err := tokennizer.GenerateAccessToken(id)
 	assert.NoError(t, err)
 	authoHeader := fmt.Sprintf("%s %s", typeAuth, token)
@@ -29,13 +29,13 @@ func Test_AuthMiddleware(t *testing.T) {
 	tests := []struct {
 		name         string
 		id           string
-		setupAuth    func(t *testing.T, req *http.Request, tokenizer service.Jwt)
+		setupAuth    func(t *testing.T, req *http.Request, tokenizer jwtSvc)
 		checkRespose func(t *testing.T, recorder *httptest.ResponseRecorder)
 	}{
 		{
 			name: "valid Authorization",
 			id:   validId,
-			setupAuth: func(t *testing.T, req *http.Request, tokenizer service.Jwt) {
+			setupAuth: func(t *testing.T, req *http.Request, tokenizer jwtSvc) {
 				addAutho(t, req, tokenizer, validId, "Bearer")
 			},
 			checkRespose: func(t *testing.T, recorder *httptest.ResponseRecorder) {
@@ -45,7 +45,7 @@ func Test_AuthMiddleware(t *testing.T) {
 		{
 			name:      "No Authorization",
 			id:        validId,
-			setupAuth: func(t *testing.T, req *http.Request, tokenizer service.Jwt) {},
+			setupAuth: func(t *testing.T, req *http.Request, tokenizer jwtSvc) {},
 			checkRespose: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusUnauthorized, recorder.Code)
 			},
@@ -53,7 +53,7 @@ func Test_AuthMiddleware(t *testing.T) {
 		{
 			name: "Unsupported Authorization",
 			id:   validId,
-			setupAuth: func(t *testing.T, req *http.Request, tokenizer service.Jwt) {
+			setupAuth: func(t *testing.T, req *http.Request, tokenizer jwtSvc) {
 				addAutho(t, req, tokenizer, validId, "Basic")
 			},
 			checkRespose: func(t *testing.T, recorder *httptest.ResponseRecorder) {
@@ -63,7 +63,7 @@ func Test_AuthMiddleware(t *testing.T) {
 		{
 			name: "Invalid Authorization format",
 			id:   validId,
-			setupAuth: func(t *testing.T, req *http.Request, tokenizer service.Jwt) {
+			setupAuth: func(t *testing.T, req *http.Request, tokenizer jwtSvc) {
 				addAutho(t, req, tokenizer, validId, "")
 			},
 			checkRespose: func(t *testing.T, recorder *httptest.ResponseRecorder) {
@@ -73,7 +73,7 @@ func Test_AuthMiddleware(t *testing.T) {
 		{
 			name: "Expired Token",
 			id:   validId,
-			setupAuth: func(t *testing.T, req *http.Request, tokenizer service.Jwt) {
+			setupAuth: func(t *testing.T, req *http.Request, tokenizer jwtSvc) {
 				addAutho(t, req, tokenizer, validId, "Bearer")
 				time.Sleep(2 * time.Second)
 			},
@@ -84,7 +84,7 @@ func Test_AuthMiddleware(t *testing.T) {
 		{
 			name: "Invalid Id",
 			id:   "1",
-			setupAuth: func(t *testing.T, req *http.Request, tokenizer service.Jwt) {
+			setupAuth: func(t *testing.T, req *http.Request, tokenizer jwtSvc) {
 				addAutho(t, req, tokenizer, validId, "Bearer")
 
 			},
@@ -95,7 +95,7 @@ func Test_AuthMiddleware(t *testing.T) {
 		{
 			name: "Valid Id but uri not the same with token",
 			id:   "d3aa0883-4a29-4a39-8f0e-2413c169bd9d",
-			setupAuth: func(t *testing.T, req *http.Request, tokenizer service.Jwt) {
+			setupAuth: func(t *testing.T, req *http.Request, tokenizer jwtSvc) {
 				addAutho(t, req, tokenizer, validId, "Bearer")
 
 			},

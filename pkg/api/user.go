@@ -7,17 +7,23 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/service"
 )
 
-func NewUser(userSvc service.User) *user {
+type userSvc interface {
+	CreateUser(newUser *domain.User) error
+	VerifyCredential(email, password string) (string, error)
+	GetUserById(id string) (*domain.User, error)
+	UpdateUser(user *domain.User) error
+}
+
+func NewUser(userSvc userSvc) *user {
 	return &user{
 		userService: userSvc,
 	}
 }
 
 type user struct {
-	userService service.User
+	userService userSvc
 }
 
 func (u *user) postUserHandler(c *gin.Context) {
@@ -35,7 +41,7 @@ func (u *user) postUserHandler(c *gin.Context) {
 			"Dob":      "must between today and after 1990",
 		})
 		if errjson != nil {
-			errorServerResponse(c, err)
+			errServerResp(c, err)
 			return
 		}
 		return
@@ -50,17 +56,14 @@ func (u *user) postUserHandler(c *gin.Context) {
 	err := u.userService.CreateUser(&user)
 	if err != nil {
 		if errors.Is(err, domain.ErrUniqueConstraint23505) {
-			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
-				"status":  "fail",
-				"message": "email is already taken",
-			})
+			errUnprocessableEntityResp(c, "email is already taken")
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 
@@ -78,17 +81,14 @@ func (u *user) getUserByIdHandler(c *gin.Context) {
 	user, err := u.userService.GetUserById(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
-				"status":  "fail",
-				"message": "id not found!",
-			})
+			errNotFoundResp(c, "id not found")
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 
@@ -105,17 +105,14 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 	user, err := u.userService.GetUserById(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
-				"status":  "fail",
-				"message": "id not found!",
-			})
+			errNotFoundResp(c, "id not found")
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	var input struct {
@@ -135,7 +132,7 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 			"Dob":         "Must betwen today and more than 1990",
 		})
 		if errjson != nil {
-			errorServerResponse(c, err)
+			errServerResp(c, err)
 			return
 		}
 		return
@@ -143,7 +140,7 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 	if input.NewPassword != nil && input.OldPassword != nil {
 		_, err := u.userService.VerifyCredential(user.Email, *input.OldPassword)
 		if err != nil {
-			errorInvalidCredsResponse(c, "email or password do not match")
+			errUnauthorizedResp(c, "email or password do not match")
 			return
 		}
 		user.Password = *input.NewPassword
@@ -163,14 +160,14 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 	err = u.userService.UpdateUser(user)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			errorResourceNotFound(c, "users.Id not found!")
+			errNotFoundResp(c, "users.Id not found!")
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{

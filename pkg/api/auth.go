@@ -6,10 +6,21 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/service"
 )
 
-func NewAuth(authService service.AuthService, userService service.User, token service.Jwt) *auth {
+type authSvc interface {
+	AddRefreshToken(token string) error
+	VerifyRefreshToken(token string) error
+	DeleteRefreshToken(token string) error
+}
+type jwtSvc interface {
+	GenerateAccessToken(id string) (string, error)
+	GenerateRefreshToken(id string) (string, error)
+	ValidateRefreshToken(token string) (string, error)
+	ValidateAccessToken(token string) (string, error)
+}
+
+func NewAuth(authService authSvc, userService userSvc, token jwtSvc) *auth {
 	return &auth{
 		authService: authService,
 		userService: userService,
@@ -18,9 +29,9 @@ func NewAuth(authService service.AuthService, userService service.User, token se
 }
 
 type auth struct {
-	authService service.AuthService
-	userService service.User
-	tokenizer   service.Jwt
+	authService authSvc
+	userService userSvc
+	tokenizer   jwtSvc
 }
 
 func (a *auth) postAuthHandler(c *gin.Context) {
@@ -35,7 +46,7 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 			"Password": "required and must be over 8 character",
 		})
 		if errjson != nil {
-			errorServerResponse(c, err)
+			errServerResp(c, err)
 			return
 		}
 		return
@@ -43,30 +54,30 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 	id, err := a.userService.VerifyCredential(input.Email, input.Password)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
 		if errors.Is(err, domain.ErrNotMatchCredential) {
-			errorInvalidCredsResponse(c, "email or password do not match")
+			errUnauthorizedResp(c, "email or password do not match")
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	accessToken, err := a.tokenizer.GenerateAccessToken(id)
 	if err != nil {
-		errorInvalidCredsResponse(c, "fail to create token, please try again!")
+		errUnauthorizedResp(c, "fail to create token, please try again!")
 		return
 	}
 	refreshToken, err := a.tokenizer.GenerateRefreshToken(id)
 	if err != nil {
-		errorInvalidCredsResponse(c, "fail to create token, please try again!")
+		errUnauthorizedResp(c, "fail to create token, please try again!")
 		return
 	}
 	err = a.authService.AddRefreshToken(refreshToken)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
 		if errors.Is(err, domain.ErrUniqueConstraint23505) {
@@ -76,7 +87,7 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 			})
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	c.SetCookie("refreshToken", refreshToken, 2592000, "/api/v1", "localhost", true, true)
@@ -92,32 +103,32 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 func (a *auth) putAuthHandler(c *gin.Context) {
 	refreshTokenCookie, err := c.Cookie("refreshToken")
 	if err != nil {
-		errCookieNotFound(c)
+		errForbiddenResp(c, "Cookie not found in your browser, must be login")
 		return
 	}
 	err = a.authService.VerifyRefreshToken(refreshTokenCookie)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
 		if errors.Is(err, domain.ErrNotMatchCredential) {
-			errorInvalidCredsResponse(c, "invalid credentials")
+			errUnauthorizedResp(c, "invalid credentials")
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	id, err := a.tokenizer.ValidateRefreshToken(refreshTokenCookie)
 	if err != nil {
 		if errors.Is(err, domain.ErrNotMatchCredential) {
-			errorInvalidCredsResponse(c, "invalid credentials")
+			errUnauthorizedResp(c, "invalid credentials")
 			return
 		}
 	}
 	accessToken, err := a.tokenizer.GenerateAccessToken(id)
 	if err != nil {
-		errorInvalidCredsResponse(c, "fail to create token, please try again!")
+		errUnauthorizedResp(c, "fail to create token, please try again!")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -131,33 +142,33 @@ func (a *auth) putAuthHandler(c *gin.Context) {
 func (a *auth) deleteAuthHandler(c *gin.Context) {
 	refreshTokenCookie, err := c.Cookie("refreshToken")
 	if err != nil {
-		errCookieNotFound(c)
+		errForbiddenResp(c, "Cookie not found in your browser, must be login")
 		return
 	}
 	err = a.authService.VerifyRefreshToken(refreshTokenCookie)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
 		if errors.Is(err, domain.ErrNotMatchCredential) {
-			errorInvalidCredsResponse(c, "invalid credentials")
+			errUnauthorizedResp(c, "invalid credentials")
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	err = a.authService.DeleteRefreshToken(refreshTokenCookie)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
 		if errors.Is(err, domain.ErrNotMatchCredential) {
-			errorInvalidCredsResponse(c, "invalid credentials")
+			errUnauthorizedResp(c, "invalid credentials")
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	c.SetCookie("refreshToken", "", -1, "/api/v1", "localhost", true, true)

@@ -15,7 +15,7 @@ const (
 	authorizationHeaderKey = "Authorization"
 )
 
-func validateUser(jwtService service.Jwt) gin.HandlerFunc {
+func validateUser(jwtService jwtSvc) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authorizationHeader := c.GetHeader(authorizationHeaderKey)
 		fields := strings.Fields(authorizationHeader)
@@ -38,10 +38,10 @@ func validateUser(jwtService service.Jwt) gin.HandlerFunc {
 		id, err := jwtService.ValidateAccessToken(accessToken)
 		if err != nil {
 			if errors.Is(err, service.ErrTokenExpired) {
-				errExpiredAccesToken(c)
+				errUnauthorizedResp(c, "token is expired, please login!")
 			}
 			if errors.Is(err, domain.ErrNotMatchCredential) {
-				errAccesTokenInvalid(c)
+				errUnauthorizedResp(c, "token is invalid, please login!")
 			}
 			return
 		}
@@ -59,7 +59,7 @@ func validateUser(jwtService service.Jwt) gin.HandlerFunc {
 		}
 
 		if url.UserId != id {
-			errorInvalidIdTokenResponse(c)
+			errForbiddenResp(c, "you should not access this resoures")
 			return
 		}
 		c.Set("userId", url.UserId)

@@ -11,23 +11,18 @@ import (
 func jsonBindingErrResp(err error, c *gin.Context, errorMap map[string]string) error {
 	err1 := util.ReadJSONDecoderErr(err)
 	if err1 != nil {
-		errorJSONBindingResponse(c, err1)
+		errBadRequestResp(c, err1.Error())
 		return nil
 	}
 	errMap := util.ReadValidationErr(err, errorMap)
 	if errMap != nil {
-		errorValidationResponse(c, errMap)
+		errValidationResp(c, errMap)
 		return nil
 	}
 	return err
 }
-func errorJSONBindingResponse(c *gin.Context, err error) {
-	c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-		"status":  "fail",
-		"message": err.Error(),
-	})
-}
-func errorValidationResponse(c *gin.Context, errMap map[string]string) {
+
+func errValidationResp(c *gin.Context, errMap map[string]string) {
 	c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
 		"status":  "fail",
 		"message": "please refer to the documentation",
@@ -35,7 +30,7 @@ func errorValidationResponse(c *gin.Context, errMap map[string]string) {
 	})
 }
 
-func errorServerResponse(c *gin.Context, err error) {
+func errServerResp(c *gin.Context, err error) {
 	log.Println(err.Error())
 	c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
 		"status":  "fail",
@@ -43,52 +38,40 @@ func errorServerResponse(c *gin.Context, err error) {
 	})
 }
 
-func errorInvalidCredsResponse(c *gin.Context, message string) {
+func errUnauthorizedResp(c *gin.Context, message string) {
 	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 		"status":  "fail",
 		"message": message,
 	})
 }
-func errorDeadLockResponse(c *gin.Context) {
+func errResourceConflictResp(c *gin.Context) {
 	c.AbortWithStatusJSON(http.StatusConflict, gin.H{
 		"status":  "fail",
 		"message": "request conflicted, please try again",
 	})
 }
-func errorResourceNotFound(c *gin.Context, message string) {
+func errNotFoundResp(c *gin.Context, message string) {
 	c.AbortWithStatusJSON(http.StatusNotFound, gin.H{
 		"status":  "fail",
 		"message": message,
 	})
 }
 
-func errCookieNotFound(c *gin.Context) {
+func errForbiddenResp(c *gin.Context, message string) {
 	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 		"status":  "fail",
-		"message": "Cookie not found in your browser, must be login",
+		"message": message,
+	})
+}
+func errBadRequestResp(c *gin.Context, message string) {
+	c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+		"status":  "fail",
+		"message": message,
 	})
 }
 
-func errExpiredAccesToken(c *gin.Context) {
-	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-		"status":  "fail",
-		"message": "token is expired, please login!",
-	})
-}
-func errAccesTokenInvalid(c *gin.Context) {
-	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-		"status":  "fail",
-		"message": "token is invalid, please login!",
-	})
-}
-func errorInvalidIdTokenResponse(c *gin.Context) {
-	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-		"status":  "fail",
-		"message": "you should not access this resoures",
-	})
-}
-func errorBadRequest(c *gin.Context, message string) {
-	c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
+func errUnprocessableEntityResp(c *gin.Context, message string) {
+	c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
 		"status":  "fail",
 		"message": message,
 	})

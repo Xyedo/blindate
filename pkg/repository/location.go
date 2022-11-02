@@ -9,13 +9,6 @@ import (
 	"github.com/xyedo/blindate/pkg/entity"
 )
 
-type Location interface {
-	InsertNewLocation(location *entity.Location) (int64, error)
-	UpdateLocation(location *entity.Location) (int64, error)
-	GetLocationByUserId(id string) (*entity.Location, error)
-	GetClosestUser(userId string, limit int) ([]domain.User, error)
-}
-
 func NewLocation(db *sqlx.DB) *location {
 	return &location{
 		db,

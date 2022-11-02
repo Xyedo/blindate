@@ -9,14 +9,20 @@ import (
 	"github.com/xyedo/blindate/pkg/service"
 )
 
-func NewBasicInfo(basicInfoService service.BasicInfo) *basicinfo {
+type basicInfoSvc interface {
+	CreateBasicInfo(bInfo *domain.BasicInfo) error
+	GetBasicInfoByUserId(id string) (*domain.BasicInfo, error)
+	UpdateBasicInfo(bInfo *domain.BasicInfo) error
+}
+
+func NewBasicInfo(basicInfoService basicInfoSvc) *basicinfo {
 	return &basicinfo{
 		basicinfoService: basicInfoService,
 	}
 }
 
 type basicinfo struct {
-	basicinfoService service.BasicInfo
+	basicinfoService basicInfoSvc
 }
 
 func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
@@ -49,7 +55,7 @@ func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
 			"Work":             "maximal character is 50",
 		})
 		if errjson != nil {
-			errorServerResponse(c, err)
+			errServerResp(c, err)
 			return
 		}
 		return
@@ -78,10 +84,10 @@ func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
@@ -95,14 +101,14 @@ func (b *basicinfo) getBasicInfoHandler(c *gin.Context) {
 	basicInfo, err := b.basicinfoService.GetBasicInfoByUserId(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			errorResourceNotFound(c, "user Id not match with our basic info")
+			errNotFoundResp(c, "user Id not match with our basic info")
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -118,14 +124,14 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 	basicInfo, err := b.basicinfoService.GetBasicInfoByUserId(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			errorResourceNotFound(c, "user Id not match with our basic info")
+			errNotFoundResp(c, "user Id not match with our basic info")
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	var input struct {
@@ -157,7 +163,7 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 			"Work":             "maximal character is 50",
 		})
 		if errjson != nil {
-			errorServerResponse(c, err)
+			errServerResp(c, err)
 			return
 		}
 		return
@@ -203,10 +209,10 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, domain.ErrTooLongAccesingDB) {
-			errorDeadLockResponse(c)
+			errResourceConflictResp(c)
 			return
 		}
-		errorServerResponse(c, err)
+		errServerResp(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
@@ -250,6 +256,9 @@ func referencesDbErr(err error) map[string]any {
 		res["status"] = "fail"
 		res["message"] = "please refer to the documentation"
 		res["errors"] = map[string]string{"zodiac": "not valid enums"}
+	case errors.Is(err, service.ErrUniqueConstrainUserId):
+		res["status"] = "fail"
+		res["message"] = "basic_info with this user id is already created"
 	default:
 		res = nil
 	}

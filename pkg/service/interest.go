@@ -9,47 +9,52 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/repository"
 )
 
 var (
 	ErrRefInterestField          = fmt.Errorf("%w::interest_id", domain.ErrRefNotFound23503)
 	ErrUniqueConstrainInterestId = fmt.Errorf("%w::interest_id", domain.ErrUniqueConstraint23505)
 	ErrUniqueConstrainUserId     = fmt.Errorf("%w::user_id", domain.ErrUniqueConstraint23505)
+	ErrCheckConstrainHobbie      = fmt.Errorf("database: over than 10 unit")
+	ErrCheckConstrainMovieSeries = fmt.Errorf("database: over than 10 unit")
+	ErrCheckConstrainTraveling   = fmt.Errorf("database: over than 10 unit")
+	ErrCheckConstrainSports      = fmt.Errorf("database: over than 10 unit")
 )
 
-type Interest interface {
+type interestRepo interface {
+	InsertNewStats(interestId string) error
+
 	GetInterest(userId string) (*domain.Interest, error)
 
-	CreateNewBio(intr *domain.Bio) error
-	GetBio(userId string) (*domain.Bio, error)
-	PutBio(bio *domain.Bio) error
+	InsertInterestBio(intr *domain.Bio) error
+	SelectInterestBio(userId string) (*domain.Bio, error)
+	UpdateInterestBio(intr *domain.Bio) error
 
-	CreateNewHobbies(interestId string, hobbies []domain.Hobbie) error
-	PutHobbies(interestId string, hobbies []domain.Hobbie) error
-	DeleteHobbies(ids []string) error
+	InsertInterestHobbies(interestId string, hobbies []domain.Hobbie) error
+	UpdateInterestHobbies(interestId string, hobbies []domain.Hobbie) (int64, error)
+	DeleteInterestHobbies(interestId string, ids []string) (int64, error)
 
-	CreateNewMovieSeries(interestId string, movieSeries []domain.MovieSerie) error
-	PutMovieSeries(interestId string, movieSeries []domain.MovieSerie) error
-	DeleteMovieSeries(ids []string) error
+	InsertInterestMovieSeries(interestId string, movieSeries []domain.MovieSerie) error
+	UpdateInterestMovieSeries(interestId string, movieSeries []domain.MovieSerie) (int64, error)
+	DeleteInterestMovieSeries(interestId string, ids []string) (int64, error)
 
-	CreateNewTraveling(interestId string, travels []domain.Travel) error
-	PutTraveling(interestId string, travels []domain.Travel) error
-	DeleteTravels(ids []string) error
+	InsertInterestTraveling(interestId string, travels []domain.Travel) error
+	UpdateInterestTraveling(interestId string, travels []domain.Travel) (int64, error)
+	DeleteInterestTraveling(interestId string, ids []string) (int64, error)
 
-	CreateNewSports(interestId string, sports []domain.Sport) error
-	PutSports(interestId string, sports []domain.Sport) error
-	DeleteSports(ids []string) error
+	InsertInterestSports(interestId string, sports []domain.Sport) error
+	UpdateInterestSport(interestId string, sports []domain.Sport) (int64, error)
+	DeleteInterestSports(interestId string, ids []string) (int64, error)
 }
 
-func NewInterest(intrRepo repository.Interest) *interest {
+func NewInterest(intrRepo interestRepo) *interest {
 	return &interest{
 		interestRepo: intrRepo,
 	}
 }
 
 type interest struct {
-	interestRepo repository.Interest
+	interestRepo interestRepo
 }
 
 func (i *interest) GetInterest(userId string) (*domain.Interest, error) {
@@ -63,6 +68,10 @@ func (i *interest) GetInterest(userId string) (*domain.Interest, error) {
 
 func (i *interest) CreateNewBio(intr *domain.Bio) error {
 	err := i.interestRepo.InsertInterestBio(intr)
+	if err != nil {
+		return i.parsingError(err)
+	}
+	err = i.interestRepo.InsertNewStats(intr.Id)
 	if err != nil {
 		return i.parsingError(err)
 	}
@@ -94,18 +103,16 @@ func (i *interest) CreateNewHobbies(interestId string, hobbies []domain.Hobbie) 
 }
 
 func (i *interest) PutHobbies(interestId string, hobbies []domain.Hobbie) error {
-	rows, err := i.interestRepo.UpdateInterestHobbies(interestId, hobbies)
+	_, err := i.interestRepo.UpdateInterestHobbies(interestId, hobbies)
 	if err != nil {
 		return i.parsingError(err)
 	}
-	if rows == 0 {
-		panic("rows affected should not be zero")
-	}
+
 	return nil
 }
 
-func (i *interest) DeleteHobbies(ids []string) error {
-	rows, err := i.interestRepo.DeleteInterestHobbies(ids)
+func (i *interest) DeleteHobbies(interestId string, ids []string) error {
+	rows, err := i.interestRepo.DeleteInterestHobbies(interestId, ids)
 	if err != nil {
 		return i.parsingError(err)
 	}
@@ -133,8 +140,8 @@ func (i *interest) PutMovieSeries(interestId string, movieSeries []domain.MovieS
 	return nil
 }
 
-func (i *interest) DeleteMovieSeries(ids []string) error {
-	_, err := i.interestRepo.DeleteInterestMovieSeries(ids)
+func (i *interest) DeleteMovieSeries(interestId string, ids []string) error {
+	_, err := i.interestRepo.DeleteInterestMovieSeries(interestId, ids)
 	if err != nil {
 		return i.parsingError(err)
 	}
@@ -159,8 +166,8 @@ func (i *interest) PutTraveling(interestId string, travels []domain.Travel) erro
 	return nil
 }
 
-func (i *interest) DeleteTravels(ids []string) error {
-	_, err := i.interestRepo.DeleteInterestTraveling(ids)
+func (i *interest) DeleteTravels(interestId string, ids []string) error {
+	_, err := i.interestRepo.DeleteInterestTraveling(interestId, ids)
 	if err != nil {
 		return i.parsingError(err)
 	}
@@ -184,8 +191,8 @@ func (i *interest) PutSports(interestId string, sports []domain.Sport) error {
 	return nil
 }
 
-func (i *interest) DeleteSports(ids []string) error {
-	_, err := i.interestRepo.DeleteInterestSports(ids)
+func (i *interest) DeleteSports(interestId string, ids []string) error {
+	_, err := i.interestRepo.DeleteInterestSports(interestId, ids)
 	if err != nil {
 		return i.parsingError(err)
 	}
@@ -215,6 +222,21 @@ func (*interest) parsingError(err error) error {
 			}
 			if strings.Contains(pqErr.Constraint, "user_id") {
 				return ErrUniqueConstrainUserId
+			}
+			return err
+		}
+		if pqErr.Code == "24514" {
+			if strings.Contains(pqErr.Constraint, "hobbie_count") {
+				return ErrCheckConstrainHobbie
+			}
+			if strings.Contains(pqErr.Constraint, "movie_serie_count") {
+				return ErrCheckConstrainMovieSeries
+			}
+			if strings.Contains(pqErr.Constraint, "traveling_count") {
+				return ErrCheckConstrainTraveling
+			}
+			if strings.Contains(pqErr.Constraint, "sport_count") {
+				return ErrCheckConstrainSports
 			}
 			return err
 		}

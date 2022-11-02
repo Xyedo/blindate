@@ -7,25 +7,24 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type User interface {
-	CreateUser(newUser *domain.User) error
-	VerifyCredential(email, password string) (string, error)
+type userRepo interface {
+	InsertUser(user *domain.User) error
+	GetUserByEmail(email string) (*domain.User, error)
 	GetUserById(id string) (*domain.User, error)
 	UpdateUser(user *domain.User) error
 }
 
-func NewUser(userRepo repository.User) *user {
+func NewUser(userRepo userRepo) *user {
 	return &user{
 		userRepository: userRepo,
 	}
 }
 
 type user struct {
-	userRepository repository.User
+	userRepository userRepo
 }
 
 func (u *user) CreateUser(newUser *domain.User) error {

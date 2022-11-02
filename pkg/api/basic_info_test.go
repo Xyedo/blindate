@@ -124,6 +124,34 @@ func Test_postBasicInfoHandler(t *testing.T) {
 			},
 		},
 		{
+			name: "Duplicate UserId",
+			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
+			reqBody: `{
+				"gender":"Male",
+				"lookingFor":"Female"
+				}`,
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
+				basicInfo := &entity.BasicInfo{
+					UserId:     "8c540e20-75d1-4513-a8e3-72dc4bc68619",
+					Gender:     "Male",
+					LookingFor: "Female",
+				}
+				pqErr := &pq.Error{
+					Code:       "23505",
+					Constraint: "basic_info_pkey",
+				}
+				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(int64(0), pqErr)
+				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
+				return NewBasicInfo(basicInfoSvc)
+			},
+			wantCode: http.StatusUnprocessableEntity,
+			wantResp: map[string]any{
+				"status":  "fail",
+				"message": "basic_info with this user id is already created",
+			},
+		},
+		{
 			name: "Invalid Body",
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 			reqBody: `{

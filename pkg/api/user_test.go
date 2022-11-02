@@ -329,14 +329,14 @@ func Test_GetUserByIdHandler(t *testing.T) {
 	tests := []struct {
 		name      string
 		id        string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) (service.User, *domain.User)
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) (userSvc, *domain.User)
 		respFunc  func(t *testing.T, user *domain.User, resp *httptest.ResponseRecorder)
 	}{
 
 		{
 			name: "Valid Submission",
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (service.User, *domain.User) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (userSvc, *domain.User) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				users := createNewUser(t)
 				userRepo.EXPECT().GetUserById(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(users, nil)
@@ -360,7 +360,7 @@ func Test_GetUserByIdHandler(t *testing.T) {
 		{
 			name: "Valid URL Params but User Not Found",
 			id:   "d3aa0883-4a29-4a39-8f0e-2413c169bd9d",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (service.User, *domain.User) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (userSvc, *domain.User) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				users := createNewUser(t)
 				userRepo.EXPECT().GetUserById("d3aa0883-4a29-4a39-8f0e-2413c169bd9d").Times(1).Return(nil, sql.ErrNoRows)
@@ -368,12 +368,12 @@ func Test_GetUserByIdHandler(t *testing.T) {
 				return userService, users
 			},
 			respFunc: func(t *testing.T, user *domain.User, resp *httptest.ResponseRecorder) {
-				assert.Equal(t, http.StatusUnprocessableEntity, resp.Code)
+				assert.Equal(t, http.StatusNotFound, resp.Code)
 				assert.Contains(t, resp.Header().Get("Content-Type"), "application/json")
 
 				expResBody, err := json.Marshal(map[string]any{
 					"status":  "fail",
-					"message": "id not found!",
+					"message": "id not found",
 				})
 				assert.NoError(t, err)
 				assert.JSONEq(t, string(expResBody), resp.Body.String())
@@ -542,10 +542,10 @@ func Test_PatchUserById(t *testing.T) {
 				userService := service.NewUser(userRepo)
 				return NewUser(userService)
 			},
-			wantCode: http.StatusUnprocessableEntity,
+			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "id not found!",
+				"message": "id not found",
 			},
 		},
 		{

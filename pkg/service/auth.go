@@ -7,23 +7,22 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/repository"
 )
 
-type AuthService interface {
-	AddRefreshToken(token string) error
+type authRepo interface {
+	AddRefreshToken(token string) (int64, error)
 	VerifyRefreshToken(token string) error
-	DeleteRefreshToken(token string) error
+	DeleteRefreshToken(token string) (int64, error)
 }
 
-func NewAuth(authR repository.Auth) *auth {
+func NewAuth(authR authRepo) *auth {
 	return &auth{
 		authRepo: authR,
 	}
 }
 
 type auth struct {
-	authRepo repository.Auth
+	authRepo authRepo
 }
 
 func (a *auth) AddRefreshToken(token string) error {

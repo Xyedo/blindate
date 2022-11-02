@@ -59,7 +59,6 @@ func main() {
 	userRepo := repository.NewUser(db)
 	userSvc := service.NewUser(userRepo)
 	userHandler := api.NewUser(userSvc)
-
 	healthcheckHander := api.NewHealthCheck()
 
 	basicInfoRepo := repository.NewBasicInfo(db)

@@ -35,63 +35,63 @@ func (m *MockInterest) EXPECT() *MockInterestMockRecorder {
 }
 
 // DeleteInterestHobbies mocks base method.
-func (m *MockInterest) DeleteInterestHobbies(arg0 []string) (int64, error) {
+func (m *MockInterest) DeleteInterestHobbies(arg0 string, arg1 []string) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteInterestHobbies", arg0)
+	ret := m.ctrl.Call(m, "DeleteInterestHobbies", arg0, arg1)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DeleteInterestHobbies indicates an expected call of DeleteInterestHobbies.
-func (mr *MockInterestMockRecorder) DeleteInterestHobbies(arg0 interface{}) *gomock.Call {
+func (mr *MockInterestMockRecorder) DeleteInterestHobbies(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteInterestHobbies", reflect.TypeOf((*MockInterest)(nil).DeleteInterestHobbies), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteInterestHobbies", reflect.TypeOf((*MockInterest)(nil).DeleteInterestHobbies), arg0, arg1)
 }
 
 // DeleteInterestMovieSeries mocks base method.
-func (m *MockInterest) DeleteInterestMovieSeries(arg0 []string) (int64, error) {
+func (m *MockInterest) DeleteInterestMovieSeries(arg0 string, arg1 []string) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteInterestMovieSeries", arg0)
+	ret := m.ctrl.Call(m, "DeleteInterestMovieSeries", arg0, arg1)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DeleteInterestMovieSeries indicates an expected call of DeleteInterestMovieSeries.
-func (mr *MockInterestMockRecorder) DeleteInterestMovieSeries(arg0 interface{}) *gomock.Call {
+func (mr *MockInterestMockRecorder) DeleteInterestMovieSeries(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteInterestMovieSeries", reflect.TypeOf((*MockInterest)(nil).DeleteInterestMovieSeries), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteInterestMovieSeries", reflect.TypeOf((*MockInterest)(nil).DeleteInterestMovieSeries), arg0, arg1)
 }
 
 // DeleteInterestSports mocks base method.
-func (m *MockInterest) DeleteInterestSports(arg0 []string) (int64, error) {
+func (m *MockInterest) DeleteInterestSports(arg0 string, arg1 []string) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteInterestSports", arg0)
+	ret := m.ctrl.Call(m, "DeleteInterestSports", arg0, arg1)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DeleteInterestSports indicates an expected call of DeleteInterestSports.
-func (mr *MockInterestMockRecorder) DeleteInterestSports(arg0 interface{}) *gomock.Call {
+func (mr *MockInterestMockRecorder) DeleteInterestSports(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteInterestSports", reflect.TypeOf((*MockInterest)(nil).DeleteInterestSports), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteInterestSports", reflect.TypeOf((*MockInterest)(nil).DeleteInterestSports), arg0, arg1)
 }
 
 // DeleteInterestTraveling mocks base method.
-func (m *MockInterest) DeleteInterestTraveling(arg0 []string) (int64, error) {
+func (m *MockInterest) DeleteInterestTraveling(arg0 string, arg1 []string) (int64, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteInterestTraveling", arg0)
+	ret := m.ctrl.Call(m, "DeleteInterestTraveling", arg0, arg1)
 	ret0, _ := ret[0].(int64)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // DeleteInterestTraveling indicates an expected call of DeleteInterestTraveling.
-func (mr *MockInterestMockRecorder) DeleteInterestTraveling(arg0 interface{}) *gomock.Call {
+func (mr *MockInterestMockRecorder) DeleteInterestTraveling(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteInterestTraveling", reflect.TypeOf((*MockInterest)(nil).DeleteInterestTraveling), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteInterestTraveling", reflect.TypeOf((*MockInterest)(nil).DeleteInterestTraveling), arg0, arg1)
 }
 
 // GetInterest mocks base method.
@@ -177,6 +177,20 @@ func (m *MockInterest) InsertInterestTraveling(arg0 string, arg1 []domain.Travel
 func (mr *MockInterestMockRecorder) InsertInterestTraveling(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertInterestTraveling", reflect.TypeOf((*MockInterest)(nil).InsertInterestTraveling), arg0, arg1)
+}
+
+// InsertNewStats mocks base method.
+func (m *MockInterest) InsertNewStats(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InsertNewStats", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// InsertNewStats indicates an expected call of InsertNewStats.
+func (mr *MockInterestMockRecorder) InsertNewStats(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertNewStats", reflect.TypeOf((*MockInterest)(nil).InsertNewStats), arg0)
 }
 
 // SelectInterestBio mocks base method.
