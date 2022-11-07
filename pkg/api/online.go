@@ -30,12 +30,16 @@ func (o *online) postUserOnlineHandler(c *gin.Context) {
 
 	err := o.onlineSvc.CreateNewOnline(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrResourceNotFound) {
+		if errors.Is(err, domain.ErrRefNotFound23503) {
 			errNotFoundResp(c, "userId is not found!")
 			return
 		}
 		if errors.Is(err, service.ErrUniqueConstrainUserId) {
 			errUnprocessableEntityResp(c, "users is already registered")
+			return
+		}
+		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+			errResourceConflictResp(c)
 			return
 		}
 		errServerResp(c, err)
@@ -53,7 +57,11 @@ func (o *online) getUserOnlineHandler(c *gin.Context) {
 	onlineUser, err := o.onlineSvc.GetOnline(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "user_id is not found")
+			errNotFoundResp(c, "userId is not found")
+			return
+		}
+		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+			errResourceConflictResp(c)
 			return
 		}
 		errServerResp(c, err)
@@ -69,7 +77,7 @@ func (o *online) getUserOnlineHandler(c *gin.Context) {
 func (o *online) putuserOnlineHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	var input struct {
-		Online bool `json:"online" binding:"required"`
+		Online *bool `json:"online" binding:"required"`
 	}
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
@@ -82,10 +90,14 @@ func (o *online) putuserOnlineHandler(c *gin.Context) {
 		}
 		return
 	}
-	err = o.onlineSvc.PutOnline(userId, input.Online)
+	err = o.onlineSvc.PutOnline(userId, *input.Online)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "user_id is not found")
+			errNotFoundResp(c, "userId is not found")
+			return
+		}
+		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+			errResourceConflictResp(c)
 			return
 		}
 		errServerResp(c, err)

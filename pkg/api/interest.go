@@ -180,7 +180,7 @@ func (i *interest) postInterestHobbiesHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Hobbies": "each hobbies must be unique and has more than 2 and less than 50 character",
+			"Hobbies": "each hobbies must be unique, less than 10 and has more than 2 and less than 50 character",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -294,7 +294,7 @@ func (i *interest) deleteInterestHobbiesHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "every id is not found")
+			errNotFoundResp(c, "one of the id is not found")
 			return
 		}
 		errServerResp(c, err)
@@ -429,7 +429,7 @@ func (i *interest) deleteInterestMovieSeriesHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "every id is not found")
+			errNotFoundResp(c, "one of the id is not found")
 			return
 		}
 		errServerResp(c, err)
@@ -564,7 +564,7 @@ func (i *interest) deleteInterestTravelingHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "every id is not found")
+			errNotFoundResp(c, "one of the id is not found")
 			return
 		}
 		errServerResp(c, err)
@@ -636,7 +636,7 @@ func (i *interest) putInterestSportHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Sports": "each sports must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new sport",
+			"Sports": "each sports must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new sports.",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -670,7 +670,7 @@ func (i *interest) putInterestSportHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": "success",
 		"data": gin.H{
-			"travels": input.Sports,
+			"sports": input.Sports,
 		},
 	})
 }
@@ -697,7 +697,7 @@ func (i *interest) deleteInterestSportHandler(c *gin.Context) {
 			return
 		}
 		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "every id is not found")
+			errNotFoundResp(c, "one of the id is not found")
 			return
 		}
 		errServerResp(c, err)

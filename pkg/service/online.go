@@ -52,6 +52,9 @@ func (o *online) GetOnline(userId string) (*domain.Online, error) {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrResourceNotFound
 		}
+		if errors.Is(err, context.Canceled) {
+			return nil, domain.ErrTooLongAccesingDB
+		}
 		return nil, err
 	}
 	return userOnline, nil
@@ -62,6 +65,9 @@ func (o *online) PutOnline(userId string, online bool) error {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.ErrResourceNotFound
+		}
+		if errors.Is(err, context.Canceled) {
+			return domain.ErrTooLongAccesingDB
 		}
 		return err
 	}

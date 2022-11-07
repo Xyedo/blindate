@@ -290,7 +290,7 @@ func (i *interest) DeleteInterestHobbies(interestId string, ids []string) (int64
 			return err
 		}
 		row = ro
-		_, err = q.ExecContext(ctx, statsHobbiesMinusQ, len(ids)-1, interestId)
+		_, err = q.ExecContext(ctx, statsHobbiesMinusQ, len(ids), interestId)
 		if err != nil {
 			return err
 		}

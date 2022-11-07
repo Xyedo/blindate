@@ -46,7 +46,6 @@ func Routes(route Route) http.Handler {
 			auth.PATCH("/", ru.patchUserByIdHandler)
 
 			ro := route.Online
-			//TODO: TEST Online HANDLER
 			auth.POST("/online", ro.postUserOnlineHandler)
 			auth.GET("/online", ro.getUserOnlineHandler)
 			auth.PUT("/online", ro.putuserOnlineHandler)
@@ -66,7 +65,6 @@ func Routes(route Route) http.Handler {
 			auth.POST("/interests/bio", ri.postInterestBioHandler)
 			auth.PUT("/interests/bio", ri.putInterestBioHandler)
 
-			//TODO: TEST INTEREST HANDLER
 			interest := auth.Group("/interest/:interestId", validateInterest())
 			{
 				interest.POST("/hobbies", ri.postInterestHobbiesHandler)
