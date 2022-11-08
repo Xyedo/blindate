@@ -4,5 +4,5 @@ CREATE TABLE chats (
   messages TEXT NOT NULL,
   reply_to UUID REFERENCES chats(id),
   sent_at TIMESTAMPTZ NOT NULL,
-  seen_at TIMESTAMPTZ NOT NULL
+  seen_at TIMESTAMPTZ
 );

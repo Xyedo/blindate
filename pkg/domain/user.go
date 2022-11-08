@@ -8,6 +8,7 @@ type User struct {
 	ID             string    `db:"id" json:"id"`
 	FullName       string    `db:"full_name" json:"fullName"`
 	Email          string    `db:"email" json:"email"`
+	ImageProfile   string    `db:"image_profile" json:"imageProfile"`
 	Password       string    `db:"-" json:"-"`
 	HashedPassword string    `db:"password" json:"-"`
 	Active         bool      `db:"active" json:"-"`

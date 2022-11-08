@@ -16,6 +16,10 @@ var (
 
 type conversationRepo interface {
 	InsertConversation(convo *domain.Conversation) error
+	SelectConversationById(convoId string) (*domain.Conversation, error)
+	SelectConversationByUserId(UserId string) ([]domain.Conversation, error)
+	UpdateDayPass(convoId string) error
+	UpdateChatRow(convoId string) error
 }
 
 func NewConversation(convRepo conversationRepo) *conversation {
@@ -29,7 +33,7 @@ type conversation struct {
 }
 
 func (c *conversation) CreateConversation(conv *domain.Conversation) error {
-	if conv.FromId == conv.ToId {
+	if conv.FromUser.ID == conv.ToUser.ID {
 		return ErrConvoWithSelf
 	}
 	//TODO: check if has been match or not
@@ -50,6 +54,62 @@ func (c *conversation) CreateConversation(conv *domain.Conversation) error {
 				return domain.ErrUniqueConstraint23505
 			}
 			return pqErr
+		}
+		return err
+	}
+	return nil
+}
+
+func (c *conversation) FindConversationById(convoId string) (*domain.Conversation, error) {
+	conv, err := c.convRepo.SelectConversationById(convoId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.ErrResourceNotFound
+		}
+		if errors.Is(err, context.Canceled) {
+			return nil, domain.ErrTooLongAccesingDB
+		}
+		return nil, err
+	}
+	return conv, nil
+}
+
+func (c *conversation) GetConversationByUserId(userId string) ([]domain.Conversation, error) {
+	convs, err := c.convRepo.SelectConversationByUserId(userId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.ErrResourceNotFound
+		}
+		if errors.Is(err, context.Canceled) {
+			return nil, domain.ErrTooLongAccesingDB
+		}
+		return nil, err
+	}
+	return convs, nil
+}
+
+func (c *conversation) UpdateConvRow(convoId string) error {
+	err := c.convRepo.UpdateChatRow(convoId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.ErrResourceNotFound
+		}
+		if errors.Is(err, context.Canceled) {
+			return domain.ErrTooLongAccesingDB
+		}
+		return err
+	}
+	return nil
+}
+
+func (c *conversation) UpdateConvDay(convoId string) error {
+	err := c.convRepo.UpdateDayPass(convoId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.ErrResourceNotFound
+		}
+		if errors.Is(err, context.Canceled) {
+			return domain.ErrTooLongAccesingDB
 		}
 		return err
 	}
