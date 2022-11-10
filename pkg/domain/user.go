@@ -7,6 +7,7 @@ import (
 type User struct {
 	ID             string    `db:"id" json:"id"`
 	FullName       string    `db:"full_name" json:"fullName"`
+	Alias          string    `db:"alias" json:"alias"`
 	Email          string    `db:"email" json:"email"`
 	ImageProfile   string    `db:"image_profile" json:"imageProfile"`
 	Password       string    `db:"-" json:"-"`

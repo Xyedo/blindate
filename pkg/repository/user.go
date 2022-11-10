@@ -20,9 +20,18 @@ type userCon struct {
 
 func (u *userCon) InsertUser(user *domain.User) error {
 	query := `
-	INSERT INTO users(full_name, email, "password", dob, created_at, updated_at)
-	VALUES($1,$2,$3,$4,$5,$5) RETURNING id`
-	args := []any{user.FullName, user.Email, user.HashedPassword, user.Dob, time.Now()}
+	INSERT INTO users(
+		full_name, 
+		alias, 
+		image_profile, 
+		email, 
+		"password", 
+		dob,
+		created_at, 
+		updated_at
+	)
+	VALUES($1,$2,$3,$4,$5,$6,$7,$7) RETURNING id`
+	args := []any{user.FullName, user.Alias, user.ImageProfile, user.Email, user.HashedPassword, user.Dob, time.Now()}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -38,10 +47,18 @@ func (u *userCon) InsertUser(user *domain.User) error {
 func (u *userCon) UpdateUser(user *domain.User) error {
 	query := `
 		UPDATE users
-		SET full_name = $1, email = $2, "password" = $3, dob=$4, active=$5, updated_at = $6
-		WHERE id = $7
+		SET 
+			full_name = $1, 
+			alias=$2, 
+			image_profile= $3,
+			email = $4, 
+			"password" = $5, 
+			dob=$6, 
+			active=$7, 
+			updated_at = $8
+		WHERE id = $9
 		RETURNING id`
-	args := []any{user.FullName, user.Email, user.HashedPassword, user.Dob, user.Active, time.Now(), user.ID}
+	args := []any{user.FullName, user.Alias, user.ImageProfile, user.Email, user.HashedPassword, user.Dob, user.Active, time.Now(), user.ID}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	var id string
@@ -55,7 +72,7 @@ func (u *userCon) UpdateUser(user *domain.User) error {
 func (u *userCon) GetUserById(id string) (*domain.User, error) {
 	query := `
 		SELECT 
-			id, full_name, email, "password",active, dob, created_at, updated_at
+			id, alias, full_name, image_profile, email, "password",active, dob, created_at, updated_at
 		FROM users
 		WHERE id = $1`
 
