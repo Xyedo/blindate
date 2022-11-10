@@ -43,11 +43,22 @@ func (c *chat) SelectConversationById(convoId string) (*domain.Conversation, err
 		convo.day_pass AS day_pass,
 		creator.*,
 		recipient.*
+		c.messages AS last_messages,
+		c.sent_at AS last_messages_sent_at,
+		c.seen_at AS last_messages_seen_at
 	FROM conversations AS convo 
 	JOIN users AS creator
 		ON creator.id = convo.from_id
 	JOIN users AS recipient
 		ON recipient.id = convo.to_id
+	LEFT JOIN (
+		SELECT DISTINCT ON (conversation_id) 
+			messages,
+			sent_at,
+			seen_at
+		FROM chats 
+		ORDER BY conversation_id, sent_at DESC
+		) chats AS c ON c.conversation_id = convo.id
 	WHERE convo.id = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -72,18 +83,18 @@ func (c *chat) SelectConversationByUserId(UserId string) ([]domain.Conversation,
 		c.sent_at AS last_messages_sent_at,
 		c.seen_at AS last_messages_seen_at
 	FROM conversations AS conv
+	LEFT JOIN users AS creator
+		ON creator.id = conv.from_id
+	LEFT JOIN users AS recipient
+		ON recipient.id = conv.to_id
 	LEFT JOIN (
 		SELECT DISTINCT ON (conversation_id) 
 			messages,
 			sent_at,
 			seen_at
 		FROM chats 
-		ORDERY BY conversation_id, sent_at DESC
+		ORDER BY conversation_id, sent_at DESC
 		) chats AS c ON c.conversation_id = convo.id
-	LEFT JOIN users AS creator
-		ON creator.id = conv.from_id
-	LEFT JOIN users AS recipient
-		ON recipient.id = conv.to_id
 	WHERE 
 		creator.id = $1 OR
 		recipient.id = $1`

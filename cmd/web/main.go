@@ -55,10 +55,11 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
+	uploader := service.NewS3()
 
 	userRepo := repository.NewUser(db)
 	userSvc := service.NewUser(userRepo)
-	userHandler := api.NewUser(userSvc)
+	userHandler := api.NewUser(userSvc, uploader)
 	healthcheckHander := api.NewHealthCheck()
 
 	basicInfoRepo := repository.NewBasicInfo(db)

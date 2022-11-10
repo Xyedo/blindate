@@ -52,29 +52,6 @@ func (c *chat) InsertNewChat(content *entity.Chat) error {
 	}
 	return nil
 }
-func (c *chat) GetChats(convoId string, limit int) ([]entity.Chat, error) {
-	query := `
-	SELECT 
-		chats.*
-		media.blob_link
-		media.media_type
-	FROM chats
-	LEFT JOIN media
-		ON chats.id = media.chat_id
-	WHERE chats.conversation_id=$1
-	ORDER BY sent_at DESC
-	LIMIT $2`
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	chats := []entity.Chat{}
-	err := c.SelectContext(ctx, &chats, query, convoId, limit)
-	if err != nil {
-		return nil, err
-	}
-	return chats, nil
-}
 
 func (c *chat) DeleteChat(chatId string) (int64, error) {
 	query := `
@@ -94,6 +71,46 @@ func (c *chat) DeleteChat(chatId string) (int64, error) {
 	return row, nil
 }
 
+func (c *chat) SelectChat(convoId string, filter entity.ChatFilter) ([]entity.Chat, error) {
+	query := `
+	SELECT 
+		chats.*
+		media.blob_link
+		media.media_type
+	FROM chats
+	LEFT JOIN media
+		ON chats.id = media.chat_id
+	WHERE 
+		chats.conversation_id=$1`
+	if filter.Cursor != nil {
+		if filter.Cursor.After {
+			query += ` (AND chats.sent_at > $2  AND chats.id = $3`
+		} else {
+			query += ` (AND chats.sent_at <= $2 AND chats.id = $3`
+		}
+		query += ` OR $2 = '' AND $3 = '')`
+	}
+	query += ` ORDER BY chats.sent_at DESC
+	LIMIT $4`
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var args []any
+
+	if filter.Cursor == nil {
+		args = []any{convoId, "", "", filter.Limit}
+	} else {
+		args = []any{convoId, filter.Cursor.At, filter.Cursor.Id, filter.Limit}
+	}
+
+	chats := []entity.Chat{}
+	err := c.SelectContext(ctx, &chats, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	return chats, nil
+}
 func (c *chat) execTx(ctx context.Context, q func(q *sqlx.DB) error) error {
 	return execGeneric(c.DB, ctx, q, &sql.TxOptions{Isolation: sql.LevelReadCommitted, ReadOnly: false})
 }

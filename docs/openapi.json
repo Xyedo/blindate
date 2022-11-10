@@ -1,0 +1,427 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Blindate Api",
+    "description": "This is a simple API",
+    "contact": {
+      "email": "hafidmahdi23@gmail.com"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "version": "0.0.1"
+  },
+  "servers": [
+    {
+      "url": "https://virtserver.swaggerhub.com/Xyedo/blindate-api/0.0.1",
+      "description": "SwaggerHub API Auto Mocking"
+    }
+  ],
+  "tags": [
+    {
+      "name": "signup"
+    },
+    {
+      "name": "users",
+      "description": "must sign in first"
+    }
+  ],
+  "paths": {
+    "/users": {
+      "post": {
+        "tags": [
+          "signup"
+        ],
+        "summary": "Sign Up New User",
+        "operationId": "postUserHandler",
+        "requestBody": {
+          "description": "Inventory item to add",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReqUser"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "item created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inline_response_201"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inline_response_409"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "unique value on email",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inline_response_422"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{userId}": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Get User By Id",
+        "operationId": "getUserById",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "description": "unique indentifier for users",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "item created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inline_response_200"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "userId not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inline_response_404"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inline_response_409"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "users"
+        ],
+        "summary": "Edit current User",
+        "operationId": "patchUserByIdHandler",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "description": "unique indentifier for users",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "if using oldPassword props, you must use newPassword prop too",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/users_userId_body"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "item edited",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inline_response_200_1"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "userId not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inline_response_404"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/inline_response_409"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "user": {
+        "required": [
+          "dob",
+          "email",
+          "fullName"
+        ],
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "example": "Najwa Sihab"
+          },
+          "email": {
+            "uniqueItems": true,
+            "type": "string",
+            "format": "email"
+          },
+          "dob": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "ReqUser": {
+        "required": [
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "password": {
+            "minLength": 8,
+            "type": "string",
+            "format": "password"
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/user"
+          }
+        ]
+      },
+      "ResUser": {
+        "required": [
+          "createdAt",
+          "id",
+          "imageProfile",
+          "updatedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+          },
+          "fullName": {
+            "type": "string",
+            "example": "Najwa Sihab"
+          },
+          "email": {
+            "uniqueItems": true,
+            "type": "string",
+            "format": "email"
+          },
+          "imageProfile": {
+            "type": "string",
+            "format": "uuid",
+            "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/user"
+          }
+        ]
+      },
+      "inline_response_201": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "success"
+          },
+          "message": {
+            "type": "string",
+            "example": "confirmation email sent, check your email"
+          },
+          "data": {
+            "$ref": "#/components/schemas/inline_response_201_data"
+          }
+        }
+      },
+      "inline_response_422": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "fail"
+          },
+          "message": {
+            "type": "string",
+            "example": "email is already taken"
+          }
+        }
+      },
+      "inline_response_409": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "fail"
+          },
+          "message": {
+            "type": "string",
+            "example": "requirest conflicted, please try again"
+          }
+        }
+      },
+      "inline_response_200": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "success"
+          },
+          "data": {
+            "$ref": "#/components/schemas/inline_response_200_data"
+          }
+        }
+      },
+      "inline_response_404": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "fail"
+          },
+          "message": {
+            "type": "string",
+            "example": "userId is not found"
+          }
+        }
+      },
+      "users_userId_body": {
+        "type": "object",
+        "properties": {
+          "fullName": {
+            "type": "string",
+            "example": "Najwa Sihab"
+          },
+          "email": {
+            "uniqueItems": true,
+            "type": "string",
+            "format": "email"
+          },
+          "oldPassword": {
+            "minLength": 8,
+            "type": "string",
+            "format": "password"
+          },
+          "newPassword": {
+            "minLength": 8,
+            "type": "string",
+            "format": "password"
+          },
+          "dob": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "anyOf": [
+          {
+            "required": [
+              "newPassword",
+              "oldPassword"
+            ]
+          }
+        ]
+      },
+      "inline_response_200_1": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "success"
+          },
+          "message": {
+            "type": "string",
+            "example": "user updated"
+          }
+        }
+      },
+      "inline_response_201_data": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+          }
+        }
+      },
+      "inline_response_200_data": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/ResUser"
+          }
+        }
+      }
+    }
+  }
+}

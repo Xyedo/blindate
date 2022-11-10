@@ -44,7 +44,7 @@ func Routes(route Route) http.Handler {
 		{
 			auth.GET("/", ru.getUserByIdHandler)
 			auth.PATCH("/", ru.patchUserByIdHandler)
-
+			auth.PUT("/profile-picture", ru.putUserImageProfile)
 			ro := route.Online
 			auth.POST("/online", ro.postUserOnlineHandler)
 			auth.GET("/online", ro.getUserOnlineHandler)

@@ -62,6 +62,7 @@ func (c *conversation) CreateConversation(conv *domain.Conversation) error {
 
 func (c *conversation) FindConversationById(convoId string) (*domain.Conversation, error) {
 	conv, err := c.convRepo.SelectConversationById(convoId)
+	//TODO: check if has been reveal, if not, show generic profile_pic and alias
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrResourceNotFound
@@ -76,6 +77,7 @@ func (c *conversation) FindConversationById(convoId string) (*domain.Conversatio
 
 func (c *conversation) GetConversationByUserId(userId string) ([]domain.Conversation, error) {
 	convs, err := c.convRepo.SelectConversationByUserId(userId)
+	//TODO: check if has been reveal, if not, show generic profile_pic and alias
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrResourceNotFound
