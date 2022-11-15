@@ -8,13 +8,13 @@ import (
 )
 
 type Chat struct {
-	Id             string             `db:"id"`
-	ConversationId string             `db:"conversation_id"`
-	Messages       string             `db:"messages"`
-	ReplyTo        sql.NullString     `db:"reply_to"`
-	SentAt         time.Time          `db:"sent_at"`
-	SeenAt         sql.NullTime       `db:"seen_at"`
-	Attachment     *domain.Attachment `db:"attachment"`
+	Id             string                 `db:"id"`
+	ConversationId string                 `db:"conversation_id"`
+	Messages       string                 `db:"messages"`
+	ReplyTo        sql.NullString         `db:"reply_to"`
+	SentAt         time.Time              `db:"sent_at"`
+	SeenAt         sql.NullTime           `db:"seen_at"`
+	Attachment     *domain.ChatAttachment `db:"attachment"`
 }
 
 type ChatFilter struct {

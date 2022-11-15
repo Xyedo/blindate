@@ -10,6 +10,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/repository"
 )
 
 var (
@@ -23,20 +24,14 @@ var (
 	ErrRefZodiacField           = fmt.Errorf("%w::zodiac", domain.ErrRefNotFound23503)
 )
 
-type basicInfoRepo interface {
-	InsertBasicInfo(basicinfo *entity.BasicInfo) (int64, error)
-	GetBasicInfoByUserId(id string) (*entity.BasicInfo, error)
-	UpdateBasicInfo(bInfo *entity.BasicInfo) (int64, error)
-}
-
-func NewBasicInfo(bInfoRepo basicInfoRepo) *basicInfo {
+func NewBasicInfo(bInfoRepo repository.BasicInfoRepo) *basicInfo {
 	return &basicInfo{
 		BasicInfoRepo: bInfoRepo,
 	}
 }
 
 type basicInfo struct {
-	BasicInfoRepo basicInfoRepo
+	BasicInfoRepo repository.BasicInfoRepo
 }
 
 func (b *basicInfo) CreateBasicInfo(bInfo *domain.BasicInfo) error {

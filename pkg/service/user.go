@@ -7,24 +7,20 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
+	"github.com/xyedo/blindate/pkg/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type userRepo interface {
-	InsertUser(user *domain.User) error
-	GetUserByEmail(email string) (*domain.User, error)
-	GetUserById(id string) (*domain.User, error)
-	UpdateUser(user *domain.User) error
-}
+var ErrMaxProfilePicture = errors.New("excedeed profile picture constraint")
 
-func NewUser(userRepo userRepo) *user {
+func NewUser(userRepo repository.UserRepo) *user {
 	return &user{
 		userRepository: userRepo,
 	}
 }
 
 type user struct {
-	userRepository userRepo
+	userRepository repository.UserRepo
 }
 
 func (u *user) CreateUser(newUser *domain.User) error {
@@ -63,6 +59,18 @@ func (u *user) GetUserById(id string) (*domain.User, error) {
 		}
 		return nil, err
 	}
+	profPics, err := u.userRepository.SelectProfilePicture(id, nil)
+	if err != nil {
+		//TODO: Error handling
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.ErrResourceNotFound
+		}
+		if errors.Is(err, context.Canceled) {
+			return nil, domain.ErrTooLongAccesingDB
+		}
+		return nil, err
+	}
+	user.ProfilePic = profPics
 	return user, nil
 }
 func (u *user) VerifyCredential(email, password string) (string, error) {
@@ -107,6 +115,30 @@ func (u *user) UpdateUser(user *domain.User) error {
 		return err
 	}
 	return nil
+}
+
+func (u *user) CreateNewProfilePic(profPicParam domain.ProfilePicture) (string, error) {
+	profPics, err := u.userRepository.SelectProfilePicture(profPicParam.UserId, nil)
+	if err != nil {
+		//TODO:handle error
+		return "", err
+	}
+	if len(profPics) >= 5 {
+		return "", ErrMaxProfilePicture
+	}
+	if profPicParam.Selected {
+		_, err := u.userRepository.ProfilePicSelectedToFalse(profPicParam.UserId)
+		if err != nil {
+			//TODO:handle error
+			return "", err
+		}
+	}
+	id, err := u.userRepository.CreateProfilePicture(profPicParam.UserId, profPicParam.PictureLink, profPicParam.Selected)
+	if err != nil {
+		//TODO: handle error
+		return "", err
+	}
+	return id, nil
 }
 
 func hashAndSalt(password string) (string, error) {

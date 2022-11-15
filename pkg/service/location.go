@@ -10,23 +10,17 @@ import (
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/repository"
 )
 
-type locationRepo interface {
-	InsertNewLocation(location *entity.Location) (int64, error)
-	UpdateLocation(location *entity.Location) (int64, error)
-	GetLocationByUserId(id string) (*entity.Location, error)
-	GetClosestUser(userId string, limit int) ([]domain.User, error)
-}
-
-func NewLocation(locationRepo locationRepo) *location {
+func NewLocation(locationRepo repository.LocationRepo) *location {
 	return &location{
 		locationRepo: locationRepo,
 	}
 }
 
 type location struct {
-	locationRepo locationRepo
+	locationRepo repository.LocationRepo
 }
 
 func (l *location) CreateNewLocation(location *domain.Location) error {

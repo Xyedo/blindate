@@ -9,6 +9,12 @@ import (
 	"github.com/xyedo/blindate/pkg/entity"
 )
 
+type ChatRepo interface {
+	InsertNewChat(content *entity.Chat) error
+	SelectChat(convoId string, filter entity.ChatFilter) ([]entity.Chat, error)
+	DeleteChat(chatId string) (int64, error)
+}
+
 func NewChat(conn *sqlx.DB) *chat {
 	return &chat{
 		conn,

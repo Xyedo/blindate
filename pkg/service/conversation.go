@@ -8,28 +8,21 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
+	"github.com/xyedo/blindate/pkg/repository"
 )
 
 var (
 	ErrConvoWithSelf = fmt.Errorf("conversation: cannot create conversation with yourself")
 )
 
-type conversationRepo interface {
-	InsertConversation(convo *domain.Conversation) error
-	SelectConversationById(convoId string) (*domain.Conversation, error)
-	SelectConversationByUserId(UserId string) ([]domain.Conversation, error)
-	UpdateDayPass(convoId string) error
-	UpdateChatRow(convoId string) error
-}
-
-func NewConversation(convRepo conversationRepo) *conversation {
+func NewConversation(convRepo repository.ConversationRepo) *conversation {
 	return &conversation{
 		convRepo: convRepo,
 	}
 }
 
 type conversation struct {
-	convRepo conversationRepo
+	convRepo repository.ConversationRepo
 }
 
 func (c *conversation) CreateConversation(conv *domain.Conversation) error {
@@ -60,20 +53,20 @@ func (c *conversation) CreateConversation(conv *domain.Conversation) error {
 	return nil
 }
 
-func (c *conversation) FindConversationById(convoId string) (*domain.Conversation, error) {
-	conv, err := c.convRepo.SelectConversationById(convoId)
-	//TODO: check if has been reveal, if not, show generic profile_pic and alias
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domain.ErrResourceNotFound
-		}
-		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccesingDB
-		}
-		return nil, err
-	}
-	return conv, nil
-}
+// func (c *conversation) FindConversationById(convoId string) (*domain.Conversation, error) {
+// 	conv, err := c.convRepo.SelectConversationById(convoId)
+// 	//TODO: check if has been reveal, if not, show generic profile_pic and alias
+// 	if err != nil {
+// 		if errors.Is(err, sql.ErrNoRows) {
+// 			return nil, domain.ErrResourceNotFound
+// 		}
+// 		if errors.Is(err, context.Canceled) {
+// 			return nil, domain.ErrTooLongAccesingDB
+// 		}
+// 		return nil, err
+// 	}
+// 	return conv, nil
+// }
 
 func (c *conversation) GetConversationByUserId(userId string) ([]domain.Conversation, error) {
 	convs, err := c.convRepo.SelectConversationByUserId(userId)

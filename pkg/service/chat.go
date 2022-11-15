@@ -7,25 +7,21 @@ import (
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/repository"
 )
 
-type chatRepo interface {
-	InsertNewChat(content *entity.Chat) error
-	SelectChat(convoId string, filter entity.ChatFilter) ([]entity.Chat, error)
-	DeleteChat(chatId string) (int64, error)
-}
-
-func NewChat(chatRepo chatRepo) *chat {
+func NewChat(chatRepo repository.ChatRepo) *chat {
 	return &chat{
 		chatRepo: chatRepo,
 	}
 }
 
 type chat struct {
-	chatRepo chatRepo
+	chatRepo repository.ChatRepo
 }
 
 func (c *chat) CreateNewChat(content *domain.Chat) error {
+
 	//TODO: check if has been match or not
 
 	chatEntity := c.convertToEntity(content)

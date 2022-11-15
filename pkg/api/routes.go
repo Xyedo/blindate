@@ -23,6 +23,7 @@ func Routes(route Route) http.Handler {
 
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
+	r.MaxMultipartMemory = 8 << 20
 
 	v1 := r.Group("/api/v1")
 	{

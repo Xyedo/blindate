@@ -7,6 +7,12 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+type AuthRepo interface {
+	AddRefreshToken(token string) (int64, error)
+	VerifyRefreshToken(token string) error
+	DeleteRefreshToken(token string) (int64, error)
+}
+
 func NewAuth(conn *sqlx.DB) *authConn {
 	return &authConn{
 		conn,

@@ -9,6 +9,7 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
+	"github.com/xyedo/blindate/pkg/repository"
 )
 
 var (
@@ -21,40 +22,14 @@ var (
 	ErrCheckConstrainSports      = fmt.Errorf("database: over than 10 unit")
 )
 
-type interestRepo interface {
-	InsertNewStats(interestId string) error
-
-	GetInterest(userId string) (*domain.Interest, error)
-
-	InsertInterestBio(intr *domain.Bio) error
-	SelectInterestBio(userId string) (*domain.Bio, error)
-	UpdateInterestBio(intr *domain.Bio) error
-
-	InsertInterestHobbies(interestId string, hobbies []domain.Hobbie) error
-	UpdateInterestHobbies(interestId string, hobbies []domain.Hobbie) (int64, error)
-	DeleteInterestHobbies(interestId string, ids []string) (int64, error)
-
-	InsertInterestMovieSeries(interestId string, movieSeries []domain.MovieSerie) error
-	UpdateInterestMovieSeries(interestId string, movieSeries []domain.MovieSerie) (int64, error)
-	DeleteInterestMovieSeries(interestId string, ids []string) (int64, error)
-
-	InsertInterestTraveling(interestId string, travels []domain.Travel) error
-	UpdateInterestTraveling(interestId string, travels []domain.Travel) (int64, error)
-	DeleteInterestTraveling(interestId string, ids []string) (int64, error)
-
-	InsertInterestSports(interestId string, sports []domain.Sport) error
-	UpdateInterestSport(interestId string, sports []domain.Sport) (int64, error)
-	DeleteInterestSports(interestId string, ids []string) (int64, error)
-}
-
-func NewInterest(intrRepo interestRepo) *interest {
+func NewInterest(intrRepo repository.InterestRepo) *interest {
 	return &interest{
 		interestRepo: intrRepo,
 	}
 }
 
 type interest struct {
-	interestRepo interestRepo
+	interestRepo repository.InterestRepo
 }
 
 func (i *interest) GetInterest(userId string) (*domain.Interest, error) {

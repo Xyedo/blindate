@@ -10,10 +10,17 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
 const BUCKET_NAME = "blindate-bucket"
+
+type Attachment interface {
+	UploadBlob(file io.Reader, attach domain.Uploader) (string, error)
+	DeleteBlob(key string) error
+	GetPresignedUrl(key string) (string, error)
+}
 
 func NewS3() *attachment {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -28,29 +35,46 @@ func NewS3() *attachment {
 			u.PartSize = 10 << 20
 		}),
 		presignClient: s3.NewPresignClient(client),
+		s3client:      client,
 	}
 }
 
 type attachment struct {
 	uploader      *manager.Uploader
 	presignClient *s3.PresignClient
+	s3client      *s3.Client
 }
 
-func (a *attachment) UploadBlob(file io.Reader, length int64, contentType string) (string, error) {
+func (a *attachment) UploadBlob(file io.Reader, attach domain.Uploader) (string, error) {
+	//TODO: better error handling
+	key := attach.Prefix + "/" + util.RandomUUID() + attach.Ext
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	key := util.RandomUUID()
 	_, err := a.uploader.Upload(ctx, &s3.PutObjectInput{
 		Bucket:        aws.String(BUCKET_NAME),
 		Key:           aws.String(key),
 		Body:          file,
-		ContentLength: length,
-		ContentType:   aws.String(contentType),
+		ContentLength: attach.Length,
+		ContentType:   aws.String(attach.ContentType),
 	})
 	if err != nil {
 		return "", err
 	}
 	return key, nil
+}
+
+func (a *attachment) DeleteBlob(key string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_, err := a.s3client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Key:    &key,
+		Bucket: aws.String(BUCKET_NAME),
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (a *attachment) GetPresignedUrl(key string) (string, error) {

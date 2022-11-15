@@ -86,6 +86,10 @@ func Test_GetUserByEmail(t *testing.T) {
 	})
 
 }
+
+func Test_CreateProfilePicture(t *testing.T) {
+
+}
 func createNewAccount(t *testing.T) *domain.User {
 	repo := NewUser(testQuery)
 	hashed, err := bcrypt.GenerateFromPassword([]byte(util.RandomString(12)), 12)

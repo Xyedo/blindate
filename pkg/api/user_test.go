@@ -21,6 +21,7 @@ import (
 	"github.com/xyedo/blindate/pkg/domain"
 	mockrepo "github.com/xyedo/blindate/pkg/repository/mock"
 	"github.com/xyedo/blindate/pkg/service"
+	mocksvc "github.com/xyedo/blindate/pkg/service/mock"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
@@ -52,7 +53,8 @@ func Test_PostUserHandler(t *testing.T) {
 
 				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).Return(nil)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusCreated,
 			wantHeader: map[string]string{
@@ -78,7 +80,8 @@ func Test_PostUserHandler(t *testing.T) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusBadRequest,
 			wantHeader: map[string]string{
@@ -101,7 +104,8 @@ func Test_PostUserHandler(t *testing.T) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusBadRequest,
 			wantHeader: map[string]string{
@@ -124,7 +128,8 @@ func Test_PostUserHandler(t *testing.T) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusBadRequest,
 			wantHeader: map[string]string{
@@ -147,7 +152,8 @@ func Test_PostUserHandler(t *testing.T) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantHeader: map[string]string{
@@ -174,7 +180,8 @@ func Test_PostUserHandler(t *testing.T) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantHeader: map[string]string{
@@ -195,7 +202,8 @@ func Test_PostUserHandler(t *testing.T) {
 
 				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).Return(nil)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusCreated,
 			wantHeader: map[string]string{
@@ -218,7 +226,8 @@ func Test_PostUserHandler(t *testing.T) {
 				}
 				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).Return(&pqErr)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantHeader: map[string]string{
@@ -232,7 +241,8 @@ func Test_PostUserHandler(t *testing.T) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantHeader: map[string]string{
@@ -253,7 +263,8 @@ func Test_PostUserHandler(t *testing.T) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantHeader: map[string]string{
@@ -273,7 +284,8 @@ func Test_PostUserHandler(t *testing.T) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantHeader: map[string]string{
@@ -293,7 +305,8 @@ func Test_PostUserHandler(t *testing.T) {
 
 				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).Return(context.Canceled)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusConflict,
 			wantHeader: map[string]string{
@@ -329,19 +342,21 @@ func Test_GetUserByIdHandler(t *testing.T) {
 	tests := []struct {
 		name      string
 		id        string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) (userSvc, *domain.User)
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) (userSvc, service.Attachment, *domain.User)
 		respFunc  func(t *testing.T, user *domain.User, resp *httptest.ResponseRecorder)
 	}{
 
 		{
 			name: "Valid Submission",
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (userSvc, *domain.User) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (userSvc, service.Attachment, *domain.User) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				users := createNewUser(t)
 				userRepo.EXPECT().GetUserById(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(users, nil)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+
 				userService := service.NewUser(userRepo)
-				return userService, users
+				return userService, attachSvc, users
 			},
 			respFunc: func(t *testing.T, user *domain.User, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, resp.Code)
@@ -360,12 +375,13 @@ func Test_GetUserByIdHandler(t *testing.T) {
 		{
 			name: "Valid URL Params but User Not Found",
 			id:   "d3aa0883-4a29-4a39-8f0e-2413c169bd9d",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (userSvc, *domain.User) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (userSvc, service.Attachment, *domain.User) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				users := createNewUser(t)
 				userRepo.EXPECT().GetUserById("d3aa0883-4a29-4a39-8f0e-2413c169bd9d").Times(1).Return(nil, sql.ErrNoRows)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				userService := service.NewUser(userRepo)
-				return userService, users
+				return userService, attachSvc, users
 			},
 			respFunc: func(t *testing.T, user *domain.User, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusNotFound, resp.Code)
@@ -384,8 +400,9 @@ func Test_GetUserByIdHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-			userSvc, user := tt.setupFunc(t, ctrl)
-			userH := NewUser(userSvc)
+			userSvc, attachSvc, user := tt.setupFunc(t, ctrl)
+
+			userH := NewUser(userSvc, attachSvc)
 			rr := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(rr)
 			c.Set("userId", tt.id)
@@ -418,7 +435,8 @@ func Test_PatchUserById(t *testing.T) {
 				user.FullName = "Bob Martin"
 				userRepo.EXPECT().UpdateUser(gomock.Eq(user)).Times(1).Return(nil)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusOK,
 			wantResp: map[string]any{
@@ -437,7 +455,8 @@ func Test_PatchUserById(t *testing.T) {
 				user.Email = "bob@martin.com"
 				userRepo.EXPECT().UpdateUser(gomock.Eq(user)).Times(1).Return(nil)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusOK,
 			wantResp: map[string]any{
@@ -461,7 +480,8 @@ func Test_PatchUserById(t *testing.T) {
 				user.Password = "newPa55word"
 				userRepo.EXPECT().UpdateUser(gomock.Not(nil)).Times(1).Return(nil)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantResp: map[string]any{
 				"status":  "success",
@@ -480,7 +500,8 @@ func Test_PatchUserById(t *testing.T) {
 				userRepo.EXPECT().GetUserByEmail(gomock.Eq(user.Email)).Times(1).Return(user, nil)
 				userRepo.EXPECT().UpdateUser(gomock.Not(nil)).Times(0)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantResp: map[string]any{
 				"status":  "fail",
@@ -498,7 +519,8 @@ func Test_PatchUserById(t *testing.T) {
 				userRepo.EXPECT().GetUserByEmail(gomock.Any()).Times(0)
 				userRepo.EXPECT().UpdateUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
@@ -521,7 +543,8 @@ func Test_PatchUserById(t *testing.T) {
 				userRepo.EXPECT().GetUserByEmail(gomock.Any()).Times(0)
 				userRepo.EXPECT().UpdateUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantResp: map[string]any{
 				"status":  "fail",
@@ -540,7 +563,8 @@ func Test_PatchUserById(t *testing.T) {
 				userRepo.EXPECT().GetUserById(gomock.Eq("d3aa0883-4a29-4a39-8f0e-2413c169bd9d")).Times(1).Return(nil, sql.ErrNoRows)
 				userRepo.EXPECT().UpdateUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
@@ -558,7 +582,8 @@ func Test_PatchUserById(t *testing.T) {
 				userRepo.EXPECT().GetUserById(gomock.Eq("d3aa0883-4a29-4a39-8f0e-2413c169bd9d")).Times(1).Return(user, nil)
 				userRepo.EXPECT().UpdateUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
-				return NewUser(userService)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				return NewUser(userService, attachSvc)
 			},
 			wantCode: http.StatusBadRequest,
 			wantResp: map[string]any{

@@ -10,7 +10,7 @@ migrate-down:
 	migrate -path $(MG_PATH) -database $(DB_DSN) down
 
 migrate-create:
-	migrate create -dir $(MG_PATH) -seq -ext .sql $()
+	migrate create -dir $(MG_PATH) -seq -ext .sql $(name)
 
 build-up:
 	docker compose up -d --build
