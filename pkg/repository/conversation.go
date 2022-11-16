@@ -160,7 +160,7 @@ func (c *chat) SelectConversationByUserId(UserId string) ([]domain.Conversation,
 			FROM users AS u
 			LEFT JOIN profile_picture as pp
 				ON pp.user_id = u.id
-			ORDER BY id ASC
+			ORDER BY id DESC
 			LIMIT 1
 		)
 		LIMIT 1
@@ -188,7 +188,7 @@ func (c *chat) SelectConversationByUserId(UserId string) ([]domain.Conversation,
 			FROM users AS u
 			LEFT JOIN profile_picture as pp
 				ON pp.user_id = u.id
-			ORDER BY id ASC
+			ORDER BY id DESC
 			LIMIT 1
 		)
 		LIMIT 1

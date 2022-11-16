@@ -160,7 +160,7 @@ func (u *userCon) ProfilePicSelectedToFalse(userId string) (int64, error) {
 	query := `
 	UPDATE profile_picture SET
 		selected = false
-	WHERE userId=$1`
+	WHERE user_id=$1`
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	res, err := u.ExecContext(ctx, query, userId)

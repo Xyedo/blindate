@@ -7,7 +7,9 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/xyedo/blindate/pkg/domain"
+	"github.com/xyedo/blindate/pkg/entity"
 	"github.com/xyedo/blindate/pkg/util"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -88,8 +90,101 @@ func Test_GetUserByEmail(t *testing.T) {
 }
 
 func Test_CreateProfilePicture(t *testing.T) {
+	repo := NewUser(testQuery)
+	t.Run("create valid pp", func(t *testing.T) {
+		usr := createNewAccount(t)
+		id, err := repo.CreateProfilePicture(usr.ID, util.RandomUUID()+".png", true)
+		require.NoError(t, err)
+		assert.NotEmpty(t, id)
+	})
+	t.Run("create valid pp but not false selected", func(t *testing.T) {
+		usr := createNewAccount(t)
+		id, err := repo.CreateProfilePicture(usr.ID, util.RandomUUID()+".png", false)
+		require.NoError(t, err)
+		assert.NotEmpty(t, id)
+	})
+	t.Run("create multiple profpic", func(t *testing.T) {
+		usr := createNewAccount(t)
+		for i := 0; i < 3; i++ {
+			id, err := repo.CreateProfilePicture(usr.ID, util.RandomUUID()+".png", false)
+			require.NoError(t, err)
+			assert.NotEmpty(t, id)
+		}
+	})
 
 }
+
+func Test_SelectProfilePic(t *testing.T) {
+	repo := NewUser(testQuery)
+	setupFunc := func(t *testing.T) string {
+		usr := createNewAccount(t)
+		for i := 0; i < 3; i++ {
+			id, err := repo.CreateProfilePicture(usr.ID, util.RandomUUID()+".png", false)
+			require.NoError(t, err)
+			assert.NotEmpty(t, id)
+		}
+		return usr.ID
+	}
+
+	t.Run("valid Select Profile Pic", func(t *testing.T) {
+		userId := setupFunc(t)
+		profpics, err := repo.SelectProfilePicture(userId, nil)
+		require.NoError(t, err)
+		assert.Equal(t, len(profpics), 3)
+
+	})
+	t.Run("valid Select with Params > Return 0", func(t *testing.T) {
+		userId := setupFunc(t)
+		selected := true
+		profpics, err := repo.SelectProfilePicture(userId, &entity.ProfilePicQuery{
+			Selected: &selected,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, len(profpics), 0)
+
+	})
+	t.Run("valid Select with Params > Return 1", func(t *testing.T) {
+		userId := setupFunc(t)
+		id, err := repo.CreateProfilePicture(userId, util.RandomUUID()+".png", true)
+		require.NoError(t, err)
+		require.NotEmpty(t, id)
+		selected := true
+		profpics, err := repo.SelectProfilePicture(userId, &entity.ProfilePicQuery{
+			Selected: &selected,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, len(profpics), 1)
+	})
+}
+
+func Test_ProfilePicSelectedToFalse(t *testing.T) {
+	repo := NewUser(testQuery)
+	usr := createNewAccount(t)
+	for i := 0; i < 3; i++ {
+		id, err := repo.CreateProfilePicture(usr.ID, util.RandomUUID()+".png", true)
+		require.NoError(t, err)
+		assert.NotEmpty(t, id)
+	}
+	selected := true
+	profpics, err := repo.SelectProfilePicture(usr.ID, &entity.ProfilePicQuery{
+		Selected: &selected,
+	})
+	require.NoError(t, err)
+	require.Equal(t, len(profpics), 3)
+	require.Equal(t, profpics[0].UserId, usr.ID)
+
+	row, err := repo.ProfilePicSelectedToFalse(usr.ID)
+	require.NoError(t, err)
+	require.Equal(t, row, int64(3))
+
+	actualProfPic, err := repo.SelectProfilePicture(usr.ID, &entity.ProfilePicQuery{
+		Selected: &selected,
+	})
+	require.NoError(t, err)
+	require.Equal(t, len(actualProfPic), 0)
+
+}
+
 func createNewAccount(t *testing.T) *domain.User {
 	repo := NewUser(testQuery)
 	hashed, err := bcrypt.GenerateFromPassword([]byte(util.RandomString(12)), 12)

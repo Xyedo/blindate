@@ -51,6 +51,7 @@ func TestUploadAndPresignedIt(t *testing.T) {
 func testUpload(s3man *attachment, t *testing.T) string {
 	file, err := os.Open("../../assets/test.png")
 	require.NoError(t, err)
+	defer file.Close()
 	fileInfo, err := os.Stat(file.Name())
 	require.NoError(t, err)
 	key, err := s3man.UploadBlob(file, domain.Uploader{
