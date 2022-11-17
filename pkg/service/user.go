@@ -61,7 +61,6 @@ func (u *user) GetUserById(id string) (*domain.User, error) {
 	}
 	profPics, err := u.userRepository.SelectProfilePicture(id, nil)
 	if err != nil {
-		//TODO: Error handling
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrResourceNotFound
 		}
@@ -120,7 +119,12 @@ func (u *user) UpdateUser(user *domain.User) error {
 func (u *user) CreateNewProfilePic(profPicParam domain.ProfilePicture) (string, error) {
 	profPics, err := u.userRepository.SelectProfilePicture(profPicParam.UserId, nil)
 	if err != nil {
-		//TODO:handle error
+		if errors.Is(err, context.Canceled) {
+			return "", domain.ErrTooLongAccesingDB
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", ErrRefUserIdField
+		}
 		return "", err
 	}
 	if len(profPics) >= 5 {
@@ -129,13 +133,24 @@ func (u *user) CreateNewProfilePic(profPicParam domain.ProfilePicture) (string, 
 	if profPicParam.Selected {
 		_, err := u.userRepository.ProfilePicSelectedToFalse(profPicParam.UserId)
 		if err != nil {
-			//TODO:handle error
+			if errors.Is(err, context.Canceled) {
+				return "", domain.ErrTooLongAccesingDB
+			}
 			return "", err
 		}
 	}
 	id, err := u.userRepository.CreateProfilePicture(profPicParam.UserId, profPicParam.PictureLink, profPicParam.Selected)
 	if err != nil {
-		//TODO: handle error
+		if errors.Is(err, context.Canceled) {
+			return "", domain.ErrTooLongAccesingDB
+		}
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) {
+			if pqErr.Code == "23503" {
+				return "", ErrRefUserIdField
+			}
+			return "", pqErr
+		}
 		return "", err
 	}
 	return id, nil

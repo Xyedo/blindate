@@ -13,7 +13,8 @@ import (
 type ChatRepo interface {
 	InsertNewChat(content *entity.Chat) error
 	SelectChat(convoId string, filter entity.ChatFilter) ([]entity.Chat, error)
-	DeleteChat(chatId string) (int64, error)
+	UpdateSeenChatById(chatId string) error
+	DeleteChatById(chatId string) error
 }
 
 func NewChat(conn *sqlx.DB) *chat {
@@ -65,7 +66,7 @@ func (c *chat) InsertNewChat(content *entity.Chat) error {
 	return nil
 }
 
-func (c *chat) DeleteChat(chatId string) error {
+func (c *chat) DeleteChatById(chatId string) error {
 	query := `
 	DELETE FROM chats WHERE id = $1 RETURNING id`
 
@@ -78,6 +79,45 @@ func (c *chat) DeleteChat(chatId string) error {
 		return err
 	}
 
+	return nil
+}
+
+// func (c *chat) SelectChatById(chatId string) (*entity.Chat, error) {
+// 	query := `
+// 	SELECT
+// 		chats.id,
+// 		chats.conversation_id,
+// 		chats.author,
+// 		chats.messages,
+// 		chats.reply_to,
+// 		chats.sent_at,
+// 		chats.seen_at,
+// 		media.blob_link,
+// 		media.media_type
+// 	FROM chats
+// 	LEFT JOIN media
+// 		ON media.chat_id = chats.id
+// 	WHERE chats.id = $1`
+// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+// 	defer cancel()
+
+//		row := c.conn.QueryRowxContext(ctx, query, chatId)
+//		newChat, err := c.createNewChat(row)
+//		if err != nil {
+//			return nil, err
+//		}
+//		return &newChat, nil
+//	}
+func (c *chat) UpdateSeenChatById(chatId string) error {
+	query := `UPDATE chats SET seen_at = $1 WHERE id = $2 RETURNING id`
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var retId string
+
+	err := c.conn.GetContext(ctx, &retId, query, sql.NullTime{Valid: true, Time: time.Now()}, chatId)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -120,44 +160,50 @@ func (c *chat) SelectChat(convoId string, filter entity.ChatFilter) ([]entity.Ch
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	rows, err := c.conn.QueryContext(ctx, query, args...)
+	rows, err := c.conn.QueryxContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	chats := make([]entity.Chat, 0)
 	for rows.Next() {
-		var newChat entity.Chat
-		var blobLink sql.NullString
-		var mediaType sql.NullString
-		err = rows.Scan(
-			&newChat.Id,
-			&newChat.ConversationId,
-			&newChat.Author,
-			&newChat.Messages,
-			&newChat.ReplyTo,
-			&newChat.SentAt,
-			&newChat.SeenAt,
-			&blobLink,
-			&mediaType,
-		)
+		newChat, err := c.createNewChat(rows)
 		if err != nil {
 			return nil, err
 		}
-		if blobLink.Valid && mediaType.Valid {
-			newChat.Attachment = &domain.ChatAttachment{
-				ChatId:    newChat.Id,
-				BlobLink:  blobLink.String,
-				MediaType: mediaType.String,
-			}
-		}
-
 		chats = append(chats, newChat)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 	return chats, nil
+}
+func (*chat) createNewChat(row sqlx.ColScanner) (entity.Chat, error) {
+	var newChat entity.Chat
+	var blobLink sql.NullString
+	var mediaType sql.NullString
+	err := row.Scan(
+		&newChat.Id,
+		&newChat.ConversationId,
+		&newChat.Author,
+		&newChat.Messages,
+		&newChat.ReplyTo,
+		&newChat.SentAt,
+		&newChat.SeenAt,
+		&blobLink,
+		&mediaType,
+	)
+	if err != nil {
+		return entity.Chat{}, err
+	}
+	if blobLink.Valid && mediaType.Valid {
+		newChat.Attachment = &domain.ChatAttachment{
+			ChatId:    newChat.Id,
+			BlobLink:  blobLink.String,
+			MediaType: mediaType.String,
+		}
+	}
+	return newChat, nil
 }
 func (c *chat) execTx(ctx context.Context, q func(q *sqlx.DB) error) error {
 	return execGeneric(c.conn, ctx, q, &sql.TxOptions{Isolation: sql.LevelReadCommitted, ReadOnly: false})

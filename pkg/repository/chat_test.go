@@ -29,7 +29,6 @@ func Test_InsertNewChat(t *testing.T) {
 	})
 	t.Run("valid new chat w attachment", func(t *testing.T) {
 		convoId, fromUsr, _ := setup(t)
-		//TODO: this should not happen in prod. the author must have link by converstation
 
 		err := chat.InsertNewChat(&entity.Chat{
 			ConversationId: convoId,
@@ -106,18 +105,49 @@ func Test_InsertNewChat(t *testing.T) {
 		assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
 		assert.Contains(t, pqErr.Constraint, "author")
 	})
+	t.Run("invalid reply_to", func(t *testing.T) {
+		convoId, fromUsr, _ := setup(t)
+		err := chat.InsertNewChat(&entity.Chat{
+			ConversationId: convoId,
+			Author:         fromUsr,
+			Messages:       util.RandomString(12),
+			ReplyTo: sql.NullString{
+				Valid:  true,
+				String: util.RandomUUID(),
+			},
+			SentAt: time.Now(),
+		})
+		require.Error(t, err)
+		var pqErr *pq.Error
+		require.ErrorAs(t, err, &pqErr)
+		assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
+		assert.Contains(t, pqErr.Constraint, "reply_to")
+	})
+}
 
+func Test_UpdateSeenChatById(t *testing.T) {
+	chat := NewChat(testQuery)
+	t.Run("valid", func(t *testing.T) {
+		chatId := createNewChat(chat, t)
+		err := chat.UpdateSeenChatById(chatId)
+		require.NoError(t, err)
+	})
+	t.Run("invalid chatId", func(t *testing.T) {
+		err := chat.UpdateSeenChatById(util.RandomUUID())
+		require.Error(t, err)
+		assert.ErrorIs(t, err, sql.ErrNoRows)
+	})
 }
 
 func Test_DeleteChat(t *testing.T) {
 	chat := NewChat(testQuery)
 	t.Run("valid delete", func(t *testing.T) {
 		chatId := createNewChat(chat, t)
-		err := chat.DeleteChat(chatId)
+		err := chat.DeleteChatById(chatId)
 		require.NoError(t, err)
 	})
 	t.Run("invalid chatId", func(t *testing.T) {
-		err := chat.DeleteChat(util.RandomUUID())
+		err := chat.DeleteChatById(util.RandomUUID())
 		require.Error(t, err)
 		require.ErrorIs(t, err, sql.ErrNoRows)
 	})
@@ -147,7 +177,7 @@ func Test_DeleteChat(t *testing.T) {
 			SentAt: time.Now(),
 		})
 		require.NoError(t, err)
-		err = chat.DeleteChat(newChat.Id)
+		err = chat.DeleteChatById(newChat.Id)
 		require.NoError(t, err)
 	})
 }
@@ -225,6 +255,7 @@ func Test_SelectChat(t *testing.T) {
 			require.NotEmpty(t, after20Chats)
 		})
 	})
+
 }
 func createNewChat(chat *chat, t *testing.T) string {
 	conv := NewConversation(testQuery)

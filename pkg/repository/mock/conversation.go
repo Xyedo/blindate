@@ -35,6 +35,20 @@ func (m *MockConversationRepo) EXPECT() *MockConversationRepoMockRecorder {
 	return m.recorder
 }
 
+// DeleteConversationById mocks base method.
+func (m *MockConversationRepo) DeleteConversationById(arg0 string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteConversationById", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteConversationById indicates an expected call of DeleteConversationById.
+func (mr *MockConversationRepoMockRecorder) DeleteConversationById(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteConversationById", reflect.TypeOf((*MockConversationRepo)(nil).DeleteConversationById), arg0)
+}
+
 // InsertConversation mocks base method.
 func (m *MockConversationRepo) InsertConversation(arg0, arg1 string) (string, error) {
 	m.ctrl.T.Helper()
@@ -48,6 +62,21 @@ func (m *MockConversationRepo) InsertConversation(arg0, arg1 string) (string, er
 func (mr *MockConversationRepoMockRecorder) InsertConversation(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertConversation", reflect.TypeOf((*MockConversationRepo)(nil).InsertConversation), arg0, arg1)
+}
+
+// SelectConversationById mocks base method.
+func (m *MockConversationRepo) SelectConversationById(arg0 string) (*domain.Conversation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SelectConversationById", arg0)
+	ret0, _ := ret[0].(*domain.Conversation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SelectConversationById indicates an expected call of SelectConversationById.
+func (mr *MockConversationRepoMockRecorder) SelectConversationById(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectConversationById", reflect.TypeOf((*MockConversationRepo)(nil).SelectConversationById), arg0)
 }
 
 // SelectConversationByUserId mocks base method.

@@ -111,6 +111,15 @@ func Test_CreateProfilePicture(t *testing.T) {
 			assert.NotEmpty(t, id)
 		}
 	})
+	t.Run("invalid userId", func(t *testing.T) {
+		id, err := repo.CreateProfilePicture(util.RandomUUID(), util.RandomUUID()+".png", false)
+		require.Error(t, err)
+		assert.Empty(t, id)
+		var pqErr *pq.Error
+		require.ErrorAs(t, err, &pqErr)
+		assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
+		assert.Contains(t, pqErr.Constraint, "user_id")
+	})
 
 }
 

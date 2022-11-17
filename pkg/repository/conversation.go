@@ -12,9 +12,11 @@ import (
 
 type ConversationRepo interface {
 	InsertConversation(fromUserId, toUserId string) (string, error)
+	SelectConversationById(convoId string) (*domain.Conversation, error)
 	SelectConversationByUserId(UserId string, filter *entity.ConvFilter) ([]domain.Conversation, error)
 	UpdateDayPass(convoId string) error
 	UpdateChatRow(convoId string) error
+	DeleteConversationById(convoId string) error
 }
 
 func NewConversation(conn *sqlx.DB) *conversation {
@@ -44,56 +46,76 @@ func (c *conversation) InsertConversation(fromUserId, toUserId string) (string, 
 	return convoId, nil
 }
 
-func (c *conversation) SelectConversationByUserId(UserId string, filter *entity.ConvFilter) ([]domain.Conversation, error) {
-	convQuery := `
+var selectConvo = `
+SELECT 
+conv.id AS id,
+conv.chat_rows AS chat_rows,
+conv.day_pass AS day_pass,
+creator.id AS creator_id,
+creator.full_name AS creator_full_name,
+creator.alias AS creator_alias,
+(
+	SELECT
+		picture_ref
+	FROM profile_picture 
+	WHERE user_id = creator.id
+	ORDER BY selected DESC, id DESC
+	LIMIT 1
+) AS creator_pp_ref,
+recipient.id AS recipient_id,
+recipient.full_name AS recipient_full_name,
+recipient.alias AS recipieint_alias,
+(
 	SELECT 
-		conv.id AS id,
-		conv.chat_rows AS chat_rows,
-		conv.day_pass AS day_pass,
-		creator.id AS creator_id,
-		creator.full_name AS creator_full_name,
-		creator.alias AS creator_alias,
-		(
-			SELECT
-				picture_ref
-			FROM profile_picture 
-			WHERE user_id = creator.id
-			ORDER BY selected DESC, id DESC
-			LIMIT 1
-		) AS creator_pp_ref,
-		recipient.id AS recipient_id,
-		recipient.full_name AS recipient_full_name,
-		recipient.alias AS recipieint_alias,
-		(
-			SELECT 
-				picture_ref
-			FROM profile_picture
-			WHERE user_id = recipient.id
-			ORDER BY selected DESC, id DESC
-			LIMIT 1
-		) AS recipient_pp_ref,
-		c.messages AS last_messages,
-		c.sent_at AS last_messages_sent_at,
-		c.seen_at AS last_messages_seen_at
-	FROM conversations AS conv
-	JOIN users AS creator 
-		ON creator.id = conv.from_id
-	JOIN users AS recipient
-		ON recipient.id = conv.to_id
-	LEFT JOIN (
-		SELECT DISTINCT ON (conversation_id) 
-			conversation_id,
-			messages,
-			sent_at,
-			seen_at
-		FROM chats 
-		ORDER BY conversation_id, sent_at DESC
-		) AS c ON c.conversation_id = conv.id
-	WHERE 
-		creator.id = $1 OR
-		recipient.id = $1
-	ORDER BY last_messages_sent_at DESC
-	LIMIT 20`
+		picture_ref
+	FROM profile_picture
+	WHERE user_id = recipient.id
+	ORDER BY selected DESC, id DESC
+	LIMIT 1
+) AS recipient_pp_ref,
+c.messages AS last_messages,
+c.sent_at AS last_messages_sent_at,
+c.seen_at AS last_messages_seen_at
+FROM conversations AS conv
+JOIN users AS creator 
+ON creator.id = conv.from_id
+JOIN users AS recipient
+ON recipient.id = conv.to_id
+LEFT JOIN (
+SELECT DISTINCT ON (conversation_id) 
+	conversation_id,
+	messages,
+	sent_at,
+	seen_at
+FROM chats 
+ORDER BY conversation_id, sent_at DESC
+) AS c ON c.conversation_id = conv.id`
+
+func (c *conversation) SelectConversationById(convoId string) (*domain.Conversation, error) {
+	convQuery := selectConvo +
+		` WHERE conv.id = $1`
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	row := c.conn.QueryRowxContext(ctx, convQuery, convoId)
+	newConv, err := c.createNewChat(row)
+	if err != nil {
+		return nil, err
+	}
+	if err = row.Err(); err != nil {
+		return nil, err
+	}
+	return newConv, nil
+
+}
+
+func (c *conversation) SelectConversationByUserId(UserId string, filter *entity.ConvFilter) ([]domain.Conversation, error) {
+	convQuery := selectConvo +
+		` WHERE 
+			creator.id = $1 OR
+			recipient.id = $1
+		ORDER BY last_messages_sent_at DESC
+		LIMIT 20`
 
 	args := []any{UserId}
 	if filter != nil {
@@ -104,7 +126,7 @@ func (c *conversation) SelectConversationByUserId(UserId string, filter *entity.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	rows, err := c.conn.QueryContext(ctx, convQuery, args...)
+	rows, err := c.conn.QueryxContext(ctx, convQuery, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -112,51 +134,11 @@ func (c *conversation) SelectConversationByUserId(UserId string, filter *entity.
 
 	convs := make([]domain.Conversation, 0)
 	for rows.Next() {
-		var newConv domain.Conversation
-
-		var creatorProfPic sql.NullString
-		var recipientProfPic sql.NullString
-
-		var lastMessage sql.NullString
-		var lastMessageSentAt sql.NullTime
-		var seenAt sql.NullTime
-
-		err = rows.Scan(
-			&newConv.Id,
-			&newConv.ChatRows,
-			&newConv.DayPass,
-			&newConv.FromUser.ID,
-			&newConv.FromUser.FullName,
-			&newConv.FromUser.Alias,
-			&creatorProfPic,
-			&newConv.ToUser.ID,
-			&newConv.ToUser.FullName,
-			&newConv.ToUser.Alias,
-			&recipientProfPic,
-			&lastMessage,
-			&lastMessageSentAt,
-			&seenAt,
-		)
+		newConv, err := c.createNewChat(rows)
 		if err != nil {
 			return nil, err
 		}
-		if creatorProfPic.Valid {
-			newConv.FromUser.ProfilePic = creatorProfPic.String
-		}
-		if recipientProfPic.Valid {
-			newConv.ToUser.ProfilePic = recipientProfPic.String
-		}
-		if lastMessage.Valid {
-			newConv.LastMessage = lastMessage.String
-		}
-		if lastMessageSentAt.Valid {
-			newConv.LastMessageSentAt = lastMessageSentAt.Time
-		}
-		if seenAt.Valid {
-			newConv.LastMessageSeenAt = &seenAt.Time
-		}
-
-		convs = append(convs, newConv)
+		convs = append(convs, *newConv)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
@@ -195,4 +177,62 @@ func (c *conversation) UpdateDayPass(convoId string) error {
 		return err
 	}
 	return nil
+}
+func (c *conversation) DeleteConversationById(convoId string) error {
+	query := `
+	DELETE from conversations WHERE id = $1 RETURNING id`
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var id string
+	err := c.conn.GetContext(ctx, &id, query, convoId)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *conversation) createNewChat(row sqlx.ColScanner) (*domain.Conversation, error) {
+	var newConv domain.Conversation
+
+	var creatorProfPic sql.NullString
+	var recipientProfPic sql.NullString
+
+	var lastMessage sql.NullString
+	var lastMessageSentAt sql.NullTime
+	var seenAt sql.NullTime
+	err := row.Scan(
+		&newConv.Id,
+		&newConv.ChatRows,
+		&newConv.DayPass,
+		&newConv.FromUser.ID,
+		&newConv.FromUser.FullName,
+		&newConv.FromUser.Alias,
+		&creatorProfPic,
+		&newConv.ToUser.ID,
+		&newConv.ToUser.FullName,
+		&newConv.ToUser.Alias,
+		&recipientProfPic,
+		&lastMessage,
+		&lastMessageSentAt,
+		&seenAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	if creatorProfPic.Valid {
+		newConv.FromUser.ProfilePic = creatorProfPic.String
+	}
+	if recipientProfPic.Valid {
+		newConv.ToUser.ProfilePic = recipientProfPic.String
+	}
+	if lastMessage.Valid {
+		newConv.LastMessage = lastMessage.String
+	}
+	if lastMessageSentAt.Valid {
+		newConv.LastMessageSentAt = lastMessageSentAt.Time
+	}
+	if seenAt.Valid {
+		newConv.LastMessageSeenAt = &seenAt.Time
+	}
+	return &newConv, nil
 }

@@ -44,6 +44,85 @@ func Test_InsertConversation(t *testing.T) {
 	})
 }
 
+func Test_SelectConversationById(t *testing.T) {
+	conv := NewConversation(testQuery)
+	chat := NewChat(testQuery)
+	user := NewUser(testQuery)
+	t.Run("valid select with full attributes", func(t *testing.T) {
+		fromUsr := createNewAccount(t)
+		toUsr := createNewAccount(t)
+		var expectedProfilePicCreator string
+		for i := 0; i < 4; i++ {
+			if i == 2 {
+				expectedProfilePicCreator = "true.png"
+				_, err := user.CreateProfilePicture(fromUsr.ID, expectedProfilePicCreator, true)
+				require.NoError(t, err)
+				continue
+			}
+			_, err := user.CreateProfilePicture(fromUsr.ID, fmt.Sprintf("%d.png", i), false)
+			require.NoError(t, err)
+		}
+		var expectedProfilePicRecipient string
+		for i := 0; i < 4; i++ {
+			if i == 3 {
+				expectedProfilePicRecipient = fmt.Sprintf("%d.png", i)
+				_, err := user.CreateProfilePicture(toUsr.ID, expectedProfilePicRecipient, false)
+				require.NoError(t, err)
+				continue
+			}
+			_, err := user.CreateProfilePicture(toUsr.ID, fmt.Sprintf("%d.png", i), false)
+			require.NoError(t, err)
+		}
+
+		convoId, err := conv.InsertConversation(fromUsr.ID, toUsr.ID)
+		require.NoError(t, err)
+		require.NotEmpty(t, convoId)
+
+		for i := 0; i < 4; i++ {
+			err = chat.InsertNewChat(&entity.Chat{
+				ConversationId: convoId,
+				Author:         fromUsr.ID,
+				Messages:       util.RandomString(15),
+				SentAt:         time.Now(),
+			})
+			require.NoError(t, err)
+			err = chat.InsertNewChat(&entity.Chat{
+				ConversationId: convoId,
+				Author:         toUsr.ID,
+				Messages:       util.RandomString(15),
+				SentAt:         time.Now(),
+			})
+			require.NoError(t, err)
+		}
+		expectedCreatorMsg := "hey sexy!"
+		err = chat.InsertNewChat(&entity.Chat{
+			ConversationId: convoId,
+			Author:         fromUsr.ID,
+			Messages:       expectedCreatorMsg,
+			SentAt:         time.Now(),
+		})
+		require.NoError(t, err)
+
+		conv, err := conv.SelectConversationById(convoId)
+		require.NoError(t, err)
+		require.NotEmpty(t, conv)
+
+		require.NotEmpty(t, expectedProfilePicCreator)
+		require.NotEmpty(t, expectedProfilePicRecipient)
+
+		assert.Equal(t, expectedProfilePicCreator, conv.FromUser.ProfilePic)
+		assert.Equal(t, expectedProfilePicRecipient, conv.ToUser.ProfilePic)
+		assert.Equal(t, expectedCreatorMsg, conv.LastMessage)
+	})
+	t.Run("invalid convoId", func(t *testing.T) {
+		conv, err := conv.SelectConversationById(util.RandomUUID())
+		require.Error(t, err)
+		require.Empty(t, conv)
+		assert.ErrorIs(t, err, sql.ErrNoRows)
+
+	})
+}
+
 func Test_SelectConvoByUserId(t *testing.T) {
 	conv := NewConversation(testQuery)
 	chat := NewChat(testQuery)
@@ -129,10 +208,10 @@ func Test_SelectConvoByUserId(t *testing.T) {
 	})
 	t.Run("valid with full attr and lot match", func(t *testing.T) {
 		fromUsr := createNewAccount(t)
+		_, err := user.CreateProfilePicture(fromUsr.ID, util.RandomUUID()+".png", true)
+		require.NoError(t, err)
 		for i := 0; i < 30; i++ {
 			toUsr := createNewAccount(t)
-			_, err := user.CreateProfilePicture(fromUsr.ID, util.RandomUUID()+".png", true)
-			require.NoError(t, err)
 			_, err = user.CreateProfilePicture(toUsr.ID, util.RandomUUID()+".png", false)
 			require.NoError(t, err)
 			convoId, err := conv.InsertConversation(fromUsr.ID, toUsr.ID)
@@ -198,6 +277,19 @@ func Test_UpdateDayPass(t *testing.T) {
 		err := conv.UpdateDayPass(util.RandomUUID())
 		require.Error(t, err)
 		require.ErrorIs(t, err, sql.ErrNoRows)
+	})
+}
+func Test_DeleteConvoById(t *testing.T) {
+	conv := NewConversation(testQuery)
+	t.Run("valid", func(t *testing.T) {
+		convoId := createNewConvo(conv, t)
+		err := conv.DeleteConversationById(convoId)
+		require.NoError(t, err)
+	})
+	t.Run("invalid convoId", func(t *testing.T) {
+		err := conv.DeleteConversationById(util.RandomUUID())
+		require.Error(t, err)
+		assert.ErrorIs(t, err, sql.ErrNoRows)
 	})
 }
 func createNewConvo(conv *conversation, t *testing.T) string {

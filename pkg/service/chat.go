@@ -1,8 +1,11 @@
 package service
 
 import (
+	"context"
 	"database/sql"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
@@ -10,42 +13,77 @@ import (
 	"github.com/xyedo/blindate/pkg/repository"
 )
 
-func NewChat(chatRepo repository.ChatRepo) *chat {
+var (
+	ErrRefMediaType   = fmt.Errorf("%w:invalid media types", domain.ErrRefNotFound23503)
+	ErrRefConvoID     = fmt.Errorf("%w:invalid convoId", domain.ErrRefNotFound23503)
+	ErrRefReplyTo     = fmt.Errorf("%w:invalid reply_to", domain.ErrRefNotFound23503)
+	ErrAuthorNotValid = errors.New("author not in the conversation")
+)
+
+func NewChat(chatRepo repository.ChatRepo, convRepo repository.ConversationRepo) *chat {
 	return &chat{
 		chatRepo: chatRepo,
+		convRepo: convRepo,
 	}
 }
 
 type chat struct {
 	chatRepo repository.ChatRepo
+	convRepo repository.ConversationRepo
 }
 
 func (c *chat) CreateNewChat(content *domain.Chat) error {
 
 	//TODO: check if has been match or not
-
 	chatEntity := c.convertToEntity(content)
-	err := c.chatRepo.InsertNewChat(chatEntity)
+	conv, err := c.convRepo.SelectConversationById(chatEntity.ConversationId)
 	if err != nil {
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) {
-			if pqErr.Code == "23503" {
-				return domain.ErrRefNotFound23503
-			}
-			if pqErr.Code == "23505" {
-				return domain.ErrUniqueConstraint23505
-			}
-			return pqErr
+		if errors.Is(err, context.Canceled) {
+			return domain.ErrTooLongAccesingDB
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrRefConvoID
 		}
 		return err
 	}
+	if !(chatEntity.Author == conv.FromUser.ID || chatEntity.Author == conv.ToUser.ID) {
+		return ErrAuthorNotValid
+	}
+	cleanChats := c.sanitizeChat(chatEntity)
+	for _, cleanChat := range cleanChats {
+		err = c.chatRepo.InsertNewChat(cleanChat)
+		if err != nil {
+			var pqErr *pq.Error
+			if errors.As(err, &pqErr) {
+				if pqErr.Code == "23503" {
+					if strings.Contains(pqErr.Constraint, "media_type") {
+						return ErrRefMediaType
+					}
+					if strings.Contains(pqErr.Constraint, "conversation_id") {
+						return ErrRefConvoID
+					}
+					if strings.Contains(pqErr.Constraint, "author") {
+						return ErrAuthorNotValid
+					}
+					if strings.Contains(pqErr.Constraint, "reply_to") {
+						return ErrRefReplyTo
+					}
+				}
+				return pqErr
+			}
+			return err
+		}
+	}
 	return nil
+
 }
 
 func (c *chat) GetMessages(convoId string, filter entity.ChatFilter) ([]domain.Chat, error) {
 	chats, err := c.chatRepo.SelectChat(convoId, filter)
 	if err != nil {
-		//TODO: make error handling more good
+		if errors.Is(err, context.Canceled) {
+			return nil, domain.ErrTooLongAccesingDB
+		}
 		return nil, err
 	}
 
@@ -56,14 +94,35 @@ func (c *chat) GetMessages(convoId string, filter entity.ChatFilter) ([]domain.C
 	return chatDomain, nil
 }
 
-func (c *chat) DeleteMessages(chatId string) {
-	//TODO: make error handling better
-	c.chatRepo.DeleteChat(chatId)
+func (c *chat) DeleteMessages(chatId string) error {
+	err := c.chatRepo.DeleteChatById(chatId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.ErrRefNotFound23503
+		}
+		if errors.Is(err, context.Canceled) {
+			return domain.ErrTooLongAccesingDB
+		}
+		return err
+	}
+	return nil
+}
+func (*chat) sanitizeChat(chat *entity.Chat) []*entity.Chat {
+	chat.Messages = strings.TrimSpace(chat.Messages)
+	if chat.Attachment != nil && chat.Messages != "" {
+		chatWAttach := chat
+		chatWAttach.Messages = ""
+		chatWoAttach := chat
+		chatWoAttach.Attachment = nil
+		return []*entity.Chat{chatWAttach, chatWoAttach}
+	}
+	return []*entity.Chat{chat}
 }
 func (*chat) convertToEntity(content *domain.Chat) *entity.Chat {
 	chatEntity := &entity.Chat{
 		Id:             content.Id,
 		ConversationId: content.ConversationId,
+		Author:         content.Author,
 		Messages:       content.Messages,
 		SentAt:         content.SentAt,
 		Attachment:     content.Attachment,
@@ -88,6 +147,7 @@ func (*chat) convertToDomain(content *entity.Chat) *domain.Chat {
 	chatDomain := &domain.Chat{
 		Id:             content.Id,
 		ConversationId: content.ConversationId,
+		Author:         content.Author,
 		Messages:       content.Messages,
 		SentAt:         content.SentAt,
 		Attachment:     content.Attachment,
