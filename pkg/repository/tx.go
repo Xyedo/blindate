@@ -8,6 +8,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+// to be more clean, use it with your class method
 func execGeneric(conn *sqlx.DB, ctx context.Context, cb func(q *sqlx.DB) error, option *sql.TxOptions) error {
 	tx, err := conn.BeginTxx(ctx, option)
 	if err != nil {

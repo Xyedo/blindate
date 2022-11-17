@@ -21,12 +21,12 @@ type UserRepo interface {
 
 func NewUser(db *sqlx.DB) *userCon {
 	return &userCon{
-		db,
+		conn: db,
 	}
 }
 
 type userCon struct {
-	*sqlx.DB
+	conn *sqlx.DB
 }
 
 func (u *userCon) InsertUser(user *domain.User) error {
@@ -46,7 +46,7 @@ func (u *userCon) InsertUser(user *domain.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	err := u.GetContext(ctx, &user.ID, query, args...)
+	err := u.conn.GetContext(ctx, &user.ID, query, args...)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (u *userCon) UpdateUser(user *domain.User) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	var id string
-	err := u.GetContext(ctx, &id, query, args...)
+	err := u.conn.GetContext(ctx, &id, query, args...)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (u *userCon) GetUserById(id string) (*domain.User, error) {
 	defer cancel()
 
 	var user domain.User
-	err := u.DB.GetContext(ctx, &user, query, id)
+	err := u.conn.GetContext(ctx, &user, query, id)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (u *userCon) GetUserByEmail(email string) (*domain.User, error) {
 	defer cancel()
 
 	var user domain.User
-	err := u.GetContext(ctx, &user, query, email)
+	err := u.conn.GetContext(ctx, &user, query, email)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (u *userCon) CreateProfilePicture(userId, pictureRef string, selected bool)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	var id string
-	err := u.GetContext(ctx, &id, query, userId, selected, pictureRef)
+	err := u.conn.GetContext(ctx, &id, query, userId, selected, pictureRef)
 	if err != nil {
 		return "", err
 	}
@@ -149,7 +149,7 @@ func (u *userCon) SelectProfilePicture(userId string, params *entity.ProfilePicQ
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	profilePics := []domain.ProfilePicture{}
-	err := u.SelectContext(ctx, &profilePics, query, args...)
+	err := u.conn.SelectContext(ctx, &profilePics, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (u *userCon) ProfilePicSelectedToFalse(userId string) (int64, error) {
 	WHERE user_id=$1`
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	res, err := u.ExecContext(ctx, query, userId)
+	res, err := u.conn.ExecContext(ctx, query, userId)
 	if err != nil {
 		return 0, err
 	}

@@ -52,6 +52,7 @@ func uploadFile(c *gin.Context, uploader attachmentManager, validMimeTypes []str
 		errServerResp(c, err)
 		return ""
 	}
+	defer file.Close()
 	buff := make([]byte, 512)
 	_, err = file.Read(buff)
 	if err != nil {

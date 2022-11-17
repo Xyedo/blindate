@@ -18,12 +18,12 @@ type LocationRepo interface {
 
 func NewLocation(db *sqlx.DB) *location {
 	return &location{
-		db,
+		conn: db,
 	}
 }
 
 type location struct {
-	*sqlx.DB
+	conn *sqlx.DB
 }
 
 func (l *location) InsertNewLocation(location *entity.Location) (int64, error) {
@@ -35,7 +35,7 @@ func (l *location) InsertNewLocation(location *entity.Location) (int64, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	rows, err := l.ExecContext(ctx, query, args...)
+	rows, err := l.conn.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -57,7 +57,7 @@ func (l *location) UpdateLocation(location *entity.Location) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	res, err := l.ExecContext(ctx, query, args...)
+	res, err := l.conn.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, nil
 	}
@@ -82,7 +82,7 @@ func (l *location) GetLocationByUserId(id string) (*entity.Location, error) {
 	defer cancel()
 
 	var location entity.Location
-	err := l.GetContext(ctx, &location, query, id)
+	err := l.conn.GetContext(ctx, &location, query, id)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +104,7 @@ func (l *location) GetClosestUser(geom string, limit int) ([]domain.User, error)
 	defer cancel()
 
 	users := make([]domain.User, 0, limit)
-	err := l.SelectContext(ctx, &users, query, geom, limit)
+	err := l.conn.SelectContext(ctx, &users, query, geom, limit)
 	if err != nil {
 		return []domain.User{}, err
 	}

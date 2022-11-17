@@ -25,32 +25,32 @@ type conversation struct {
 	convRepo repository.ConversationRepo
 }
 
-func (c *conversation) CreateConversation(conv *domain.Conversation) error {
+func (c *conversation) CreateConversation(conv *domain.Conversation) (string, error) {
 	if conv.FromUser.ID == conv.ToUser.ID {
-		return ErrConvoWithSelf
+		return "", ErrConvoWithSelf
 	}
 	//TODO: check if has been match or not
-	err := c.convRepo.InsertConversation(conv)
+	id, err := c.convRepo.InsertConversation(conv.FromUser.ID, conv.ToUser.ID)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return "", domain.ErrTooLongAccesingDB
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return domain.ErrResourceNotFound
+			return "", domain.ErrResourceNotFound
 		}
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			if pqErr.Code == "23503" {
-				return domain.ErrRefNotFound23503
+				return "", domain.ErrRefNotFound23503
 			}
 			if pqErr.Code == "23505" {
-				return domain.ErrUniqueConstraint23505
+				return "", domain.ErrUniqueConstraint23505
 			}
-			return pqErr
+			return "", pqErr
 		}
-		return err
+		return "", err
 	}
-	return nil
+	return id, nil
 }
 
 // func (c *conversation) FindConversationById(convoId string) (*domain.Conversation, error) {
@@ -69,7 +69,7 @@ func (c *conversation) CreateConversation(conv *domain.Conversation) error {
 // }
 
 func (c *conversation) GetConversationByUserId(userId string) ([]domain.Conversation, error) {
-	convs, err := c.convRepo.SelectConversationByUserId(userId)
+	convs, err := c.convRepo.SelectConversationByUserId(userId, nil)
 	//TODO: check if has been reveal, if not, show generic profile_pic and alias
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

@@ -24,6 +24,6 @@ mock:
 	mockgen -destination pkg/repository/mock/$(mock_name) -package mockrepo $(REPO_PATH) $(interface) 
 
 test :
-	go test ./...
+	go test ./.. .
 
 .PHONY: migrate-up migrate-down migrate-create build-up up down mock test

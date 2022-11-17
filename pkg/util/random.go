@@ -71,6 +71,9 @@ func RandomToken(secret string, expires time.Duration) (string, error) {
 func RandomInt(min, max int64) int64 {
 	return min + rand.Int63n(max-min+1)
 }
+func RandomBool() bool {
+	return rand.Intn(2) == 1
+}
 func randomFloat(min, max, precision int) float64 {
 	output := math.Pow(10, float64(precision))
 	num := float64(min) + rand.Float64()*float64(max-min)

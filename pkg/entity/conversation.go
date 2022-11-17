@@ -10,6 +10,7 @@ import (
 type Chat struct {
 	Id             string                 `db:"id"`
 	ConversationId string                 `db:"conversation_id"`
+	Author         string                 `db:"author"`
 	Messages       string                 `db:"messages"`
 	ReplyTo        sql.NullString         `db:"reply_to"`
 	SentAt         time.Time              `db:"sent_at"`
@@ -18,11 +19,15 @@ type Chat struct {
 }
 
 type ChatFilter struct {
-	Cursor *cursor
+	Cursor *ChatCursor
 	Limit  int
 }
-type cursor struct {
+type ChatCursor struct {
 	At    time.Time
 	Id    string
 	After bool
+}
+
+type ConvFilter struct {
+	Offset int
 }
