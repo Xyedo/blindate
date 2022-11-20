@@ -279,12 +279,43 @@ func Test_UpdateDayPass(t *testing.T) {
 		require.ErrorIs(t, err, sql.ErrNoRows)
 	})
 }
+
 func Test_DeleteConvoById(t *testing.T) {
 	conv := NewConversation(testQuery)
+
 	t.Run("valid", func(t *testing.T) {
-		convoId := createNewConvo(conv, t)
-		err := conv.DeleteConversationById(convoId)
+		chat := NewChat(testQuery)
+		fromUsr := createNewAccount(t)
+		toUsr := createNewAccount(t)
+		convoId, err := conv.InsertConversation(fromUsr.ID, toUsr.ID)
 		require.NoError(t, err)
+		require.NotEmpty(t, convoId)
+		for i := 0; i < 5; i++ {
+			newChat := &entity.Chat{
+				ConversationId: convoId,
+				Messages:       util.RandomString(12),
+				SentAt:         time.Now(),
+			}
+			if util.RandomBool() {
+				newChat.Author = fromUsr.ID
+			} else {
+				newChat.Author = toUsr.ID
+			}
+			err := chat.InsertNewChat(newChat)
+			require.NoError(t, err)
+		}
+		err = conv.DeleteConversationById(convoId)
+		require.NoError(t, err)
+		convs, err := conv.SelectConversationById(convoId)
+		require.Error(t, err)
+		require.ErrorIs(t, err, sql.ErrNoRows)
+		assert.Empty(t, convs)
+		chats, err := chat.SelectChat(convoId, entity.ChatFilter{
+			Limit: 10,
+		})
+		require.NoError(t, err)
+		assert.Empty(t, chats)
+
 	})
 	t.Run("invalid convoId", func(t *testing.T) {
 		err := conv.DeleteConversationById(util.RandomUUID())

@@ -91,7 +91,7 @@ func (u *user) putUserImageProfile(c *gin.Context) {
 	selectedQ := c.Query("selected")
 	selected := strings.EqualFold(selectedQ, "true")
 	userId := c.GetString("userId")
-	user, err := u.userService.GetUserById(userId)
+	userDb, err := u.userService.GetUserById(userId)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
 			errNotFoundResp(c, "id not found")
@@ -116,7 +116,7 @@ func (u *user) putUserImageProfile(c *gin.Context) {
 		return
 	}
 	newProfPic := domain.ProfilePicture{
-		UserId:      user.ID,
+		UserId:      userDb.ID,
 		Selected:    selected,
 		PictureLink: key,
 	}

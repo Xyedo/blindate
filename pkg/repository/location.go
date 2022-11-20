@@ -9,7 +9,7 @@ import (
 	"github.com/xyedo/blindate/pkg/entity"
 )
 
-type LocationRepo interface {
+type Location interface {
 	InsertNewLocation(location *entity.Location) (int64, error)
 	UpdateLocation(location *entity.Location) (int64, error)
 	GetLocationByUserId(id string) (*entity.Location, error)

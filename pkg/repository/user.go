@@ -9,7 +9,7 @@ import (
 	"github.com/xyedo/blindate/pkg/entity"
 )
 
-type UserRepo interface {
+type User interface {
 	InsertUser(user *domain.User) error
 	GetUserByEmail(email string) (*domain.User, error)
 	GetUserById(id string) (*domain.User, error)

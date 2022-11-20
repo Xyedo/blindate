@@ -10,14 +10,14 @@ import (
 	"github.com/xyedo/blindate/pkg/repository"
 )
 
-func NewAuth(authR repository.AuthRepo) *auth {
+func NewAuth(authR repository.Auth) *auth {
 	return &auth{
 		authRepo: authR,
 	}
 }
 
 type auth struct {
-	authRepo repository.AuthRepo
+	authRepo repository.Auth
 }
 
 func (a *auth) AddRefreshToken(token string) error {

@@ -10,7 +10,7 @@ import (
 	"github.com/xyedo/blindate/pkg/entity"
 )
 
-type ConversationRepo interface {
+type Conversation interface {
 	InsertConversation(fromUserId, toUserId string) (string, error)
 	SelectConversationById(convoId string) (*domain.Conversation, error)
 	SelectConversationByUserId(UserId string, filter *entity.ConvFilter) ([]domain.Conversation, error)

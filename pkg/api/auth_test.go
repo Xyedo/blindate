@@ -36,7 +36,7 @@ func Test_postAuthHandler(t *testing.T) {
 			}`,
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *auth {
 				authRepo := mockrepo.NewMockAuth(ctrl)
-				userRepo := mockrepo.NewMockUserRepo(ctrl)
+				userRepo := mockrepo.NewMockUser(ctrl)
 
 				validUser := createNewUser(t)
 				hashed, err := bcrypt.GenerateFromPassword([]byte("pa55word"), 12)
@@ -72,7 +72,7 @@ func Test_postAuthHandler(t *testing.T) {
 			}`,
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *auth {
 				authRepo := mockrepo.NewMockAuth(ctrl)
-				userRepo := mockrepo.NewMockUserRepo(ctrl)
+				userRepo := mockrepo.NewMockUser(ctrl)
 
 				userRepo.EXPECT().GetUserByEmail(gomock.Any()).Times(0)
 				authRepo.EXPECT().AddRefreshToken(gomock.Any()).Times(0)
@@ -99,7 +99,7 @@ func Test_postAuthHandler(t *testing.T) {
 			}`,
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *auth {
 				authRepo := mockrepo.NewMockAuth(ctrl)
-				userRepo := mockrepo.NewMockUserRepo(ctrl)
+				userRepo := mockrepo.NewMockUser(ctrl)
 
 				userRepo.EXPECT().GetUserByEmail(gomock.Any()).Times(0)
 				authRepo.EXPECT().AddRefreshToken(gomock.Any()).Times(0)
@@ -130,7 +130,7 @@ func Test_postAuthHandler(t *testing.T) {
 			}`,
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *auth {
 				authRepo := mockrepo.NewMockAuth(ctrl)
-				userRepo := mockrepo.NewMockUserRepo(ctrl)
+				userRepo := mockrepo.NewMockUser(ctrl)
 
 				validUser := createNewUser(t)
 				userRepo.EXPECT().GetUserByEmail(gomock.Eq("uncleBob23@cool.com")).Times(1).Return(validUser, nil)
@@ -183,7 +183,7 @@ func Test_putAuthHandler(t *testing.T) {
 			name: "Valid PutAuthHandler",
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (*auth, string) {
 				authRepo := mockrepo.NewMockAuth(ctrl)
-				userRepo := mockrepo.NewMockUserRepo(ctrl)
+				userRepo := mockrepo.NewMockUser(ctrl)
 				id := util.RandomUUID()
 				token, err := jwt.GenerateRefreshToken(id)
 				assert.NoError(t, err)
@@ -209,7 +209,7 @@ func Test_putAuthHandler(t *testing.T) {
 			name: "Invalid RefreshToken",
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (*auth, string) {
 				authRepo := mockrepo.NewMockAuth(ctrl)
-				userRepo := mockrepo.NewMockUserRepo(ctrl)
+				userRepo := mockrepo.NewMockUser(ctrl)
 				id := util.RandomUUID()
 				token, err := jwt.GenerateRefreshToken(id)
 				assert.NoError(t, err)
@@ -272,7 +272,7 @@ func Test_deleteAuthHandler(t *testing.T) {
 			name: "Valid Log out",
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (*auth, string) {
 				authRepo := mockrepo.NewMockAuth(ctrl)
-				userRepo := mockrepo.NewMockUserRepo(ctrl)
+				userRepo := mockrepo.NewMockUser(ctrl)
 				id := util.RandomUUID()
 				token, err := jwt.GenerateRefreshToken(id)
 				assert.NoError(t, err)
@@ -297,7 +297,7 @@ func Test_deleteAuthHandler(t *testing.T) {
 			name: "InValid Log out",
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (*auth, string) {
 				authRepo := mockrepo.NewMockAuth(ctrl)
-				userRepo := mockrepo.NewMockUserRepo(ctrl)
+				userRepo := mockrepo.NewMockUser(ctrl)
 				id := util.RandomUUID()
 				token, err := jwt.GenerateRefreshToken(id)
 				assert.NoError(t, err)

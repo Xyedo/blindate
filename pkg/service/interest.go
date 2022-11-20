@@ -22,14 +22,14 @@ var (
 	ErrCheckConstrainSports      = fmt.Errorf("database: over than 10 unit")
 )
 
-func NewInterest(intrRepo repository.InterestRepo) *interest {
+func NewInterest(intrRepo repository.Interest) *interest {
 	return &interest{
 		interestRepo: intrRepo,
 	}
 }
 
 type interest struct {
-	interestRepo repository.InterestRepo
+	interestRepo repository.Interest
 }
 
 func (i *interest) GetInterest(userId string) (*domain.Interest, error) {

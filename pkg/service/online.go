@@ -11,14 +11,14 @@ import (
 	"github.com/xyedo/blindate/pkg/repository"
 )
 
-func NewOnline(onlineRepo repository.OnlineRepo) *online {
+func NewOnline(onlineRepo repository.Online) *online {
 	return &online{
 		onlineRepository: onlineRepo,
 	}
 }
 
 type online struct {
-	onlineRepository repository.OnlineRepo
+	onlineRepository repository.Online
 }
 
 func (o *online) CreateNewOnline(userId string) error {

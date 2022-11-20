@@ -20,7 +20,7 @@ var (
 	ErrAuthorNotValid = errors.New("author not in the conversation")
 )
 
-func NewChat(chatRepo repository.ChatRepo, convRepo repository.ConversationRepo) *chat {
+func NewChat(chatRepo repository.Chat, convRepo repository.Conversation) *chat {
 	return &chat{
 		chatRepo: chatRepo,
 		convRepo: convRepo,
@@ -28,8 +28,8 @@ func NewChat(chatRepo repository.ChatRepo, convRepo repository.ConversationRepo)
 }
 
 type chat struct {
-	chatRepo repository.ChatRepo
-	convRepo repository.ConversationRepo
+	chatRepo repository.Chat
+	convRepo repository.Conversation
 }
 
 func (c *chat) CreateNewChat(content *domain.Chat) error {
@@ -110,11 +110,11 @@ func (c *chat) DeleteMessages(chatId string) error {
 func (*chat) sanitizeChat(chat *entity.Chat) []*entity.Chat {
 	chat.Messages = strings.TrimSpace(chat.Messages)
 	if chat.Attachment != nil && chat.Messages != "" {
-		chatWAttach := chat
+		chatWAttach := *chat
 		chatWAttach.Messages = ""
-		chatWoAttach := chat
+		chatWoAttach := *chat
 		chatWoAttach.Attachment = nil
-		return []*entity.Chat{chatWAttach, chatWoAttach}
+		return []*entity.Chat{&chatWAttach, &chatWoAttach}
 	}
 	return []*entity.Chat{chat}
 }

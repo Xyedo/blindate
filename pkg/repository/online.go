@@ -9,7 +9,7 @@ import (
 	"github.com/xyedo/blindate/pkg/domain"
 )
 
-type OnlineRepo interface {
+type Online interface {
 	InsertNewOnline(on *domain.Online) error
 	UpdateOnline(userId string, online bool) error
 	SelectOnline(userId string) (*domain.Online, error)

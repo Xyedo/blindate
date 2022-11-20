@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"path/filepath"
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
@@ -13,14 +14,14 @@ import (
 
 var ErrMaxProfilePicture = errors.New("excedeed profile picture constraint")
 
-func NewUser(userRepo repository.UserRepo) *user {
+func NewUser(userRepo repository.User) *user {
 	return &user{
 		userRepository: userRepo,
 	}
 }
 
 type user struct {
-	userRepository repository.UserRepo
+	userRepository repository.User
 }
 
 func (u *user) CreateUser(newUser *domain.User) error {
@@ -139,6 +140,7 @@ func (u *user) CreateNewProfilePic(profPicParam domain.ProfilePicture) (string, 
 			return "", err
 		}
 	}
+	profPicParam.PictureLink = filepath.Base(profPicParam.PictureLink)
 	id, err := u.userRepository.CreateProfilePicture(profPicParam.UserId, profPicParam.PictureLink, profPicParam.Selected)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {

@@ -15,14 +15,14 @@ var (
 	ErrConvoWithSelf = fmt.Errorf("conversation: cannot create conversation with yourself")
 )
 
-func NewConversation(convRepo repository.ConversationRepo) *conversation {
+func NewConversation(convRepo repository.Conversation) *conversation {
 	return &conversation{
 		convRepo: convRepo,
 	}
 }
 
 type conversation struct {
-	convRepo repository.ConversationRepo
+	convRepo repository.Conversation
 }
 
 func (c *conversation) CreateConversation(conv *domain.Conversation) (string, error) {
@@ -53,20 +53,20 @@ func (c *conversation) CreateConversation(conv *domain.Conversation) (string, er
 	return id, nil
 }
 
-// func (c *conversation) FindConversationById(convoId string) (*domain.Conversation, error) {
-// 	conv, err := c.convRepo.SelectConversationById(convoId)
-// 	//TODO: check if has been reveal, if not, show generic profile_pic and alias
-// 	if err != nil {
-// 		if errors.Is(err, sql.ErrNoRows) {
-// 			return nil, domain.ErrResourceNotFound
-// 		}
-// 		if errors.Is(err, context.Canceled) {
-// 			return nil, domain.ErrTooLongAccesingDB
-// 		}
-// 		return nil, err
-// 	}
-// 	return conv, nil
-// }
+func (c *conversation) FindConversationById(convoId string) (*domain.Conversation, error) {
+	conv, err := c.convRepo.SelectConversationById(convoId)
+	//TODO: check if has been reveal, if not, show generic profile_pic and alias
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, domain.ErrResourceNotFound
+		}
+		if errors.Is(err, context.Canceled) {
+			return nil, domain.ErrTooLongAccesingDB
+		}
+		return nil, err
+	}
+	return conv, nil
+}
 
 func (c *conversation) GetConversationByUserId(userId string) ([]domain.Conversation, error) {
 	convs, err := c.convRepo.SelectConversationByUserId(userId, nil)

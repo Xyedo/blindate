@@ -10,7 +10,7 @@ import (
 	"github.com/xyedo/blindate/pkg/entity"
 )
 
-type ChatRepo interface {
+type Chat interface {
 	InsertNewChat(content *entity.Chat) error
 	SelectChat(convoId string, filter entity.ChatFilter) ([]entity.Chat, error)
 	UpdateSeenChatById(chatId string) error

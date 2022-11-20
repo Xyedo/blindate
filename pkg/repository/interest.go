@@ -12,7 +12,7 @@ import (
 	"github.com/xyedo/blindate/pkg/util"
 )
 
-type InterestRepo interface {
+type Interest interface {
 	InsertNewStats(interestId string) error
 
 	GetInterest(userId string) (*domain.Interest, error)

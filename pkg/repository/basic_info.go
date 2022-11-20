@@ -8,7 +8,7 @@ import (
 	"github.com/xyedo/blindate/pkg/entity"
 )
 
-type BasicInfoRepo interface {
+type BasicInfo interface {
 	InsertBasicInfo(basicinfo *entity.BasicInfo) (int64, error)
 	GetBasicInfoByUserId(id string) (*entity.BasicInfo, error)
 	UpdateBasicInfo(bInfo *entity.BasicInfo) (int64, error)

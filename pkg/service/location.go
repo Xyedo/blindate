@@ -13,14 +13,14 @@ import (
 	"github.com/xyedo/blindate/pkg/repository"
 )
 
-func NewLocation(locationRepo repository.LocationRepo) *location {
+func NewLocation(locationRepo repository.Location) *location {
 	return &location{
 		locationRepo: locationRepo,
 	}
 }
 
 type location struct {
-	locationRepo repository.LocationRepo
+	locationRepo repository.Location
 }
 
 func (l *location) CreateNewLocation(location *domain.Location) error {

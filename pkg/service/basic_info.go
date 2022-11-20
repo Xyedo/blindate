@@ -24,14 +24,14 @@ var (
 	ErrRefZodiacField           = fmt.Errorf("%w::zodiac", domain.ErrRefNotFound23503)
 )
 
-func NewBasicInfo(bInfoRepo repository.BasicInfoRepo) *basicInfo {
+func NewBasicInfo(bInfoRepo repository.BasicInfo) *basicInfo {
 	return &basicInfo{
 		BasicInfoRepo: bInfoRepo,
 	}
 }
 
 type basicInfo struct {
-	BasicInfoRepo repository.BasicInfoRepo
+	BasicInfoRepo repository.BasicInfo
 }
 
 func (b *basicInfo) CreateBasicInfo(bInfo *domain.BasicInfo) error {
