@@ -6,8 +6,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"image/png"
+	"io"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -18,6 +22,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/xyedo/blindate/pkg/domain"
 	mockrepo "github.com/xyedo/blindate/pkg/repository/mock"
 	"github.com/xyedo/blindate/pkg/service"
@@ -615,86 +620,293 @@ func Test_PatchUserById(t *testing.T) {
 	}
 }
 
-// func Test_PutUserImageProfile(t *testing.T) {
-// 	validId := util.RandomUUID()
-// 	writeToPng := func(writer *multipart.Writer) {
-// 		defer writer.Close()
-// 		part, err := writer.CreateFormFile("file", "img-test.png")
-// 		require.NoError(t, err)
-// 		img := util.CreateDefaultImage(200, 200)
-// 		err = png.Encode(part, img)
-// 		require.NoError(t, err)
-// 	}
-// 	tests := []struct {
-// 		name      string
-// 		id        string
-// 		params    map[string]string
-// 		setupFunc func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *user
-// 		wantCode  int
-// 		wantResp  map[string]any
-// 	}{
-// 		{
-// 			name: "valid",
-// 			id:   validId,
-// 			params: map[string]string{
-// 				"selected": "true",
-// 			},
-// 			setupFunc: func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *user {
-// 				userRepo := mockrepo.NewMockUser(ctrl)
-// 				attachSvc := mocksvc.NewMockAttachment(ctrl)
-// 				validKey := util.RandomUUID() + ".png"
-// 				user := createNewUser(t)
-// 				userRepo.EXPECT().GetUserById(validId).Return(user, nil).Times(1)
-// 				userRepo.EXPECT().SelectProfilePicture(gomock.Eq(user.ID), gomock.Nil()).Return()
-// 				userRepo.
-// 					EXPECT().
-// 					CreateProfilePicture(
-// 						gomock.Eq(user.ID),
-// 						gomock.Any().String(),
-// 						gomock.Eq(true),
-// 					).
-// 					Return(validKey, nil).
-// 					Times(1)
-// 				userSvc := service.NewUser(userRepo)
-// 				attachSvc.EXPECT().UploadBlob(gomock.Eq(pr), gomock.Any()).Return(validKey, nil).Times(1)
-// 				return NewUser(userSvc, attachSvc)
-// 			},
-// 			wantCode: http.StatusOK,
-// 		},
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			ctrl := gomock.NewController(t)
-// 			defer ctrl.Finish()
-// 			pr, pw := io.Pipe()
-// 			writer := multipart.NewWriter(pw)
-// 			go writeToPng(writer)
-// 			userH := tt.setupFunc(t, ctrl, pr)
+type uploadTestMatcher struct {
+	actualV any
+}
 
-// 			rr := httptest.NewRecorder()
-// 			c, _ := gin.CreateTestContext(rr)
-// 			c.Set("userId", tt.id)
-// 			req := httptest.NewRequest("PUT", "/users/"+tt.id+"/profile-picture", pr)
-// 			req.Header.Add("Content-Type", writer.FormDataContentType())
+func (u *uploadTestMatcher) Matches(x any) bool {
+	u.actualV = x
+	_, ok := x.(io.Reader)
+	return ok
+}
+func (u *uploadTestMatcher) String() string {
+	return fmt.Sprintln(u.actualV)
+}
+func uploadValid() *uploadTestMatcher {
+	return &uploadTestMatcher{}
+}
+func Test_PutUserImageProfile(t *testing.T) {
+	validUserId := util.RandomUUID()
+	validProfPicId := util.RandomUUID()
+	writeToPng := func(writer *multipart.Writer) {
+		defer writer.Close()
+		part, err := writer.CreateFormFile("file", "img-test.png")
+		require.NoError(t, err)
+		img := util.CreateDefaultImage(200, 200)
+		err = png.Encode(part, img)
+		require.NoError(t, err)
+	}
+	tests := []struct {
+		name      string
+		id        string
+		params    map[string]string
+		writoMime func(writer *multipart.Writer)
+		stubFunc  func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *user
+		wantCode  int
+		wantResp  map[string]any
+	}{
+		{
+			name: "valid with selected profile-pictures",
+			id:   validUserId,
+			params: map[string]string{
+				"selected": "true",
+			},
+			writoMime: writeToPng,
+			stubFunc: func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *user {
+				userRepo := mockrepo.NewMockUser(ctrl)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				validKey := "profile-picture/" + util.RandomUUID() + ".png"
+				user := createNewUser(t)
+				user.ID = validUserId
+				userRepo.EXPECT().GetUserById(validUserId).Return(user, nil).Times(1)
 
-// 			queryParams := req.URL.Query()
-// 			for k, v := range tt.params {
-// 				queryParams.Add(k, v)
-// 			}
-// 			req.URL.RawQuery = queryParams.Encode()
+				attachSvc.EXPECT().UploadBlob(uploadValid(), gomock.Any()).Return(validKey, nil).Times(1)
 
-// 			c.Request = req
-// 			userH.putUserImageProfile(c)
-// 			assert.Equal(t, tt.wantCode, rr.Code)
-// 			assert.Contains(t, rr.Header().Get("Content-Type"), "application/json")
-// 			if tt.wantResp != nil {
-// 				expResBody, err := json.Marshal(tt.wantResp)
-// 				require.NoError(t, err)
-// 				assert.JSONEq(t, string(expResBody), rr.Body.String())
-// 			}
-// 		})
-// 	}
-// }
+				profPic := make([]domain.ProfilePicture, 0, 4)
+				for i := 0; i < 3; i++ {
+					profPic = append(profPic, createRandomProfPic(user.ID))
+				}
+
+				userRepo.EXPECT().SelectProfilePicture(gomock.Eq(user.ID), gomock.Nil()).Return(profPic, nil).Times(1)
+				userRepo.EXPECT().ProfilePicSelectedToFalse(gomock.Eq(user.ID)).Return(int64(3), nil).Times(1)
+				userRepo.
+					EXPECT().
+					CreateProfilePicture(
+						gomock.Eq(user.ID),
+						gomock.Eq(filepath.Base(validKey)),
+						gomock.Eq(true),
+					).
+					Return(validProfPicId, nil).
+					Times(1)
+				userSvc := service.NewUser(userRepo)
+				return NewUser(userSvc, attachSvc)
+			},
+			wantCode: http.StatusOK,
+			wantResp: map[string]any{
+				"status":  "success",
+				"message": "user profile-picture uploaded",
+				"data": gin.H{
+					"profilePicture": gin.H{
+						"id": validProfPicId,
+					},
+				},
+			},
+		},
+		{
+			name:      "valid but unselected",
+			id:        validUserId,
+			writoMime: writeToPng,
+			stubFunc: func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *user {
+				userRepo := mockrepo.NewMockUser(ctrl)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				validKey := "profile-picture/" + util.RandomUUID() + ".png"
+				user := createNewUser(t)
+				user.ID = validUserId
+				userRepo.EXPECT().GetUserById(validUserId).Return(user, nil).Times(1)
+
+				attachSvc.EXPECT().UploadBlob(uploadValid(), gomock.Any()).Return(validKey, nil).Times(1)
+
+				profPic := make([]domain.ProfilePicture, 0, 4)
+				for i := 0; i < 3; i++ {
+					profPic = append(profPic, createRandomProfPic(user.ID))
+				}
+
+				userRepo.EXPECT().SelectProfilePicture(gomock.Eq(user.ID), gomock.Nil()).Return(profPic, nil).Times(1)
+				userRepo.EXPECT().ProfilePicSelectedToFalse(gomock.Any()).Times(0)
+				userRepo.
+					EXPECT().
+					CreateProfilePicture(
+						gomock.Eq(user.ID),
+						gomock.Eq(filepath.Base(validKey)),
+						gomock.Eq(false),
+					).
+					Return(validProfPicId, nil).
+					Times(1)
+				userSvc := service.NewUser(userRepo)
+				return NewUser(userSvc, attachSvc)
+			},
+			wantCode: http.StatusOK,
+			wantResp: map[string]any{
+				"status":  "success",
+				"message": "user profile-picture uploaded",
+				"data": gin.H{
+					"profilePicture": gin.H{
+						"id": validProfPicId,
+					},
+				},
+			},
+		},
+		{
+			name: "invalid MIME types",
+			id:   validUserId,
+			params: map[string]string{
+				"selected": "true",
+			},
+			writoMime: func(writer *multipart.Writer) {
+				defer writer.Close()
+				part, err := writer.CreateFormFile("file", "text.txt")
+				require.NoError(t, err)
+				str := util.RandomString(128)
+				read := strings.NewReader(str)
+				_, err = io.Copy(part, read)
+				require.NoError(t, err)
+			},
+			stubFunc: func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *user {
+				userRepo := mockrepo.NewMockUser(ctrl)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				validKey := "profile-picture/" + util.RandomUUID() + ".png"
+				user := createNewUser(t)
+				user.ID = validUserId
+				userRepo.EXPECT().GetUserById(validUserId).Return(user, nil).Times(1)
+
+				attachSvc.EXPECT().UploadBlob(gomock.Any(), gomock.Any()).Times(0)
+
+				userRepo.EXPECT().SelectProfilePicture(gomock.Any(), gomock.Any()).Times(0)
+				userRepo.EXPECT().ProfilePicSelectedToFalse(gomock.Any()).Times(0)
+				userRepo.
+					EXPECT().
+					CreateProfilePicture(
+						gomock.Eq(user.ID),
+						gomock.Eq(filepath.Base(validKey)),
+						gomock.Eq(false),
+					).
+					Times(0)
+				userSvc := service.NewUser(userRepo)
+				return NewUser(userSvc, attachSvc)
+			},
+			wantCode: http.StatusUnprocessableEntity,
+			wantResp: map[string]any{
+				"status":  "fail",
+				"message": "not valid mime-type",
+			},
+		},
+		{
+			name: "not having a file",
+			id:   validUserId,
+			params: map[string]string{
+				"selected": "true",
+			},
+			writoMime: func(writer *multipart.Writer) {
+				defer writer.Close()
+				part, err := writer.CreateFormField("file")
+				require.NoError(t, err)
+				str := util.RandomString(128)
+				read := strings.NewReader(str)
+				_, err = io.Copy(part, read)
+				require.NoError(t, err)
+			},
+			stubFunc: func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *user {
+				userRepo := mockrepo.NewMockUser(ctrl)
+				attachSvc := mocksvc.NewMockAttachment(ctrl)
+				validKey := "profile-picture/" + util.RandomUUID() + ".png"
+				user := createNewUser(t)
+				user.ID = validUserId
+				userRepo.EXPECT().GetUserById(validUserId).Return(user, nil).Times(1)
+
+				attachSvc.EXPECT().UploadBlob(gomock.Any(), gomock.Any()).Times(0)
+
+				userRepo.EXPECT().SelectProfilePicture(gomock.Any(), gomock.Any()).Times(0)
+				userRepo.EXPECT().ProfilePicSelectedToFalse(gomock.Any()).Times(0)
+				userRepo.
+					EXPECT().
+					CreateProfilePicture(
+						gomock.Eq(user.ID),
+						gomock.Eq(filepath.Base(validKey)),
+						gomock.Eq(false),
+					).
+					Times(0)
+				userSvc := service.NewUser(userRepo)
+				return NewUser(userSvc, attachSvc)
+			},
+			wantCode: http.StatusBadRequest,
+			wantResp: map[string]any{
+				"status":  "fail",
+				"message": "request did not contain a file",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			defer ctrl.Finish()
+			pr, pw := io.Pipe()
+			writer := multipart.NewWriter(pw)
+			go tt.writoMime(writer)
+
+			userH := tt.stubFunc(t, ctrl, pr)
+
+			rr := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(rr)
+			c.Set("userId", tt.id)
+			req := httptest.NewRequest("PUT", "/users/"+tt.id+"/profile-picture", pr)
+			req.Header.Add("Content-Type", writer.FormDataContentType())
+
+			if tt.params != nil {
+				queryParams := req.URL.Query()
+				for k, v := range tt.params {
+					queryParams.Add(k, v)
+				}
+				req.URL.RawQuery = queryParams.Encode()
+			}
+
+			c.Request = req
+			userH.putUserImageProfile(c)
+			assert.Equal(t, tt.wantCode, rr.Code)
+			assert.Contains(t, rr.Header().Get("Content-Type"), "application/json")
+			if tt.wantResp != nil {
+				expResBody, err := json.Marshal(tt.wantResp)
+				require.NoError(t, err)
+				assert.JSONEq(t, string(expResBody), rr.Body.String())
+			}
+		})
+	}
+	t.Run("not multipart", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		defer ctrl.Finish()
+		userRepo := mockrepo.NewMockUser(ctrl)
+		attachSvc := mocksvc.NewMockAttachment(ctrl)
+		validKey := "profile-picture/" + util.RandomUUID() + ".png"
+		user := createNewUser(t)
+		user.ID = validUserId
+		userRepo.EXPECT().GetUserById(validUserId).Return(user, nil).Times(1)
+
+		attachSvc.EXPECT().UploadBlob(gomock.Any(), gomock.Any()).Times(0)
+
+		userRepo.EXPECT().SelectProfilePicture(gomock.Any(), gomock.Any()).Times(0)
+		userRepo.EXPECT().ProfilePicSelectedToFalse(gomock.Any()).Times(0)
+		userRepo.
+			EXPECT().
+			CreateProfilePicture(
+				gomock.Eq(user.ID),
+				gomock.Eq(filepath.Base(validKey)),
+				gomock.Eq(false),
+			).
+			Times(0)
+		userSvc := service.NewUser(userRepo)
+		userApi := NewUser(userSvc, attachSvc)
+		rr := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(rr)
+		c.Set("userId", validUserId)
+		req := httptest.NewRequest("PUT", "/users/"+validUserId+"/profile-picture", strings.NewReader(`{"fullName":"Bob Martin"}`))
+		c.Request = req
+		userApi.putUserImageProfile(c)
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		require.Contains(t, rr.Header().Get("Content-Type"), "application/json")
+		expResBody, err := json.Marshal(map[string]any{"status": "fail", "message": "content-Type header is not valid"})
+		assert.NoError(t, err)
+		assert.JSONEq(t, string(expResBody), rr.Body.String())
+	})
+}
 
 func createNewUser(t *testing.T) *domain.User {
 	pass := util.RandomString(10)
@@ -709,5 +921,14 @@ func createNewUser(t *testing.T) *domain.User {
 		Dob:            util.RandDOB(1980, 2000),
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
+	}
+}
+
+func createRandomProfPic(userId string) domain.ProfilePicture {
+	return domain.ProfilePicture{
+		Id:          util.RandomUUID(),
+		UserId:      userId,
+		PictureLink: util.RandomUUID() + ".png",
+		Selected:    util.RandomBool(),
 	}
 }

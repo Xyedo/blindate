@@ -49,7 +49,7 @@ func (u *user) CreateUser(newUser *domain.User) error {
 
 	return nil
 }
-func (u *user) GetUserById(id string) (*domain.User, error) {
+func (u *user) GetUserById(id string, withProfPic bool) (*domain.User, error) {
 	user, err := u.userRepository.GetUserById(id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -60,17 +60,20 @@ func (u *user) GetUserById(id string) (*domain.User, error) {
 		}
 		return nil, err
 	}
-	profPics, err := u.userRepository.SelectProfilePicture(id, nil)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domain.ErrResourceNotFound
+	if withProfPic {
+		profPics, err := u.userRepository.SelectProfilePicture(id, nil)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, domain.ErrResourceNotFound
+			}
+			if errors.Is(err, context.Canceled) {
+				return nil, domain.ErrTooLongAccesingDB
+			}
+			return nil, err
 		}
-		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccesingDB
-		}
-		return nil, err
+		user.ProfilePic = profPics
 	}
-	user.ProfilePic = profPics
+
 	return user, nil
 }
 func (u *user) VerifyCredential(email, password string) (string, error) {

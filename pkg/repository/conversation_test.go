@@ -19,33 +19,32 @@ func Test_InsertConversation(t *testing.T) {
 		createNewConvo(conv, t)
 	})
 	t.Run("invalid new conv", func(t *testing.T) {
-		fromUsr := createNewAccount(t)
-		id, err := conv.InsertConversation(fromUsr.ID, util.RandomUUID())
+		id, err := conv.InsertConversation(util.RandomUUID())
 		require.Error(t, err)
 		require.Empty(t, id)
 		var pqErr *pq.Error
 		require.ErrorAs(t, err, &pqErr)
 		require.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
-		require.Contains(t, pqErr.Constraint, "to_id")
+		require.Contains(t, pqErr.Constraint, "conversations_match_id_fkey")
 	})
 	t.Run("duplicate conv", func(t *testing.T) {
-		fromUsr := createNewAccount(t)
-		toUsr := createNewAccount(t)
-		id, err := conv.InsertConversation(fromUsr.ID, toUsr.ID)
+		matchId := createNewMatch(t)
+		id, err := conv.InsertConversation(matchId)
 		require.NoError(t, err)
 		require.NotEmpty(t, id)
-		id, err = conv.InsertConversation(fromUsr.ID, toUsr.ID)
+		id, err = conv.InsertConversation(matchId)
 		require.Error(t, err)
 		require.Empty(t, id)
 		var pqErr *pq.Error
 		require.ErrorAs(t, err, &pqErr)
 		assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
-		assert.Contains(t, pqErr.Constraint, "to_id")
+		assert.Contains(t, pqErr.Constraint, "conversations_pkey")
 	})
 }
 
 func Test_SelectConversationById(t *testing.T) {
 	conv := NewConversation(testQuery)
+	matchRepo := NewMatch(testQuery)
 	chat := NewChat(testQuery)
 	user := NewUser(testQuery)
 	t.Run("valid select with full attributes", func(t *testing.T) {
@@ -73,8 +72,9 @@ func Test_SelectConversationById(t *testing.T) {
 			_, err := user.CreateProfilePicture(toUsr.ID, fmt.Sprintf("%d.png", i), false)
 			require.NoError(t, err)
 		}
-
-		convoId, err := conv.InsertConversation(fromUsr.ID, toUsr.ID)
+		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+		require.NoError(t, err)
+		convoId, err := conv.InsertConversation(matchId)
 		require.NoError(t, err)
 		require.NotEmpty(t, convoId)
 
@@ -113,6 +113,8 @@ func Test_SelectConversationById(t *testing.T) {
 		assert.Equal(t, expectedProfilePicCreator, conv.FromUser.ProfilePic)
 		assert.Equal(t, expectedProfilePicRecipient, conv.ToUser.ProfilePic)
 		assert.Equal(t, expectedCreatorMsg, conv.LastMessage)
+		assert.Equal(t, "unknown", conv.RequestStatus)
+		assert.Equal(t, "unknown", conv.RevealStatus)
 	})
 	t.Run("invalid convoId", func(t *testing.T) {
 		conv, err := conv.SelectConversationById(util.RandomUUID())
@@ -125,6 +127,7 @@ func Test_SelectConversationById(t *testing.T) {
 
 func Test_SelectConvoByUserId(t *testing.T) {
 	conv := NewConversation(testQuery)
+	matchRepo := NewMatch(testQuery)
 	chat := NewChat(testQuery)
 	user := NewUser(testQuery)
 	t.Run("valid select with full attributes", func(t *testing.T) {
@@ -152,8 +155,9 @@ func Test_SelectConvoByUserId(t *testing.T) {
 			_, err := user.CreateProfilePicture(toUsr.ID, fmt.Sprintf("%d.png", i), false)
 			require.NoError(t, err)
 		}
-
-		convoId, err := conv.InsertConversation(fromUsr.ID, toUsr.ID)
+		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+		require.NoError(t, err)
+		convoId, err := conv.InsertConversation(matchId)
 		require.NoError(t, err)
 		require.NotEmpty(t, convoId)
 
@@ -195,10 +199,14 @@ func Test_SelectConvoByUserId(t *testing.T) {
 
 	})
 	t.Run("valid select with little to none attributes", func(t *testing.T) {
+		matchRepo := NewMatch(testQuery)
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
-		_, err := conv.InsertConversation(fromUsr.ID, toUsr.ID)
+		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
 		require.NoError(t, err)
+		_, err = conv.InsertConversation(matchId)
+		require.NoError(t, err)
+
 		res, err := conv.SelectConversationByUserId(fromUsr.ID, nil)
 		require.NoError(t, err)
 		require.Len(t, res, 1)
@@ -214,7 +222,9 @@ func Test_SelectConvoByUserId(t *testing.T) {
 			toUsr := createNewAccount(t)
 			_, err = user.CreateProfilePicture(toUsr.ID, util.RandomUUID()+".png", false)
 			require.NoError(t, err)
-			convoId, err := conv.InsertConversation(fromUsr.ID, toUsr.ID)
+			matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+			require.NoError(t, err)
+			convoId, err := conv.InsertConversation(matchId)
 			require.NoError(t, err)
 
 			if util.RandomBool() {
@@ -284,10 +294,13 @@ func Test_DeleteConvoById(t *testing.T) {
 	conv := NewConversation(testQuery)
 
 	t.Run("valid", func(t *testing.T) {
-		chat := NewChat(testQuery)
+		chatRepo := NewChat(testQuery)
+		matchRepo := NewMatch(testQuery)
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
-		convoId, err := conv.InsertConversation(fromUsr.ID, toUsr.ID)
+		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+		require.NoError(t, err)
+		convoId, err := conv.InsertConversation(matchId)
 		require.NoError(t, err)
 		require.NotEmpty(t, convoId)
 		for i := 0; i < 5; i++ {
@@ -301,7 +314,7 @@ func Test_DeleteConvoById(t *testing.T) {
 			} else {
 				newChat.Author = toUsr.ID
 			}
-			err := chat.InsertNewChat(newChat)
+			err := chatRepo.InsertNewChat(newChat)
 			require.NoError(t, err)
 		}
 		err = conv.DeleteConversationById(convoId)
@@ -310,7 +323,7 @@ func Test_DeleteConvoById(t *testing.T) {
 		require.Error(t, err)
 		require.ErrorIs(t, err, sql.ErrNoRows)
 		assert.Empty(t, convs)
-		chats, err := chat.SelectChat(convoId, entity.ChatFilter{
+		chats, err := chatRepo.SelectChat(convoId, entity.ChatFilter{
 			Limit: 10,
 		})
 		require.NoError(t, err)
@@ -324,9 +337,8 @@ func Test_DeleteConvoById(t *testing.T) {
 	})
 }
 func createNewConvo(conv *conversation, t *testing.T) string {
-	fromUsr := createNewAccount(t)
-	toUsr := createNewAccount(t)
-	id, err := conv.InsertConversation(fromUsr.ID, toUsr.ID)
+	matchId := createNewMatch(t)
+	id, err := conv.InsertConversation(matchId)
 	require.NoError(t, err)
 	require.NotEmpty(t, id)
 	return id

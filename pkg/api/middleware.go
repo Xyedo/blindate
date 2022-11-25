@@ -83,5 +83,59 @@ func validateInterest() gin.HandlerFunc {
 		c.Set("interestId", url.InterestId)
 		c.Next()
 	}
+}
+func validateConversation() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var url struct {
+			ConversationId string `uri:"conversationId" binding:"required,uuid"`
+		}
+		err := c.ShouldBindUri(&url)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"status":  "fail",
+				"message": "required,must have uuid in uri!",
+			})
+			return
+		}
+		c.Set("convId", url.ConversationId)
+		c.Next()
+	}
+
+}
+
+func validateChat() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var url struct {
+			ChatId string `uri:"chatId" binding:"required,uuid"`
+		}
+		err := c.ShouldBindUri(&url)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"status":  "fail",
+				"message": "required,must have uuid in uri!",
+			})
+			return
+		}
+		c.Set("chatId", url.ChatId)
+		c.Next()
+	}
+
+}
+func validateMatch() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var url struct {
+			MatchId string `uri:"matchId" binding:"required,uuid"`
+		}
+		err := c.ShouldBindUri(&url)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+				"status":  "fail",
+				"message": "required,must have uuid in uri!",
+			})
+			return
+		}
+		c.Set("matchId", url.MatchId)
+		c.Next()
+	}
 
 }

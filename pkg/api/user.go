@@ -14,7 +14,7 @@ import (
 type userSvc interface {
 	CreateUser(newUser *domain.User) error
 	VerifyCredential(email, password string) (string, error)
-	GetUserById(id string) (*domain.User, error)
+	GetUserById(id string, withProfPic bool) (*domain.User, error)
 	UpdateUser(user *domain.User) error
 	CreateNewProfilePic(profPicParam domain.ProfilePicture) (string, error)
 }
@@ -91,7 +91,7 @@ func (u *user) putUserImageProfile(c *gin.Context) {
 	selectedQ := c.Query("selected")
 	selected := strings.EqualFold(selectedQ, "true")
 	userId := c.GetString("userId")
-	userDb, err := u.userService.GetUserById(userId)
+	userDb, err := u.userService.GetUserById(userId, false)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
 			errNotFoundResp(c, "id not found")
@@ -111,7 +111,7 @@ func (u *user) putUserImageProfile(c *gin.Context) {
 		"image/webp",
 		"image/svg+xml",
 	}
-	key := uploadFile(c, u.attachmentSvc, validImageTypes, "profile-picture")
+	key, _ := uploadFile(c, u.attachmentSvc, validImageTypes, "profile-picture")
 	if key == "" {
 		return
 	}
@@ -136,8 +136,8 @@ func (u *user) putUserImageProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "user profile-picture uploaded",
-		"data": map[string]any{
-			"profilePicture": map[string]any{
+		"data": gin.H{
+			"profilePicture": gin.H{
 				"id": id,
 			},
 		},
@@ -145,7 +145,7 @@ func (u *user) putUserImageProfile(c *gin.Context) {
 }
 func (u *user) getUserByIdHandler(c *gin.Context) {
 	userId := c.GetString("userId")
-	user, err := u.userService.GetUserById(userId)
+	user, err := u.userService.GetUserById(userId, false)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
 			errNotFoundResp(c, "id not found")
@@ -169,7 +169,7 @@ func (u *user) getUserByIdHandler(c *gin.Context) {
 
 func (u *user) patchUserByIdHandler(c *gin.Context) {
 	userId := c.GetString("userId")
-	user, err := u.userService.GetUserById(userId)
+	user, err := u.userService.GetUserById(userId, false)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
 			errNotFoundResp(c, "id not found")

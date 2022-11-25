@@ -11,8 +11,8 @@ import (
 )
 
 type Conversation interface {
-	InsertConversation(fromUserId, toUserId string) (string, error)
-	SelectConversationById(convoId string) (*domain.Conversation, error)
+	InsertConversation(matchId string) (string, error)
+	SelectConversationById(matchId string) (*domain.Conversation, error)
 	SelectConversationByUserId(UserId string, filter *entity.ConvFilter) ([]domain.Conversation, error)
 	UpdateDayPass(convoId string) error
 	UpdateChatRow(convoId string) error
@@ -29,17 +29,17 @@ type conversation struct {
 	conn *sqlx.DB
 }
 
-func (c *conversation) InsertConversation(fromUserId, toUserId string) (string, error) {
+func (c *conversation) InsertConversation(matchId string) (string, error) {
 	query := `
-	INSERT INTO conversations(from_id,to_id)
-	VALUES($1,$2)
-	RETURNING id`
+	INSERT INTO conversations(match_id)
+	VALUES($1)
+	RETURNING match_id`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	var convoId string
-	err := c.conn.GetContext(ctx, &convoId, query, fromUserId, toUserId)
+	err := c.conn.GetContext(ctx, &convoId, query, matchId)
 	if err != nil {
 		return "", err
 	}
@@ -48,7 +48,7 @@ func (c *conversation) InsertConversation(fromUserId, toUserId string) (string, 
 
 var selectConvo = `
 SELECT 
-conv.id AS id,
+conv.match_id AS id,
 conv.chat_rows AS chat_rows,
 conv.day_pass AS day_pass,
 creator.id AS creator_id,
@@ -75,29 +75,33 @@ recipient.alias AS recipieint_alias,
 ) AS recipient_pp_ref,
 c.messages AS last_messages,
 c.sent_at AS last_messages_sent_at,
-c.seen_at AS last_messages_seen_at
+c.seen_at AS last_messages_seen_at,
+match.request_status AS request_status,
+match.reveal_status AS reveal_status
 FROM conversations AS conv
+JOIN match AS match
+	ON match.id = conv.match_id
 JOIN users AS creator 
-ON creator.id = conv.from_id
+	ON creator.id = match.request_from
 JOIN users AS recipient
-ON recipient.id = conv.to_id
+	ON recipient.id = match.request_to
 LEFT JOIN (
-SELECT DISTINCT ON (conversation_id) 
-	conversation_id,
-	messages,
-	sent_at,
-	seen_at
-FROM chats 
-ORDER BY conversation_id, sent_at DESC
-) AS c ON c.conversation_id = conv.id`
+	SELECT DISTINCT ON (conversation_id) 
+		conversation_id,
+		messages,
+		sent_at,
+		seen_at
+	FROM chats 
+	ORDER BY conversation_id, sent_at DESC
+) AS c ON c.conversation_id = conv.match_id`
 
-func (c *conversation) SelectConversationById(convoId string) (*domain.Conversation, error) {
+func (c *conversation) SelectConversationById(matchId string) (*domain.Conversation, error) {
 	convQuery := selectConvo +
-		` WHERE conv.id = $1`
+		` WHERE conv.match_id = $1`
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	row := c.conn.QueryRowxContext(ctx, convQuery, convoId)
+	row := c.conn.QueryRowxContext(ctx, convQuery, matchId)
 	newConv, err := c.createNewChat(row)
 	if err != nil {
 		return nil, err
@@ -149,8 +153,8 @@ func (c *conversation) UpdateChatRow(convoId string) error {
 	query := `
 	UPDATE conversations SET
 		chat_rows = chat_rows + 1
-	WHERE id = $1
-	RETURNING id`
+	WHERE match_id = $1
+	RETURNING match_id`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -166,8 +170,8 @@ func (c *conversation) UpdateDayPass(convoId string) error {
 	query := `
 	UPDATE conversations SET
 		day_pass = day_pass +1
-	WHERE id = $1
-	RETURNING id`
+	WHERE match_id = $1
+	RETURNING match_id`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -180,7 +184,7 @@ func (c *conversation) UpdateDayPass(convoId string) error {
 }
 func (c *conversation) DeleteConversationById(convoId string) error {
 	query := `
-	DELETE from conversations WHERE id = $1 RETURNING id`
+	DELETE from conversations WHERE match_id = $1 RETURNING match_id`
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	var id string
@@ -215,6 +219,8 @@ func (c *conversation) createNewChat(row sqlx.ColScanner) (*domain.Conversation,
 		&lastMessage,
 		&lastMessageSentAt,
 		&seenAt,
+		&newConv.RequestStatus,
+		&newConv.RevealStatus,
 	)
 	if err != nil {
 		return nil, err

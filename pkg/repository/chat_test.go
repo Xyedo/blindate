@@ -15,11 +15,14 @@ import (
 
 func Test_InsertNewChat(t *testing.T) {
 	chat := NewChat(testQuery)
-	setup := func(t *testing.T) (convoId, fromUser, toUser string) {
-		conv := NewConversation(testQuery)
+	setup := func(t *testing.T) (convoId, fromUserId, toUserId string) {
+		convRepo := NewConversation(testQuery)
+		matchRepo := NewMatch(testQuery)
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
-		convoId, err := conv.InsertConversation(fromUsr.ID, toUsr.ID)
+		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+		require.NoError(t, err)
+		convoId, err = convRepo.InsertConversation(matchId)
 		require.NoError(t, err)
 		require.NotEmpty(t, convoId)
 		return convoId, fromUsr.ID, toUsr.ID
@@ -28,16 +31,16 @@ func Test_InsertNewChat(t *testing.T) {
 		createNewChat(chat, t)
 	})
 	t.Run("valid new chat w attachment", func(t *testing.T) {
-		convoId, fromUsr, _ := setup(t)
+		convoId, fromUserId, _ := setup(t)
 
 		err := chat.InsertNewChat(&entity.Chat{
 			ConversationId: convoId,
-			Author:         fromUsr,
+			Author:         fromUserId,
 			Messages:       "",
 			SentAt:         time.Now(),
 			Attachment: &domain.ChatAttachment{
 				BlobLink:  util.RandomUUID() + ".ogg",
-				MediaType: "ogg",
+				MediaType: "application/ogg",
 			},
 		})
 		require.NoError(t, err)
@@ -52,7 +55,7 @@ func Test_InsertNewChat(t *testing.T) {
 			SentAt:         time.Now(),
 			Attachment: &domain.ChatAttachment{
 				BlobLink:  util.RandomUUID() + ".mp3",
-				MediaType: "mp3",
+				MediaType: "audio/mpeg",
 			},
 		})
 		require.NoError(t, err)
@@ -153,9 +156,12 @@ func Test_DeleteChat(t *testing.T) {
 	})
 	t.Run("delete refrenced chat", func(t *testing.T) {
 		conv := NewConversation(testQuery)
+		matchRepo := NewMatch(testQuery)
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
-		convoId, err := conv.InsertConversation(fromUsr.ID, toUsr.ID)
+		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+		require.NoError(t, err)
+		convoId, err := conv.InsertConversation(matchId)
 		require.NoError(t, err)
 		require.NotEmpty(t, convoId)
 		newChat := &entity.Chat{
@@ -186,9 +192,12 @@ func Test_SelectChat(t *testing.T) {
 	chat := NewChat(testQuery)
 	conv := NewConversation(testQuery)
 	t.Run("valid chat", func(t *testing.T) {
+		matchRepo := NewMatch(testQuery)
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
-		convoId, err := conv.InsertConversation(fromUsr.ID, toUsr.ID)
+		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+		require.NoError(t, err)
+		convoId, err := conv.InsertConversation(matchId)
 		require.NoError(t, err)
 		require.NotEmpty(t, convoId)
 		chatDivider := &entity.Chat{
@@ -259,9 +268,12 @@ func Test_SelectChat(t *testing.T) {
 }
 func createNewChat(chat *chat, t *testing.T) string {
 	conv := NewConversation(testQuery)
+	matchRepo := NewMatch(testQuery)
 	fromUsr := createNewAccount(t)
 	toUsr := createNewAccount(t)
-	convoId, err := conv.InsertConversation(fromUsr.ID, toUsr.ID)
+	matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+	require.NoError(t, err)
+	convoId, err := conv.InsertConversation(matchId)
 	require.NoError(t, err)
 	require.NotEmpty(t, convoId)
 	//this should not happen in prod. the author must have link by converstation

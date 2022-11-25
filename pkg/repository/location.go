@@ -13,7 +13,7 @@ type Location interface {
 	InsertNewLocation(location *entity.Location) (int64, error)
 	UpdateLocation(location *entity.Location) (int64, error)
 	GetLocationByUserId(id string) (*entity.Location, error)
-	GetClosestUser(userId string, limit int) ([]domain.User, error)
+	GetClosestUser(userId, geom string, limit int) ([]domain.User, error)
 }
 
 func NewLocation(db *sqlx.DB) *location {
@@ -90,23 +90,30 @@ func (l *location) GetLocationByUserId(id string) (*entity.Location, error) {
 
 }
 
-func (l *location) GetClosestUser(geom string, limit int) ([]domain.User, error) {
+func (l *location) GetClosestUser(userId, geom string, limit int) ([]domain.User, error) {
 	query := `
 		SELECT 
-			users.*
+			users.id
 		FROM locations
 		JOIN users
 			ON users.id = locations.user_id
+		WHERE NOT EXISTS (
+			SELECT 1
+			FROM match m
+			WHERE 
+				m.request_to = users.id OR
+				m.request_from = users.id
+		) AND users.id != $3
 		ORDER BY locations.geog <-> ST_GeomFromText($1)
 		LIMIT $2`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	users := make([]domain.User, 0, limit)
-	err := l.conn.SelectContext(ctx, &users, query, geom, limit)
+	users := make([]domain.User, 0)
+	err := l.conn.SelectContext(ctx, &users, query, geom, limit, userId)
 	if err != nil {
-		return []domain.User{}, err
+		return nil, err
 	}
 	return users, nil
 }

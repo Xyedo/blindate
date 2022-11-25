@@ -50,18 +50,18 @@ func (mr *MockConversationMockRecorder) DeleteConversationById(arg0 interface{})
 }
 
 // InsertConversation mocks base method.
-func (m *MockConversation) InsertConversation(arg0, arg1 string) (string, error) {
+func (m *MockConversation) InsertConversation(arg0 string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InsertConversation", arg0, arg1)
+	ret := m.ctrl.Call(m, "InsertConversation", arg0)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // InsertConversation indicates an expected call of InsertConversation.
-func (mr *MockConversationMockRecorder) InsertConversation(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockConversationMockRecorder) InsertConversation(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertConversation", reflect.TypeOf((*MockConversation)(nil).InsertConversation), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertConversation", reflect.TypeOf((*MockConversation)(nil).InsertConversation), arg0)
 }
 
 // SelectConversationById mocks base method.

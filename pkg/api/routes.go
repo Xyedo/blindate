@@ -15,6 +15,9 @@ type Route struct {
 	Tokenizer      jwtSvc
 	Interest       *interest
 	Online         *online
+	Match          *match
+	Convo          *conversation
+	Chat           *chat
 }
 
 func Routes(route Route) http.Handler {
@@ -46,6 +49,31 @@ func Routes(route Route) http.Handler {
 			auth.GET("/", ru.getUserByIdHandler)
 			auth.PATCH("/", ru.patchUserByIdHandler)
 			auth.PUT("/profile-picture", ru.putUserImageProfile)
+
+			rm := route.Match
+			auth.GET("/match", rm.getNewMatchHandler)
+			// match := auth.Group("match/:matchId", validateMatch())
+			{
+				// match.PUT("/request", rm.putRequestHandler)
+				// match.PUT("/reveal", rm.putRevealHandler)
+			}
+
+			rconv := route.Convo
+			auth.POST("/conversation", rconv.postConversationHandler)
+			auth.GET("/conversation", rconv.getConversationByUserId)
+
+			conv := auth.Group("/conversation/:conversationId", validateConversation())
+			{
+				conv.GET("/", rconv.getConversationById)
+				conv.DELETE("/", rconv.deleteConversationById)
+
+				rchat := route.Chat
+				conv.POST("/chat", rchat.postChatHandler)
+				conv.POST("/chat-media", rchat.postChatMediaHandler)
+				conv.GET("/chat", rchat.getMessagesHandler)
+				conv.DELETE("chat/:chatId", validateChat(), rchat.deleteMessagesByIdHandler)
+			}
+
 			ro := route.Online
 			auth.POST("/online", ro.postUserOnlineHandler)
 			auth.GET("/online", ro.getUserOnlineHandler)

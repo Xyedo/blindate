@@ -55,11 +55,12 @@ func main() {
 		log.Fatal(err)
 	}
 	defer db.Close()
-	uploader := service.NewS3()
+	attachmentSvc := service.NewS3()
 
 	userRepo := repository.NewUser(db)
 	userSvc := service.NewUser(userRepo)
-	userHandler := api.NewUser(userSvc, uploader)
+	userHandler := api.NewUser(userSvc, attachmentSvc)
+
 	healthcheckHander := api.NewHealthCheck()
 
 	basicInfoRepo := repository.NewBasicInfo(db)
@@ -84,6 +85,16 @@ func main() {
 	authSvc := service.NewAuth(authRepo)
 	authHandler := api.NewAuth(authSvc, userSvc, tokenSvc)
 
+	matchRepo := repository.NewMatch(db)
+
+	convRepo := repository.NewConversation(db)
+	convSvc := service.NewConversation(convRepo, matchRepo)
+	convHandler := api.NewConvo(convSvc)
+
+	chatRepp := repository.NewChat(db)
+	chatSvc := service.NewChat(chatRepp, matchRepo)
+	chatHandler := api.NewChat(chatSvc, attachmentSvc)
+
 	route := api.Route{
 		User:           userHandler,
 		Healthcheck:    healthcheckHander,
@@ -93,6 +104,8 @@ func main() {
 		Tokenizer:      tokenSvc,
 		Interest:       interestHandler,
 		Online:         onlineHandler,
+		Convo:          convHandler,
+		Chat:           chatHandler,
 	}
 
 	h := api.Routes(route)

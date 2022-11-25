@@ -20,23 +20,22 @@ var (
 	ErrAuthorNotValid = errors.New("author not in the conversation")
 )
 
-func NewChat(chatRepo repository.Chat, convRepo repository.Conversation) *chat {
+func NewChat(chatRepo repository.Chat, matchRepo repository.Match) *chat {
 	return &chat{
-		chatRepo: chatRepo,
-		convRepo: convRepo,
+		chatRepo:  chatRepo,
+		matchRepo: matchRepo,
 	}
 }
 
 type chat struct {
-	chatRepo repository.Chat
-	convRepo repository.Conversation
+	chatRepo  repository.Chat
+	matchRepo repository.Match
 }
 
 func (c *chat) CreateNewChat(content *domain.Chat) error {
 
-	//TODO: check if has been match or not
 	chatEntity := c.convertToEntity(content)
-	conv, err := c.convRepo.SelectConversationById(chatEntity.ConversationId)
+	matchEntity, err := c.matchRepo.GetMatchById(chatEntity.ConversationId)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			return domain.ErrTooLongAccesingDB
@@ -46,8 +45,11 @@ func (c *chat) CreateNewChat(content *domain.Chat) error {
 		}
 		return err
 	}
-	if !(chatEntity.Author == conv.FromUser.ID || chatEntity.Author == conv.ToUser.ID) {
+	if !(chatEntity.Author == matchEntity.RequestFrom || chatEntity.Author == matchEntity.RequestTo) {
 		return ErrAuthorNotValid
+	}
+	if matchEntity.RequestStatus != string(domain.Accepted) {
+		return ErrNotYetAccepted
 	}
 	cleanChats := c.sanitizeChat(chatEntity)
 	for _, cleanChat := range cleanChats {
@@ -94,7 +96,7 @@ func (c *chat) GetMessages(convoId string, filter entity.ChatFilter) ([]domain.C
 	return chatDomain, nil
 }
 
-func (c *chat) DeleteMessages(chatId string) error {
+func (c *chat) DeleteMessagesById(chatId string) error {
 	err := c.chatRepo.DeleteChatById(chatId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

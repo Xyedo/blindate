@@ -12,31 +12,41 @@ import (
 )
 
 var (
-	ErrConvoWithSelf = fmt.Errorf("conversation: cannot create conversation with yourself")
+	ErrConvoWithSelf  = fmt.Errorf("conversation: cannot create conversation with yourself")
+	ErrRefMatchId     = fmt.Errorf("%w:invalid matchId", domain.ErrRefNotFound23503)
+	ErrNotYetAccepted = errors.New("not yet accepted/revealed in matchId")
 )
 
-func NewConversation(convRepo repository.Conversation) *conversation {
+func NewConversation(convRepo repository.Conversation, matchRepo repository.Match) *conversation {
 	return &conversation{
-		convRepo: convRepo,
+		convRepo:  convRepo,
+		matchRepo: matchRepo,
 	}
 }
 
 type conversation struct {
-	convRepo repository.Conversation
+	convRepo  repository.Conversation
+	matchRepo repository.Match
 }
 
-func (c *conversation) CreateConversation(conv *domain.Conversation) (string, error) {
-	if conv.FromUser.ID == conv.ToUser.ID {
-		return "", ErrConvoWithSelf
-	}
-	//TODO: check if has been match or not
-	id, err := c.convRepo.InsertConversation(conv.FromUser.ID, conv.ToUser.ID)
+func (c *conversation) CreateConversation(matchId string) (string, error) {
+	matchEntity, err := c.matchRepo.GetMatchById(matchId)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			return "", domain.ErrTooLongAccesingDB
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", domain.ErrResourceNotFound
+			return "", ErrRefMatchId
+		}
+		return "", err
+	}
+	if matchEntity.RequestStatus != string(domain.Accepted) {
+		return "", ErrNotYetAccepted
+	}
+	id, err := c.convRepo.InsertConversation(matchId)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return "", domain.ErrTooLongAccesingDB
 		}
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
@@ -53,9 +63,8 @@ func (c *conversation) CreateConversation(conv *domain.Conversation) (string, er
 	return id, nil
 }
 
-func (c *conversation) FindConversationById(convoId string) (*domain.Conversation, error) {
-	conv, err := c.convRepo.SelectConversationById(convoId)
-	//TODO: check if has been reveal, if not, show generic profile_pic and alias
+func (c *conversation) FindConversationById(matchId string) (*domain.Conversation, error) {
+	conv, err := c.convRepo.SelectConversationById(matchId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrResourceNotFound
@@ -65,12 +74,19 @@ func (c *conversation) FindConversationById(convoId string) (*domain.Conversatio
 		}
 		return nil, err
 	}
+
+	if conv.RevealStatus != string(domain.Accepted) {
+		conv.FromUser.FullName = ""
+		conv.FromUser.ProfilePic = ""
+		conv.ToUser.FullName = ""
+		conv.ToUser.ProfilePic = ""
+	}
+
 	return conv, nil
 }
 
 func (c *conversation) GetConversationByUserId(userId string) ([]domain.Conversation, error) {
 	convs, err := c.convRepo.SelectConversationByUserId(userId, nil)
-	//TODO: check if has been reveal, if not, show generic profile_pic and alias
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrResourceNotFound
@@ -80,7 +96,28 @@ func (c *conversation) GetConversationByUserId(userId string) ([]domain.Conversa
 		}
 		return nil, err
 	}
+	for i := range convs {
+		if convs[i].RevealStatus != string(domain.Accepted) {
+			convs[i].FromUser.FullName = ""
+			convs[i].FromUser.ProfilePic = ""
+			convs[i].ToUser.FullName = ""
+			convs[i].ToUser.ProfilePic = ""
+		}
+	}
 	return convs, nil
+}
+func (c *conversation) DeleteConversationById(convoId string) error {
+	err := c.convRepo.DeleteConversationById(convoId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.ErrResourceNotFound
+		}
+		if errors.Is(err, context.Canceled) {
+			return domain.ErrTooLongAccesingDB
+		}
+		return err
+	}
+	return nil
 }
 
 func (c *conversation) UpdateConvRow(convoId string) error {

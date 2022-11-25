@@ -1,0 +1,5 @@
+CREATE TABLE conversations (
+  match_id UUID PRIMARY KEY REFERENCES match(id) ON DELETE CASCADE,
+  chat_rows INTEGER NOT NULL DEFAULT 0,
+  day_pass INTEGER NOT NULL DEFAULT 0
+);
