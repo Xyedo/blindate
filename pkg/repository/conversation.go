@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"log"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -64,7 +65,7 @@ creator.alias AS creator_alias,
 ) AS creator_pp_ref,
 recipient.id AS recipient_id,
 recipient.full_name AS recipient_full_name,
-recipient.alias AS recipieint_alias,
+recipient.alias AS recipient_alias,
 (
 	SELECT 
 		picture_ref
@@ -79,7 +80,7 @@ c.seen_at AS last_messages_seen_at,
 match.request_status AS request_status,
 match.reveal_status AS reveal_status
 FROM conversations AS conv
-JOIN match AS match
+JOIN match
 	ON match.id = conv.match_id
 JOIN users AS creator 
 	ON creator.id = match.request_from
@@ -134,7 +135,12 @@ func (c *conversation) SelectConversationByUserId(UserId string, filter *entity.
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func(rows *sqlx.Rows) {
+		err := rows.Close()
+		if err != nil {
+			log.Panic(err)
+		}
+	}(rows)
 
 	convs := make([]domain.Conversation, 0)
 	for rows.Next() {

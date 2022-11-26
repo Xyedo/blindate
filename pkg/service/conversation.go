@@ -12,7 +12,6 @@ import (
 )
 
 var (
-	ErrConvoWithSelf  = fmt.Errorf("conversation: cannot create conversation with yourself")
 	ErrRefMatchId     = fmt.Errorf("%w:invalid matchId", domain.ErrRefNotFound23503)
 	ErrNotYetAccepted = errors.New("not yet accepted/revealed in matchId")
 )
@@ -33,7 +32,7 @@ func (c *conversation) CreateConversation(matchId string) (string, error) {
 	matchEntity, err := c.matchRepo.GetMatchById(matchId)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return "", domain.ErrTooLongAccesingDB
+			return "", domain.ErrTooLongAccessingDB
 		}
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", ErrRefMatchId
@@ -46,7 +45,7 @@ func (c *conversation) CreateConversation(matchId string) (string, error) {
 	id, err := c.convRepo.InsertConversation(matchId)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return "", domain.ErrTooLongAccesingDB
+			return "", domain.ErrTooLongAccessingDB
 		}
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
@@ -70,7 +69,7 @@ func (c *conversation) FindConversationById(matchId string) (*domain.Conversatio
 			return nil, domain.ErrResourceNotFound
 		}
 		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccesingDB
+			return nil, domain.ErrTooLongAccessingDB
 		}
 		return nil, err
 	}
@@ -92,7 +91,7 @@ func (c *conversation) GetConversationByUserId(userId string) ([]domain.Conversa
 			return nil, domain.ErrResourceNotFound
 		}
 		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccesingDB
+			return nil, domain.ErrTooLongAccessingDB
 		}
 		return nil, err
 	}
@@ -113,7 +112,7 @@ func (c *conversation) DeleteConversationById(convoId string) error {
 			return domain.ErrResourceNotFound
 		}
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		return err
 	}
@@ -127,7 +126,7 @@ func (c *conversation) UpdateConvRow(convoId string) error {
 			return domain.ErrResourceNotFound
 		}
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		return err
 	}
@@ -141,7 +140,7 @@ func (c *conversation) UpdateConvDay(convoId string) error {
 			return domain.ErrResourceNotFound
 		}
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		return err
 	}

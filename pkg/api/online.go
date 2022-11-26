@@ -38,7 +38,7 @@ func (o *online) postUserOnlineHandler(c *gin.Context) {
 			errUnprocessableEntityResp(c, "users is already registered")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -60,7 +60,7 @@ func (o *online) getUserOnlineHandler(c *gin.Context) {
 			errNotFoundResp(c, "userId is not found")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -96,7 +96,7 @@ func (o *online) putuserOnlineHandler(c *gin.Context) {
 			errNotFoundResp(c, "userId is not found")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}

@@ -148,7 +148,7 @@ func (u *userCon) SelectProfilePicture(userId string, params *entity.ProfilePicQ
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	profilePics := []domain.ProfilePicture{}
+	var profilePics []domain.ProfilePicture
 	err := u.conn.SelectContext(ctx, &profilePics, query, args...)
 	if err != nil {
 		return nil, err

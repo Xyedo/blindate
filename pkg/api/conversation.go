@@ -99,7 +99,7 @@ func (conv *conversation) deleteConversationById(c *gin.Context) {
 		case errors.Is(err, domain.ErrResourceNotFound):
 			errNotFoundResp(c, "conversationId is not found")
 
-		case errors.Is(err, domain.ErrTooLongAccesingDB):
+		case errors.Is(err, domain.ErrTooLongAccessingDB):
 			errResourceConflictResp(c)
 		default:
 			errServerResp(c, err)

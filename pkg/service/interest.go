@@ -178,7 +178,7 @@ func (*interest) parsingError(err error) error {
 	var pqErr *pq.Error
 	switch {
 	case errors.Is(err, context.Canceled):
-		return domain.ErrTooLongAccesingDB
+		return domain.ErrTooLongAccessingDB
 	case errors.Is(err, sql.ErrNoRows):
 		return domain.ErrResourceNotFound
 	case errors.As(err, &pqErr):

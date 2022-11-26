@@ -70,7 +70,7 @@ func (u *user) postUserHandler(c *gin.Context) {
 			errUnprocessableEntityResp(c, "email is already taken")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -97,7 +97,7 @@ func (u *user) putUserImageProfile(c *gin.Context) {
 			errNotFoundResp(c, "id not found")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -126,7 +126,7 @@ func (u *user) putUserImageProfile(c *gin.Context) {
 			errNotFoundResp(c, "users.Id not found!")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -151,7 +151,7 @@ func (u *user) getUserByIdHandler(c *gin.Context) {
 			errNotFoundResp(c, "id not found")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -175,7 +175,7 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 			errNotFoundResp(c, "id not found")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -238,7 +238,7 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 			errNotFoundResp(c, "users.Id not found!")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}

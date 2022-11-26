@@ -35,7 +35,7 @@ func (o *online) CreateNewOnline(userId string) error {
 			return err
 		}
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		return err
 	}
@@ -48,7 +48,7 @@ func (o *online) GetOnline(userId string) (*domain.Online, error) {
 			return nil, domain.ErrResourceNotFound
 		}
 		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccesingDB
+			return nil, domain.ErrTooLongAccessingDB
 		}
 		return nil, err
 	}
@@ -62,7 +62,7 @@ func (o *online) PutOnline(userId string, online bool) error {
 			return domain.ErrResourceNotFound
 		}
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		return err
 	}

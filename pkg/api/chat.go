@@ -186,7 +186,7 @@ func (chat *chat) getMessagesHandler(c *gin.Context) {
 	convoId := c.GetString("convId")
 	dtoChats, err := chat.chatSvc.GetMessages(convoId, chatQueryFilter)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -207,7 +207,7 @@ func (chat *chat) deleteMessagesByIdHandler(c *gin.Context) {
 		switch {
 		case errors.Is(err, domain.ErrRefNotFound23503):
 			errNotFoundResp(c, "provided chatId in url is not found!")
-		case errors.Is(err, domain.ErrTooLongAccesingDB):
+		case errors.Is(err, domain.ErrTooLongAccessingDB):
 			errResourceConflictResp(c)
 		default:
 			errServerResp(c, err)

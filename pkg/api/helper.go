@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
@@ -52,7 +53,12 @@ func uploadFile(c *gin.Context, uploader attachmentManager, validMimeTypes []str
 		errServerResp(c, err)
 		return "", ""
 	}
-	defer file.Close()
+	defer func(file multipart.File) {
+		err := file.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(file)
 	buff := make([]byte, 512)
 	_, err = file.Read(buff)
 	if err != nil {

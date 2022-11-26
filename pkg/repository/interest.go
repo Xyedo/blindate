@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -198,7 +199,12 @@ func (i *interest) InsertInterestHobbies(interestId string, hobbies []domain.Hob
 		if err != nil {
 			return err
 		}
-		defer rows.Close()
+		defer func(rows *sqlx.Rows) {
+			err := rows.Close()
+			if err != nil {
+				log.Panic(err)
+			}
+		}(rows)
 
 		iter := 0
 		for rows.Next() {
@@ -363,7 +369,12 @@ func (i *interest) InsertInterestMovieSeries(interestId string, movieSeries []do
 		if err != nil {
 			return err
 		}
-		defer rows.Close()
+		defer func(rows *sqlx.Rows) {
+			err := rows.Close()
+			if err != nil {
+				log.Panic(err)
+			}
+		}(rows)
 
 		iter := 0
 		for rows.Next() {
@@ -524,7 +535,12 @@ func (i *interest) InsertInterestTraveling(interestId string, travels []domain.T
 		if err != nil {
 			return err
 		}
-		defer rows.Close()
+		defer func(rows *sqlx.Rows) {
+			err := rows.Close()
+			if err != nil {
+				log.Panic(err)
+			}
+		}(rows)
 
 		iter := 0
 		for rows.Next() {
@@ -688,7 +704,12 @@ func (i *interest) InsertInterestSports(interestId string, sports []domain.Sport
 		if err != nil {
 			return err
 		}
-		defer rows.Close()
+		defer func(rows *sqlx.Rows) {
+			err := rows.Close()
+			if err != nil {
+				log.Panic(err)
+			}
+		}(rows)
 
 		iter := 0
 		for rows.Next() {

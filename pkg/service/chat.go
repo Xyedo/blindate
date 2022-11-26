@@ -38,7 +38,7 @@ func (c *chat) CreateNewChat(content *domain.Chat) error {
 	matchEntity, err := c.matchRepo.GetMatchById(chatEntity.ConversationId)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrRefConvoID
@@ -84,7 +84,7 @@ func (c *chat) GetMessages(convoId string, filter entity.ChatFilter) ([]domain.C
 	chats, err := c.chatRepo.SelectChat(convoId, filter)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccesingDB
+			return nil, domain.ErrTooLongAccessingDB
 		}
 		return nil, err
 	}
@@ -103,7 +103,7 @@ func (c *chat) DeleteMessagesById(chatId string) error {
 			return domain.ErrRefNotFound23503
 		}
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		return err
 	}

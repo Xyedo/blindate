@@ -53,8 +53,14 @@ func main() {
 	db, err := openDB(cfg)
 	if err != nil {
 		log.Fatal(err)
+		return
 	}
-	defer db.Close()
+	defer func(db *sqlx.DB) {
+		err := db.Close()
+		if err != nil {
+			log.Panic(err)
+		}
+	}(db)
 	attachmentSvc := service.NewS3()
 
 	userRepo := repository.NewUser(db)
@@ -86,6 +92,8 @@ func main() {
 	authHandler := api.NewAuth(authSvc, userSvc, tokenSvc)
 
 	matchRepo := repository.NewMatch(db)
+	matchSvc := service.NewMatch(matchRepo, locationRepo)
+	matchHandler := api.NewMatch(matchSvc, interestSvc, basicInfoSvc)
 
 	convRepo := repository.NewConversation(db)
 	convSvc := service.NewConversation(convRepo, matchRepo)
@@ -106,6 +114,7 @@ func main() {
 		Online:         onlineHandler,
 		Convo:          convHandler,
 		Chat:           chatHandler,
+		Match:          matchHandler,
 	}
 
 	h := api.Routes(route)

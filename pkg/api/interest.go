@@ -52,7 +52,7 @@ func (i *interest) getInterestHandler(c *gin.Context) {
 			errNotFoundResp(c, "userId is not match with our resource")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -91,7 +91,7 @@ func (i *interest) postInterestBioHandler(c *gin.Context) {
 
 	err = i.interestSvc.CreateNewBio(&bio)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -121,7 +121,7 @@ func (i *interest) putInterestBioHandler(c *gin.Context) {
 			errNotFoundResp(c, "userId is not match with our resource")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -153,7 +153,7 @@ func (i *interest) putInterestBioHandler(c *gin.Context) {
 	bio.Bio = changedBio
 	err = i.interestSvc.PutBio(bio)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -196,7 +196,7 @@ func (i *interest) postInterestHobbiesHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.CreateNewHobbies(interestId, hobbies)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -243,7 +243,7 @@ func (i *interest) putInterestHobbiesHandler(c *gin.Context) {
 
 	err = i.interestSvc.PutHobbies(interestId, input.Hobbies)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -289,7 +289,7 @@ func (i *interest) deleteInterestHobbiesHandler(c *gin.Context) {
 	interestId := c.GetString("interestId")
 	err = i.interestSvc.DeleteHobbies(interestId, input.Ids)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -332,7 +332,7 @@ func (i *interest) postInterestMovieSeriesHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.CreateNewMovieSeries(interestId, movieSeries)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -377,7 +377,7 @@ func (i *interest) putInterestMovieSeriesHandler(c *gin.Context) {
 
 	err = i.interestSvc.PutMovieSeries(interestId, input.MovieSeries)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -424,7 +424,7 @@ func (i *interest) deleteInterestMovieSeriesHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.DeleteMovieSeries(interestId, input.Ids)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -467,7 +467,7 @@ func (i *interest) postInterestTravelingHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.CreateNewTraveling(interestId, travels)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -513,7 +513,7 @@ func (i *interest) putInterestTravelingHandler(c *gin.Context) {
 
 	err = i.interestSvc.PutTraveling(interestId, input.Travels)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -559,7 +559,7 @@ func (i *interest) deleteInterestTravelingHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.DeleteTravels(interestId, input.Ids)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -602,7 +602,7 @@ func (i *interest) postInterestSportHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.CreateNewSports(interestId, sports)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -647,7 +647,7 @@ func (i *interest) putInterestSportHandler(c *gin.Context) {
 
 	err = i.interestSvc.PutSports(interestId, input.Sports)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -692,7 +692,7 @@ func (i *interest) deleteInterestSportHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.DeleteSports(interestId, input.Ids)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}

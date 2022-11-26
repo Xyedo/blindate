@@ -11,10 +11,6 @@ import (
 	"github.com/xyedo/blindate/pkg/repository"
 )
 
-var (
-	ErrNotValidMatchStatus = errors.New("invalid match status")
-)
-
 func NewMatch(matchRepo repository.Match, locationRepo repository.Location) *match {
 	return &match{
 		matchRepo:    matchRepo,
@@ -31,7 +27,7 @@ func (m *match) FindNewMatch(userId string) ([]domain.User, error) {
 	userLoc, err := m.locationRepo.GetLocationByUserId(userId)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccesingDB
+			return nil, domain.ErrTooLongAccessingDB
 		}
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrResourceNotFound
@@ -41,7 +37,7 @@ func (m *match) FindNewMatch(userId string) ([]domain.User, error) {
 	toUsers, err := m.locationRepo.GetClosestUser(userId, userLoc.Geog, 3)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccesingDB
+			return nil, domain.ErrTooLongAccessingDB
 		}
 		return nil, err
 	}
@@ -51,7 +47,7 @@ func (m *match) FindNewMatch(userId string) ([]domain.User, error) {
 			var pqErr *pq.Error
 			switch {
 			case errors.Is(err, context.Canceled):
-				return nil, domain.ErrTooLongAccesingDB
+				return nil, domain.ErrTooLongAccessingDB
 			case errors.As(err, &pqErr):
 				switch {
 				case pqErr.Code == "23503":
@@ -78,6 +74,84 @@ func (m *match) GetMatchByUserId(userId string) ([]domain.Match, error) {
 		matchs = append(matchs, *m.convertToDomain(&matchEn))
 	}
 	return matchs, nil
+}
+
+func (m *match) AcceptRequest(matchId string) error {
+	matchEntity, err := m.getMatchById(matchId)
+	if err != nil {
+		return err
+	}
+	matchEntity.RequestStatus = string(domain.Accepted)
+
+	err = m.updateMatch(*matchEntity)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *match) RequestReveal(matchId string) error {
+	matchEntity, err := m.getMatchById(matchId)
+	if err != nil {
+		return err
+	}
+	if matchEntity.RequestStatus != string(domain.Accepted) {
+		return ErrNotYetAccepted
+	}
+	matchEntity.RevealStatus = string(domain.Requested)
+
+	err = m.updateMatch(*matchEntity)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *match) AcceptReveal(matchId string) error {
+	matchEntity, err := m.getMatchById(matchId)
+	if err != nil {
+		return err
+	}
+	if !(matchEntity.RequestStatus == string(domain.Accepted) && matchEntity.RevealStatus == string(domain.Requested)) {
+		return ErrNotYetAccepted
+	}
+	matchEntity.RevealStatus = string(domain.Accepted)
+
+	err = m.updateMatch(*matchEntity)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (m *match) updateMatch(matchEntity entity.Match) error {
+	err := m.matchRepo.UpdateMatchById(matchEntity)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return domain.ErrResourceNotFound
+		case errors.Is(err, context.Canceled):
+			return domain.ErrTooLongAccessingDB
+		default:
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *match) getMatchById(matchId string) (*entity.Match, error) {
+	matchEntity, err := m.matchRepo.GetMatchById(matchId)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, domain.ErrResourceNotFound
+		case errors.Is(err, context.Canceled):
+			return nil, domain.ErrTooLongAccessingDB
+		default:
+			return nil, err
+		}
+	}
+	return matchEntity, nil
 }
 
 //	func (*match) convertToEntity(matchDto *domain.Match) *entity.Match {

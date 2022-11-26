@@ -31,7 +31,7 @@ func (l *location) CreateNewLocation(location *domain.Location) error {
 	rows, err := l.locationRepo.InsertNewLocation(locationEntity)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
@@ -59,7 +59,7 @@ func (l *location) UpdateLocation(location *domain.Location) error {
 	rows, err := l.locationRepo.UpdateLocation(locationEntity)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		return err
 	}
@@ -73,7 +73,7 @@ func (l *location) GetLocation(id string) (*domain.Location, error) {
 	location, err := l.locationRepo.GetLocationByUserId(id)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccesingDB
+			return nil, domain.ErrTooLongAccessingDB
 		}
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrResourceNotFound

@@ -11,7 +11,7 @@ type tinyUser struct {
 	ProfilePic string `db:"picture_ref" json:"profilePicture,omitempty"`
 }
 
-// one user to many match
+// Match one user to many match
 type Match struct {
 	Id            string      `json:"id"`
 	RequestFrom   string      `json:"requestFrom"`
@@ -23,7 +23,7 @@ type Match struct {
 	RevealedAt    *time.Time  `json:"revealedAt,omitempty"`
 }
 
-// one to one with match
+// Conversation one to one with match
 type Conversation struct {
 	Id                string     `json:"id,omitempty" db:"id"`
 	FromUser          tinyUser   `json:"fromUser" db:"creator"`
@@ -37,7 +37,7 @@ type Conversation struct {
 	RevealStatus      string     `json:"-"`
 }
 
-// one convoersation to many chat
+// Chat one convoersation to many chat
 type Chat struct {
 	Id             string          `json:"id"`
 	ConversationId string          `json:"conversationId"`
@@ -49,7 +49,7 @@ type Chat struct {
 	Attachment     *ChatAttachment `json:"attachment"`
 }
 
-// one to one with chat
+// ChatAttachment one to one with chat
 type ChatAttachment struct {
 	ChatId    string `json:"-" db:"chat_id"`
 	BlobLink  string `json:"blobLink" db:"blob_link"`

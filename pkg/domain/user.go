@@ -18,7 +18,7 @@ type User struct {
 	UpdatedAt      time.Time        `db:"updated_at" json:"updatedAt"`
 }
 
-// one to one with user
+// Bio one to one with user
 type Bio struct {
 	Id        string    `json:"id,omitempty" db:"id"`
 	UserId    string    `json:"userId" db:"user_id"`
@@ -27,7 +27,7 @@ type Bio struct {
 	UpdatedAt time.Time `json:"updatedAt" db:"updated_at"`
 }
 
-// one to one with user
+// BasicInfo one to one with user
 type BasicInfo struct {
 	UserId           string    `json:"userId"`
 	Gender           string    `json:"gender"`
@@ -45,21 +45,21 @@ type BasicInfo struct {
 	UpdatedAt        time.Time `json:"updatedAt"`
 }
 
-// one to one with user
+// Location one to one with user
 type Location struct {
 	UserId string `json:"-"`
 	Lat    string `json:"lat"`
 	Lng    string `json:"lng"`
 }
 
-// one to one with user
+// Online one to one with user
 type Online struct {
 	UserId     string    `json:"-" db:"user_id"`
 	LastOnline time.Time `json:"lastOnline" db:"last_online"`
 	IsOnline   bool      `json:"isOnline" db:"is_online"`
 }
 
-// one to one with user
+// Interest one to one with user
 type Interest struct {
 	Bio         `json:"-" db:"-"`
 	Hobbies     []Hobbie     `json:"hobbies" db:"-"`
@@ -68,7 +68,7 @@ type Interest struct {
 	Sports      []Sport      `json:"sports" db:"-"`
 }
 
-// one to many with user
+// ProfilePicture one to many with user
 type ProfilePicture struct {
 	Id          string `json:"id" db:"id"`
 	UserId      string `json:"userId" db:"user_id"`
@@ -76,25 +76,25 @@ type ProfilePicture struct {
 	PictureLink string `json:"pictureLink" db:"picture_ref"`
 }
 
-// one to many with bio
+// Hobbie one to many with bio
 type Hobbie struct {
 	Id     string `json:"id,omitempty" db:"id" binding:"omitempty,uuid"`
 	Hobbie string `json:"hobbie" db:"hobbie" binding:"required,min=2,max=50"`
 }
 
-// one to many with bio
+// MovieSerie one to many with bio
 type MovieSerie struct {
 	Id         string `json:"id,omitempty" db:"id" binding:"omitempty,uuid"`
 	MovieSerie string `json:"movieSerie" db:"movie_serie" binding:"required,min=2,max=50"`
 }
 
-// one to many with bio
+// Travel one to many with bio
 type Travel struct {
 	Id     string `json:"id,omitempty" db:"id" binding:"omitempty,uuid"`
 	Travel string `json:"travel" db:"travel" binding:"required,min=2,max=50"`
 }
 
-// one to many with bio
+// Sport one to many with bio
 type Sport struct {
 	Id    string `json:"id,omitempty" db:"id" binding:"omitempty,uuid"`
 	Sport string `json:"sport" db:"sport" binding:"required,min=2,max=50"`

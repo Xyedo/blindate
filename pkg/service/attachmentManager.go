@@ -14,7 +14,7 @@ import (
 	"github.com/xyedo/blindate/pkg/util"
 )
 
-const BUCKET_NAME = "blindate-bucket"
+const BucketName = "blindate-bucket"
 
 type Attachment interface {
 	UploadBlob(file io.Reader, attach domain.Uploader) (string, error)
@@ -52,7 +52,7 @@ func (a *attachment) UploadBlob(file io.Reader, attach domain.Uploader) (string,
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	_, err := a.uploader.Upload(ctx, &s3.PutObjectInput{
-		Bucket:        aws.String(BUCKET_NAME),
+		Bucket:        aws.String(BucketName),
 		Key:           aws.String(key),
 		Body:          file,
 		ContentLength: attach.Length,
@@ -69,7 +69,7 @@ func (a *attachment) DeleteBlob(key string) error {
 	defer cancel()
 	_, err := a.s3client.DeleteObject(ctx, &s3.DeleteObjectInput{
 		Key:    &key,
-		Bucket: aws.String(BUCKET_NAME),
+		Bucket: aws.String(BucketName),
 	})
 	if err != nil {
 		return err
@@ -81,7 +81,7 @@ func (a *attachment) GetPresignedUrl(key string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	presignRes, err := a.presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(BUCKET_NAME),
+		Bucket: aws.String(BucketName),
 		Key:    aws.String(key),
 	}, func(po *s3.PresignOptions) {
 		po.Expires = 5 * time.Minute

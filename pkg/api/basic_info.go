@@ -83,7 +83,7 @@ func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, res)
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -100,7 +100,7 @@ func (b *basicinfo) getBasicInfoHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	basicInfo, err := b.basicinfoService.GetBasicInfoByUserId(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -123,7 +123,7 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	basicInfo, err := b.basicinfoService.GetBasicInfoByUserId(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -208,7 +208,7 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, res)
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}

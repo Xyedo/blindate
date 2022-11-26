@@ -175,7 +175,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Bio:    "alah lo",
 				}
-				interestRepo.EXPECT().InsertInterestBio(gomock.Eq(interest)).Times(1).Return(domain.ErrTooLongAccesingDB)
+				interestRepo.EXPECT().InsertInterestBio(gomock.Eq(interest)).Times(1).Return(domain.ErrTooLongAccessingDB)
 				interestRepo.EXPECT().InsertNewStats(gomock.Eq(interest.Id)).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)

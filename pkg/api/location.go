@@ -45,7 +45,7 @@ func (l *location) postLocationByUserIdHandler(c *gin.Context) {
 	}
 	err = l.locationService.CreateNewLocation(&domain.Location{UserId: userId, Lat: input.Lat, Lng: input.Lng})
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -69,7 +69,7 @@ func (l *location) getLocationByUserIdHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	location, err := l.locationService.GetLocation(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -108,7 +108,7 @@ func (l *location) patchLocationByUserIdHandler(c *gin.Context) {
 	}
 	location, err := l.locationService.GetLocation(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -128,7 +128,7 @@ func (l *location) patchLocationByUserIdHandler(c *gin.Context) {
 
 	err = l.locationService.UpdateLocation(location)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
