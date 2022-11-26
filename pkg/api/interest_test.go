@@ -94,7 +94,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Bio": "at least an empty string and maximal character length is less than 300"},
+					"bio": "at least an empty string and maximal character length is less than 300"},
 			},
 		},
 		{
@@ -353,7 +353,7 @@ func Test_putInterestBioHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Bio": "required, maximal character length is less than 300",
+					"bio": "required, maximal character length is less than 300",
 				},
 			},
 		},
@@ -404,7 +404,7 @@ func Test_putInterestBioHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Bio": "required, maximal character length is less than 300",
+					"bio": "required, maximal character length is less than 300",
 				},
 			},
 		},
@@ -568,7 +568,7 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Hobbies": "each hobbies must be unique, less than 10 and has more than 2 and less than 50 character",
+					"hobbies": "each hobbies must be unique, less than 10 and has more than 2 and less than 50 character",
 				},
 			},
 		},
@@ -884,7 +884,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Hobbies": "each hobbies must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new hobbies",
+					"hobbies": "each hobbies must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new hobbies",
 				},
 			},
 		},
@@ -988,7 +988,7 @@ func Test_deleteInterestHobbiesHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Ids": "each ids must be unique and uuid character",
+					"ids": "each ids must be unique and uuid character",
 				},
 			},
 		},
@@ -1138,7 +1138,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"MovieSeries": "each movieSeries must be unique, less than 10 and has more than 2 and less than 50 character",
+					"movieSeries": "each movieSeries must be unique, less than 10 and has more than 2 and less than 50 character",
 				},
 			},
 		},
@@ -1454,7 +1454,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"MovieSeries": "each movieSeries must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new movieSeries",
+					"movieSeries": "each movieSeries must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new movieSeries",
 				},
 			},
 		},
@@ -1558,7 +1558,7 @@ func Test_deleteInterestMovieSeriesHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Ids": "each ids must be unique and uuid character",
+					"ids": "each ids must be unique and uuid character",
 				},
 			},
 		},
@@ -1708,7 +1708,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Travels": "each travels must be unique, less than 10 and has more than 2 and less than 50 character",
+					"travels": "each travels must be unique, less than 10 and has more than 2 and less than 50 character",
 				},
 			},
 		},
@@ -2024,7 +2024,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Travels": "each travels must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new travel.",
+					"travels": "each travels must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new travel.",
 				},
 			},
 		},
@@ -2128,7 +2128,7 @@ func Test_deleteInterestTravelingHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Ids": "each ids must be unique and uuid character",
+					"ids": "each ids must be unique and uuid character",
 				},
 			},
 		},
@@ -2277,7 +2277,7 @@ func Test_postInterestSportsHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Sports": "each sports must be unique, less than 10 and has more than 2 and less than 50 character",
+					"sports": "each sports must be unique, less than 10 and has more than 2 and less than 50 character",
 				},
 			},
 		},
@@ -2593,7 +2593,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Sports": "each sports must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new sports.",
+					"sports": "each sports must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new sports.",
 				},
 			},
 		},
@@ -2697,7 +2697,7 @@ func Test_deleteInterestSportsHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Ids": "each ids must be unique and uuid character",
+					"ids": "each ids must be unique and uuid character",
 				},
 			},
 		},

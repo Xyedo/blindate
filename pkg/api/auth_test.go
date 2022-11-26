@@ -114,8 +114,8 @@ func Test_postAuthHandler(t *testing.T) {
 					"status":  "fail",
 					"message": "please refer to the documentation",
 					"errors": map[string]any{
-						"Email":    "required and must be valid email",
-						"Password": "required and must be over 8 character",
+						"email":    "required and must be valid email",
+						"password": "required and must be over 8 character",
 					},
 				})
 				assert.NoError(t, err)

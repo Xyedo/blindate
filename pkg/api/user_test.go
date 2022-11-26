@@ -33,6 +33,7 @@ import (
 func Test_PostUserHandler(t *testing.T) {
 	var (
 		validFullName = "Uncle Bob"
+		validAlias    = "bobbies"
 		validEmail    = "bob23@gmail.com"
 		validPassword = "validPa$$word"
 		validDOB      = "2012-04-23T18:25:43.511Z"
@@ -49,6 +50,7 @@ func Test_PostUserHandler(t *testing.T) {
 			name: "Valid Submission",
 			body: map[string]any{
 				"fullName": validFullName,
+				"alias":    util.RandomString(5),
 				"email":    validEmail,
 				"password": validPassword,
 				"dob":      validDOB,
@@ -168,8 +170,9 @@ func Test_PostUserHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]string{
-					"Email":    "must have an valid email",
-					"Password": "must have more than 8 character",
+					"email":    "must be required and have an valid email",
+					"password": "must be required and have more than 8 character",
+					"alias":    "must be required and between 1-15 characters",
 				},
 			},
 		},
@@ -197,6 +200,7 @@ func Test_PostUserHandler(t *testing.T) {
 			name: "Valid but have Unknown Fields",
 			body: map[string]any{
 				"fullName": validFullName,
+				"alias":    validAlias,
 				"email":    validEmail,
 				"password": validPassword,
 				"dob":      validDOB,
@@ -219,6 +223,7 @@ func Test_PostUserHandler(t *testing.T) {
 			name: "Valid but have Duplicate Email",
 			body: map[string]any{
 				"fullName": validFullName,
+				"alias":    validAlias,
 				"email":    validEmail,
 				"password": validPassword,
 				"dob":      validDOB,
@@ -301,6 +306,7 @@ func Test_PostUserHandler(t *testing.T) {
 			name: "Valid but have Sql Blocking",
 			body: map[string]any{
 				"fullName": validFullName,
+				"alias":    validAlias,
 				"email":    validEmail,
 				"password": validPassword,
 				"dob":      validDOB,
@@ -332,6 +338,7 @@ func Test_PostUserHandler(t *testing.T) {
 			assert.NoError(t, err)
 			req := httptest.NewRequest(http.MethodPost, "/api/v1/users", bytes.NewBuffer(bodyStr))
 			c.Request = req
+
 			userH.postUserHandler(c)
 			assert.Equal(t, tt.wantCode, rr.Code)
 			assert.Contains(t, rr.Header().Get("Content-Type"), tt.wantHeader["Content-Type"])
@@ -532,7 +539,7 @@ func Test_PatchUserById(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]string{
-					"OldPassword": "must be more than 8 character and pairing with NewPassword",
+					"oldPassword": "must be more than 8 character and pairing with newPassword",
 				},
 			},
 		},
@@ -555,7 +562,7 @@ func Test_PatchUserById(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]string{
-					"NewPassword": "must be more than 8 character and pairing with OldPassword",
+					"newPassword": "must be more than 8 character and pairing with oldPassword",
 				},
 			},
 		},

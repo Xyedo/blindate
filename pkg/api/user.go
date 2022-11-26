@@ -46,9 +46,11 @@ func (u *user) postUserHandler(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Email":    "must have an valid email",
-			"Password": "must have more than 8 character",
-			"Dob":      "must between today and after 1990",
+			"fullname": "must be required and between 1-50 characters",
+			"alias":    "must be required and between 1-15 characters",
+			"email":    "must be required and have an valid email",
+			"password": "must be required and have more than 8 character",
+			"dob":      "must be required and between today and after 1990",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -194,12 +196,12 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 	err = c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"FullName":    "must less than 50 character",
-			"Alias":       "must less than 15 character",
-			"Email":       "must be an valid email",
-			"OldPassword": "must be more than 8 character and pairing with NewPassword",
-			"NewPassword": "must be more than 8 character and pairing with OldPassword",
-			"Dob":         "Must betwen today and more than 1990",
+			"fullName":    "must less than 50 character",
+			"alias":       "must less than 15 character",
+			"email":       "must be an valid email",
+			"oldPassword": "must be more than 8 character and pairing with newPassword",
+			"newPassword": "must be more than 8 character and pairing with oldPassword",
+			"dob":         "must betwen today and more than 1990",
 		})
 		if errjson != nil {
 			errServerResp(c, err)

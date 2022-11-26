@@ -34,8 +34,8 @@ func (l *location) postLocationByUserIdHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Lat": "required and must be valid lat geometry",
-			"Lng": "required and must be valid lng geometry",
+			"lat": "required and must be valid lat geometry",
+			"lng": "required and must be valid lng geometry",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -97,8 +97,8 @@ func (l *location) patchLocationByUserIdHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Lat": "must be valid lat geometry",
-			"Lng": "must be valid lng geometry",
+			"lat": "must be valid lat geometry",
+			"lng": "must be valid lng geometry",
 		})
 		if errjson != nil {
 			errServerResp(c, err)

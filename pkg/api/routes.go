@@ -28,6 +28,7 @@ func Routes(route Route) http.Handler {
 	r.Use(gin.Logger())
 	r.MaxMultipartMemory = 8 << 20
 
+	registerTagName()
 	v1 := r.Group("/api/v1")
 	{
 		rh := route.Healthcheck

@@ -82,7 +82,7 @@ func (o *online) putuserOnlineHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Online": "required and should be boolean",
+			"online": "required and should be boolean",
 		})
 		if errjson != nil {
 			errServerResp(c, err)

@@ -42,8 +42,8 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Email":    "required and must be valid email",
-			"Password": "required and must be over 8 character",
+			"email":    "required and must be valid email",
+			"password": "required and must be over 8 character",
 		})
 		if errjson != nil {
 			errServerResp(c, err)

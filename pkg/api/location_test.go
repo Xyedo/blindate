@@ -141,7 +141,7 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Lat": "required and must be valid lat geometry",
+					"lat": "required and must be valid lat geometry",
 				},
 			},
 		},
@@ -338,7 +338,7 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Lat": "must be valid lat geometry",
+					"lat": "must be valid lat geometry",
 				},
 			},
 		},
@@ -362,7 +362,7 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 				"status":  "fail",
 				"message": "please refer to the documentation",
 				"errors": map[string]any{
-					"Lng": "must be valid lng geometry",
+					"lng": "must be valid lng geometry",
 				},
 			},
 		},
