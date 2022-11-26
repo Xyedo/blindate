@@ -9,14 +9,20 @@ import (
 	"github.com/xyedo/blindate/pkg/domain"
 )
 
+type Online interface {
+	InsertNewOnline(on *domain.Online) error
+	UpdateOnline(userId string, online bool) error
+	SelectOnline(userId string) (*domain.Online, error)
+}
+
 func NewOnline(db *sqlx.DB) *online {
 	return &online{
-		db,
+		conn: db,
 	}
 }
 
 type online struct {
-	*sqlx.DB
+	conn *sqlx.DB
 }
 
 func (o *online) InsertNewOnline(on *domain.Online) error {
@@ -27,7 +33,7 @@ func (o *online) InsertNewOnline(on *domain.Online) error {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	_, err := o.ExecContext(ctx, query, on.UserId, on.LastOnline, on.IsOnline)
+	_, err := o.conn.ExecContext(ctx, query, on.UserId, on.LastOnline, on.IsOnline)
 	if err != nil {
 		return err
 	}
@@ -44,7 +50,7 @@ func (o *online) SelectOnline(userId string) (*domain.Online, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	var userOnline domain.Online
-	err := o.GetContext(ctx, &userOnline, query, userId)
+	err := o.conn.GetContext(ctx, &userOnline, query, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -61,12 +67,12 @@ func (o *online) UpdateOnline(userId string, online bool) error {
 	defer cancel()
 	var id string
 	if online {
-		err := o.GetContext(ctx, &id, query, online, pq.NullTime{}, userId)
+		err := o.conn.GetContext(ctx, &id, query, online, pq.NullTime{}, userId)
 		if err != nil {
 			return err
 		}
 	} else {
-		err := o.GetContext(ctx, &id, query, online, time.Now(), userId)
+		err := o.conn.GetContext(ctx, &id, query, online, time.Now(), userId)
 		if err != nil {
 			return err
 		}

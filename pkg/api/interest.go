@@ -52,7 +52,7 @@ func (i *interest) getInterestHandler(c *gin.Context) {
 			errNotFoundResp(c, "userId is not match with our resource")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -75,7 +75,7 @@ func (i *interest) postInterestBioHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Bio": "at least an empty string and maximal character length is less than 300",
+			"bio": "at least an empty string and maximal character length is less than 300",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -91,7 +91,7 @@ func (i *interest) postInterestBioHandler(c *gin.Context) {
 
 	err = i.interestSvc.CreateNewBio(&bio)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -121,7 +121,7 @@ func (i *interest) putInterestBioHandler(c *gin.Context) {
 			errNotFoundResp(c, "userId is not match with our resource")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -134,7 +134,7 @@ func (i *interest) putInterestBioHandler(c *gin.Context) {
 	err = c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Bio": "required, maximal character length is less than 300",
+			"bio": "required, maximal character length is less than 300",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -153,7 +153,7 @@ func (i *interest) putInterestBioHandler(c *gin.Context) {
 	bio.Bio = changedBio
 	err = i.interestSvc.PutBio(bio)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -180,7 +180,7 @@ func (i *interest) postInterestHobbiesHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Hobbies": "each hobbies must be unique, less than 10 and has more than 2 and less than 50 character",
+			"hobbies": "each hobbies must be unique, less than 10 and has more than 2 and less than 50 character",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -196,7 +196,7 @@ func (i *interest) postInterestHobbiesHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.CreateNewHobbies(interestId, hobbies)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -232,7 +232,7 @@ func (i *interest) putInterestHobbiesHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Hobbies": "each hobbies must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new hobbies",
+			"hobbies": "each hobbies must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new hobbies",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -243,7 +243,7 @@ func (i *interest) putInterestHobbiesHandler(c *gin.Context) {
 
 	err = i.interestSvc.PutHobbies(interestId, input.Hobbies)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -278,7 +278,7 @@ func (i *interest) deleteInterestHobbiesHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Ids": "each ids must be unique and uuid character",
+			"ids": "each ids must be unique and uuid character",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -289,7 +289,7 @@ func (i *interest) deleteInterestHobbiesHandler(c *gin.Context) {
 	interestId := c.GetString("interestId")
 	err = i.interestSvc.DeleteHobbies(interestId, input.Ids)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -316,7 +316,7 @@ func (i *interest) postInterestMovieSeriesHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"MovieSeries": "each movieSeries must be unique, less than 10 and has more than 2 and less than 50 character",
+			"movieSeries": "each movieSeries must be unique, less than 10 and has more than 2 and less than 50 character",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -332,7 +332,7 @@ func (i *interest) postInterestMovieSeriesHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.CreateNewMovieSeries(interestId, movieSeries)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -366,7 +366,7 @@ func (i *interest) putInterestMovieSeriesHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"MovieSeries": "each movieSeries must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new movieSeries",
+			"movieSeries": "each movieSeries must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new movieSeries",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -377,7 +377,7 @@ func (i *interest) putInterestMovieSeriesHandler(c *gin.Context) {
 
 	err = i.interestSvc.PutMovieSeries(interestId, input.MovieSeries)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -414,7 +414,7 @@ func (i *interest) deleteInterestMovieSeriesHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Ids": "each ids must be unique and uuid character",
+			"ids": "each ids must be unique and uuid character",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -424,7 +424,7 @@ func (i *interest) deleteInterestMovieSeriesHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.DeleteMovieSeries(interestId, input.Ids)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -451,7 +451,7 @@ func (i *interest) postInterestTravelingHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Travels": "each travels must be unique, less than 10 and has more than 2 and less than 50 character",
+			"travels": "each travels must be unique, less than 10 and has more than 2 and less than 50 character",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -467,7 +467,7 @@ func (i *interest) postInterestTravelingHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.CreateNewTraveling(interestId, travels)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -502,7 +502,7 @@ func (i *interest) putInterestTravelingHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Travels": "each travels must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new travel.",
+			"travels": "each travels must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new travel.",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -513,7 +513,7 @@ func (i *interest) putInterestTravelingHandler(c *gin.Context) {
 
 	err = i.interestSvc.PutTraveling(interestId, input.Travels)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -549,7 +549,7 @@ func (i *interest) deleteInterestTravelingHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Ids": "each ids must be unique and uuid character",
+			"ids": "each ids must be unique and uuid character",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -559,7 +559,7 @@ func (i *interest) deleteInterestTravelingHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.DeleteTravels(interestId, input.Ids)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -586,7 +586,7 @@ func (i *interest) postInterestSportHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Sports": "each sports must be unique, less than 10 and has more than 2 and less than 50 character",
+			"sports": "each sports must be unique, less than 10 and has more than 2 and less than 50 character",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -602,7 +602,7 @@ func (i *interest) postInterestSportHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.CreateNewSports(interestId, sports)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -636,7 +636,7 @@ func (i *interest) putInterestSportHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Sports": "each sports must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new sports.",
+			"sports": "each sports must be unique, less than 10 and has more than 2 and less than 50 character. Id must match or empty when its new sports.",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -647,7 +647,7 @@ func (i *interest) putInterestSportHandler(c *gin.Context) {
 
 	err = i.interestSvc.PutSports(interestId, input.Sports)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -682,7 +682,7 @@ func (i *interest) deleteInterestSportHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Ids": "each ids must be unique and uuid character",
+			"ids": "each ids must be unique and uuid character",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -692,7 +692,7 @@ func (i *interest) deleteInterestSportHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.DeleteSports(interestId, input.Ids)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}

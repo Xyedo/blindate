@@ -15,12 +15,13 @@ func ReadValidationErr(err error, validation map[string]string) map[string]strin
 	var validationErr validator.ValidationErrors
 	if errors.As(err, &validationErr) {
 		for _, err := range validationErr {
-			if _, exist := errMap[err.Namespace()]; !exist {
-				errMes, iexist := validation[err.Namespace()]
+			jsontag := err.Field()
+			if _, exist := errMap[jsontag]; !exist {
+				errMes, iexist := validation[jsontag]
 				if iexist {
-					errMap[err.Namespace()] = errMes
+					errMap[jsontag] = errMes
 				} else {
-					errMap[err.Namespace()] = fmt.Sprintf("error validation on %s", err.Field())
+					errMap[jsontag] = fmt.Sprintf("error validation on %s", jsontag)
 				}
 
 			}

@@ -7,14 +7,20 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+type Auth interface {
+	AddRefreshToken(token string) (int64, error)
+	VerifyRefreshToken(token string) error
+	DeleteRefreshToken(token string) (int64, error)
+}
+
 func NewAuth(conn *sqlx.DB) *authConn {
 	return &authConn{
-		conn,
+		conn: conn,
 	}
 }
 
 type authConn struct {
-	*sqlx.DB
+	conn *sqlx.DB
 }
 
 func (a *authConn) AddRefreshToken(token string) (int64, error) {
@@ -22,7 +28,7 @@ func (a *authConn) AddRefreshToken(token string) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	res, err := a.DB.ExecContext(ctx, query, token)
+	res, err := a.conn.ExecContext(ctx, query, token)
 	if err != nil {
 		return 0, err
 	}
@@ -41,7 +47,7 @@ func (a *authConn) VerifyRefreshToken(token string) error {
 	defer cancel()
 
 	var dbToken string
-	err := a.DB.QueryRowxContext(ctx, query, token).Scan(&dbToken)
+	err := a.conn.QueryRowxContext(ctx, query, token).Scan(&dbToken)
 	if err != nil {
 		return err
 	}
@@ -54,7 +60,7 @@ func (a *authConn) DeleteRefreshToken(token string) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	row, err := a.DB.ExecContext(ctx, query, token)
+	row, err := a.conn.ExecContext(ctx, query, token)
 	if err != nil {
 		return 0, err
 	}

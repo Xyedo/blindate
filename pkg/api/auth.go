@@ -42,8 +42,8 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Email":    "required and must be valid email",
-			"Password": "required and must be over 8 character",
+			"email":    "required and must be valid email",
+			"password": "required and must be over 8 character",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -53,7 +53,7 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 	}
 	id, err := a.userService.VerifyCredential(input.Email, input.Password)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -76,7 +76,7 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 	}
 	err = a.authService.AddRefreshToken(refreshToken)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -108,7 +108,7 @@ func (a *auth) putAuthHandler(c *gin.Context) {
 	}
 	err = a.authService.VerifyRefreshToken(refreshTokenCookie)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -147,7 +147,7 @@ func (a *auth) deleteAuthHandler(c *gin.Context) {
 	}
 	err = a.authService.VerifyRefreshToken(refreshTokenCookie)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -160,7 +160,7 @@ func (a *auth) deleteAuthHandler(c *gin.Context) {
 	}
 	err = a.authService.DeleteRefreshToken(refreshTokenCookie)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}

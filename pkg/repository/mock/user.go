@@ -9,6 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	domain "github.com/xyedo/blindate/pkg/domain"
+	entity "github.com/xyedo/blindate/pkg/entity"
 )
 
 // MockUser is a mock of User interface.
@@ -32,6 +33,21 @@ func NewMockUser(ctrl *gomock.Controller) *MockUser {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockUser) EXPECT() *MockUserMockRecorder {
 	return m.recorder
+}
+
+// CreateProfilePicture mocks base method.
+func (m *MockUser) CreateProfilePicture(arg0, arg1 string, arg2 bool) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateProfilePicture", arg0, arg1, arg2)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateProfilePicture indicates an expected call of CreateProfilePicture.
+func (mr *MockUserMockRecorder) CreateProfilePicture(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateProfilePicture", reflect.TypeOf((*MockUser)(nil).CreateProfilePicture), arg0, arg1, arg2)
 }
 
 // GetUserByEmail mocks base method.
@@ -76,6 +92,36 @@ func (m *MockUser) InsertUser(arg0 *domain.User) error {
 func (mr *MockUserMockRecorder) InsertUser(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertUser", reflect.TypeOf((*MockUser)(nil).InsertUser), arg0)
+}
+
+// ProfilePicSelectedToFalse mocks base method.
+func (m *MockUser) ProfilePicSelectedToFalse(arg0 string) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ProfilePicSelectedToFalse", arg0)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ProfilePicSelectedToFalse indicates an expected call of ProfilePicSelectedToFalse.
+func (mr *MockUserMockRecorder) ProfilePicSelectedToFalse(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ProfilePicSelectedToFalse", reflect.TypeOf((*MockUser)(nil).ProfilePicSelectedToFalse), arg0)
+}
+
+// SelectProfilePicture mocks base method.
+func (m *MockUser) SelectProfilePicture(arg0 string, arg1 *entity.ProfilePicQuery) ([]domain.ProfilePicture, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SelectProfilePicture", arg0, arg1)
+	ret0, _ := ret[0].([]domain.ProfilePicture)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// SelectProfilePicture indicates an expected call of SelectProfilePicture.
+func (mr *MockUserMockRecorder) SelectProfilePicture(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectProfilePicture", reflect.TypeOf((*MockUser)(nil).SelectProfilePicture), arg0, arg1)
 }
 
 // UpdateUser mocks base method.

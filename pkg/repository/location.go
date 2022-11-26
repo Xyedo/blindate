@@ -9,14 +9,21 @@ import (
 	"github.com/xyedo/blindate/pkg/entity"
 )
 
+type Location interface {
+	InsertNewLocation(location *entity.Location) (int64, error)
+	UpdateLocation(location *entity.Location) (int64, error)
+	GetLocationByUserId(id string) (*entity.Location, error)
+	GetClosestUser(userId, geom string, limit int) ([]domain.User, error)
+}
+
 func NewLocation(db *sqlx.DB) *location {
 	return &location{
-		db,
+		conn: db,
 	}
 }
 
 type location struct {
-	*sqlx.DB
+	conn *sqlx.DB
 }
 
 func (l *location) InsertNewLocation(location *entity.Location) (int64, error) {
@@ -28,7 +35,7 @@ func (l *location) InsertNewLocation(location *entity.Location) (int64, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	rows, err := l.ExecContext(ctx, query, args...)
+	rows, err := l.conn.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -50,7 +57,7 @@ func (l *location) UpdateLocation(location *entity.Location) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	res, err := l.ExecContext(ctx, query, args...)
+	res, err := l.conn.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, nil
 	}
@@ -75,7 +82,7 @@ func (l *location) GetLocationByUserId(id string) (*entity.Location, error) {
 	defer cancel()
 
 	var location entity.Location
-	err := l.GetContext(ctx, &location, query, id)
+	err := l.conn.GetContext(ctx, &location, query, id)
 	if err != nil {
 		return nil, err
 	}
@@ -83,23 +90,30 @@ func (l *location) GetLocationByUserId(id string) (*entity.Location, error) {
 
 }
 
-func (l *location) GetClosestUser(geom string, limit int) ([]domain.User, error) {
+func (l *location) GetClosestUser(userId, geom string, limit int) ([]domain.User, error) {
 	query := `
 		SELECT 
-			users.*
+			users.id
 		FROM locations
 		JOIN users
 			ON users.id = locations.user_id
+		WHERE NOT EXISTS (
+			SELECT 1
+			FROM match m
+			WHERE 
+				m.request_to = users.id OR
+				m.request_from = users.id
+		) AND users.id != $3
 		ORDER BY locations.geog <-> ST_GeomFromText($1)
 		LIMIT $2`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	users := make([]domain.User, 0, limit)
-	err := l.SelectContext(ctx, &users, query, geom, limit)
+	users := make([]domain.User, 0)
+	err := l.conn.SelectContext(ctx, &users, query, geom, limit, userId)
 	if err != nil {
-		return []domain.User{}, err
+		return nil, err
 	}
 	return users, nil
 }

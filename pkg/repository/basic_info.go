@@ -8,14 +8,20 @@ import (
 	"github.com/xyedo/blindate/pkg/entity"
 )
 
+type BasicInfo interface {
+	InsertBasicInfo(basicinfo *entity.BasicInfo) (int64, error)
+	GetBasicInfoByUserId(id string) (*entity.BasicInfo, error)
+	UpdateBasicInfo(bInfo *entity.BasicInfo) (int64, error)
+}
+
 func NewBasicInfo(db *sqlx.DB) *basicInfo {
 	return &basicInfo{
-		db,
+		conn: db,
 	}
 }
 
 type basicInfo struct {
-	*sqlx.DB
+	conn *sqlx.DB
 }
 
 func (b *basicInfo) InsertBasicInfo(basicinfo *entity.BasicInfo) (int64, error) {
@@ -54,7 +60,7 @@ func (b *basicInfo) InsertBasicInfo(basicinfo *entity.BasicInfo) (int64, error) 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	rows, err := b.ExecContext(ctx, query, args...)
+	rows, err := b.conn.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -88,7 +94,7 @@ func (b *basicInfo) GetBasicInfoByUserId(userId string) (*entity.BasicInfo, erro
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	var basicinfo entity.BasicInfo
-	err := b.GetContext(ctx, &basicinfo, query, userId)
+	err := b.conn.GetContext(ctx, &basicinfo, query, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +137,7 @@ func (b *basicInfo) UpdateBasicInfo(bInfo *entity.BasicInfo) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	res, err := b.ExecContext(ctx, query, args...)
+	res, err := b.conn.ExecContext(ctx, query, args...)
 	if err != nil {
 		return 0, err
 	}

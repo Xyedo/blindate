@@ -10,6 +10,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/repository"
 )
 
 var (
@@ -23,27 +24,21 @@ var (
 	ErrRefZodiacField           = fmt.Errorf("%w::zodiac", domain.ErrRefNotFound23503)
 )
 
-type basicInfoRepo interface {
-	InsertBasicInfo(basicinfo *entity.BasicInfo) (int64, error)
-	GetBasicInfoByUserId(id string) (*entity.BasicInfo, error)
-	UpdateBasicInfo(bInfo *entity.BasicInfo) (int64, error)
-}
-
-func NewBasicInfo(bInfoRepo basicInfoRepo) *basicInfo {
+func NewBasicInfo(bInfoRepo repository.BasicInfo) *basicInfo {
 	return &basicInfo{
 		BasicInfoRepo: bInfoRepo,
 	}
 }
 
 type basicInfo struct {
-	BasicInfoRepo basicInfoRepo
+	BasicInfoRepo repository.BasicInfo
 }
 
 func (b *basicInfo) CreateBasicInfo(bInfo *domain.BasicInfo) error {
 	rows, err := b.BasicInfoRepo.InsertBasicInfo(b.domainToEntity(bInfo))
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		if err := parsingPostgreError(err); err != nil {
 			return err
@@ -60,7 +55,7 @@ func (b *basicInfo) GetBasicInfoByUserId(id string) (*domain.BasicInfo, error) {
 	basicInfo, err := b.BasicInfoRepo.GetBasicInfoByUserId(id)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccesingDB
+			return nil, domain.ErrTooLongAccessingDB
 		}
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrResourceNotFound
@@ -75,7 +70,7 @@ func (b *basicInfo) UpdateBasicInfo(bInfo *domain.BasicInfo) error {
 	rows, err := b.BasicInfoRepo.UpdateBasicInfo(b.domainToEntity(bInfo))
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.ErrResourceNotFound

@@ -8,22 +8,17 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
+	"github.com/xyedo/blindate/pkg/repository"
 )
 
-type onlineRepo interface {
-	InsertNewOnline(on *domain.Online) error
-	UpdateOnline(userId string, online bool) error
-	SelectOnline(userId string) (*domain.Online, error)
-}
-
-func NewOnline(onlineRepo onlineRepo) *online {
+func NewOnline(onlineRepo repository.Online) *online {
 	return &online{
 		onlineRepository: onlineRepo,
 	}
 }
 
 type online struct {
-	onlineRepository onlineRepo
+	onlineRepository repository.Online
 }
 
 func (o *online) CreateNewOnline(userId string) error {
@@ -40,7 +35,7 @@ func (o *online) CreateNewOnline(userId string) error {
 			return err
 		}
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		return err
 	}
@@ -53,7 +48,7 @@ func (o *online) GetOnline(userId string) (*domain.Online, error) {
 			return nil, domain.ErrResourceNotFound
 		}
 		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccesingDB
+			return nil, domain.ErrTooLongAccessingDB
 		}
 		return nil, err
 	}
@@ -67,7 +62,7 @@ func (o *online) PutOnline(userId string, online bool) error {
 			return domain.ErrResourceNotFound
 		}
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		return err
 	}

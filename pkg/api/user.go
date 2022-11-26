@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,12 +14,13 @@ import (
 type userSvc interface {
 	CreateUser(newUser *domain.User) error
 	VerifyCredential(email, password string) (string, error)
-	GetUserById(id string) (*domain.User, error)
+	GetUserById(id string, withProfPic bool) (*domain.User, error)
 	UpdateUser(user *domain.User) error
+	CreateNewProfilePic(profPicParam domain.ProfilePicture) (string, error)
 }
 
 type attachmentManager interface {
-	UploadBlob(file io.Reader, length int64, contentType string) (string, error)
+	UploadBlob(file io.Reader, attach domain.Uploader) (string, error)
 }
 
 func NewUser(userSvc userSvc, attachmentSvc attachmentManager) *user {
@@ -44,9 +46,11 @@ func (u *user) postUserHandler(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Email":    "must have an valid email",
-			"Password": "must have more than 8 character",
-			"Dob":      "must between today and after 1990",
+			"fullname": "must be required and between 1-50 characters",
+			"alias":    "must be required and between 1-15 characters",
+			"email":    "must be required and have an valid email",
+			"password": "must be required and have more than 8 character",
+			"dob":      "must be required and between today and after 1990",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -68,7 +72,7 @@ func (u *user) postUserHandler(c *gin.Context) {
 			errUnprocessableEntityResp(c, "email is already taken")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -86,14 +90,16 @@ func (u *user) postUserHandler(c *gin.Context) {
 }
 
 func (u *user) putUserImageProfile(c *gin.Context) {
+	selectedQ := c.Query("selected")
+	selected := strings.EqualFold(selectedQ, "true")
 	userId := c.GetString("userId")
-	user, err := u.userService.GetUserById(userId)
+	userDb, err := u.userService.GetUserById(userId, false)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
 			errNotFoundResp(c, "id not found")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -101,26 +107,28 @@ func (u *user) putUserImageProfile(c *gin.Context) {
 		return
 	}
 	var validImageTypes = []string{
-		"image/apng",
 		"image/avif",
-		"image/gif",
 		"image/jpeg",
 		"image/png",
 		"image/webp",
 		"image/svg+xml",
 	}
-	key := uploadFile(c, u.attachmentSvc, validImageTypes)
+	key, _ := uploadFile(c, u.attachmentSvc, validImageTypes, "profile-picture")
 	if key == "" {
 		return
 	}
-	user.ImageProfile = key
-	err = u.userService.UpdateUser(user)
+	newProfPic := domain.ProfilePicture{
+		UserId:      userDb.ID,
+		Selected:    selected,
+		PictureLink: key,
+	}
+	id, err := u.userService.CreateNewProfilePic(newProfPic)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
 			errNotFoundResp(c, "users.Id not found!")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -130,17 +138,22 @@ func (u *user) putUserImageProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
 		"message": "user profile-picture uploaded",
+		"data": gin.H{
+			"profilePicture": gin.H{
+				"id": id,
+			},
+		},
 	})
 }
 func (u *user) getUserByIdHandler(c *gin.Context) {
 	userId := c.GetString("userId")
-	user, err := u.userService.GetUserById(userId)
+	user, err := u.userService.GetUserById(userId, false)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
 			errNotFoundResp(c, "id not found")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -158,13 +171,13 @@ func (u *user) getUserByIdHandler(c *gin.Context) {
 
 func (u *user) patchUserByIdHandler(c *gin.Context) {
 	userId := c.GetString("userId")
-	user, err := u.userService.GetUserById(userId)
+	user, err := u.userService.GetUserById(userId, false)
 	if err != nil {
 		if errors.Is(err, domain.ErrResourceNotFound) {
 			errNotFoundResp(c, "id not found")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -183,12 +196,12 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 	err = c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"FullName":    "must less than 50 character",
-			"Alias":       "must less than 15 character",
-			"Email":       "must be an valid email",
-			"OldPassword": "must be more than 8 character and pairing with NewPassword",
-			"NewPassword": "must be more than 8 character and pairing with OldPassword",
-			"Dob":         "Must betwen today and more than 1990",
+			"fullName":    "must less than 50 character",
+			"alias":       "must less than 15 character",
+			"email":       "must be an valid email",
+			"oldPassword": "must be more than 8 character and pairing with newPassword",
+			"newPassword": "must be more than 8 character and pairing with oldPassword",
+			"dob":         "must betwen today and more than 1990",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -227,7 +240,7 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 			errNotFoundResp(c, "users.Id not found!")
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}

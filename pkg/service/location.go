@@ -10,23 +10,17 @@ import (
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/repository"
 )
 
-type locationRepo interface {
-	InsertNewLocation(location *entity.Location) (int64, error)
-	UpdateLocation(location *entity.Location) (int64, error)
-	GetLocationByUserId(id string) (*entity.Location, error)
-	GetClosestUser(userId string, limit int) ([]domain.User, error)
-}
-
-func NewLocation(locationRepo locationRepo) *location {
+func NewLocation(locationRepo repository.Location) *location {
 	return &location{
 		locationRepo: locationRepo,
 	}
 }
 
 type location struct {
-	locationRepo locationRepo
+	locationRepo repository.Location
 }
 
 func (l *location) CreateNewLocation(location *domain.Location) error {
@@ -37,7 +31,7 @@ func (l *location) CreateNewLocation(location *domain.Location) error {
 	rows, err := l.locationRepo.InsertNewLocation(locationEntity)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
@@ -65,7 +59,7 @@ func (l *location) UpdateLocation(location *domain.Location) error {
 	rows, err := l.locationRepo.UpdateLocation(locationEntity)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		return err
 	}
@@ -79,7 +73,7 @@ func (l *location) GetLocation(id string) (*domain.Location, error) {
 	location, err := l.locationRepo.GetLocationByUserId(id)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccesingDB
+			return nil, domain.ErrTooLongAccessingDB
 		}
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrResourceNotFound

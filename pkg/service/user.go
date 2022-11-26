@@ -4,27 +4,24 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"path/filepath"
 
 	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
+	"github.com/xyedo/blindate/pkg/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type userRepo interface {
-	InsertUser(user *domain.User) error
-	GetUserByEmail(email string) (*domain.User, error)
-	GetUserById(id string) (*domain.User, error)
-	UpdateUser(user *domain.User) error
-}
+var ErrMaxProfilePicture = errors.New("excedeed profile picture constraint")
 
-func NewUser(userRepo userRepo) *user {
+func NewUser(userRepo repository.User) *user {
 	return &user{
 		userRepository: userRepo,
 	}
 }
 
 type user struct {
-	userRepository userRepo
+	userRepository repository.User
 }
 
 func (u *user) CreateUser(newUser *domain.User) error {
@@ -45,31 +42,45 @@ func (u *user) CreateUser(newUser *domain.User) error {
 			return err
 		}
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		return err
 	}
 
 	return nil
 }
-func (u *user) GetUserById(id string) (*domain.User, error) {
+func (u *user) GetUserById(id string, withProfPic bool) (*domain.User, error) {
 	user, err := u.userRepository.GetUserById(id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.ErrResourceNotFound
 		}
 		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccesingDB
+			return nil, domain.ErrTooLongAccessingDB
 		}
 		return nil, err
 	}
+	if withProfPic {
+		profPics, err := u.userRepository.SelectProfilePicture(id, nil)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil, domain.ErrResourceNotFound
+			}
+			if errors.Is(err, context.Canceled) {
+				return nil, domain.ErrTooLongAccessingDB
+			}
+			return nil, err
+		}
+		user.ProfilePic = profPics
+	}
+
 	return user, nil
 }
 func (u *user) VerifyCredential(email, password string) (string, error) {
 	user, err := u.userRepository.GetUserByEmail(email)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return "", domain.ErrTooLongAccesingDB
+			return "", domain.ErrTooLongAccessingDB
 		}
 		if errors.Is(err, sql.ErrNoRows) {
 			return "", domain.ErrNotMatchCredential
@@ -99,7 +110,7 @@ func (u *user) UpdateUser(user *domain.User) error {
 	err := u.userRepository.UpdateUser(user)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccesingDB
+			return domain.ErrTooLongAccessingDB
 		}
 		if errors.Is(err, sql.ErrNoRows) {
 			return domain.ErrResourceNotFound
@@ -107,6 +118,47 @@ func (u *user) UpdateUser(user *domain.User) error {
 		return err
 	}
 	return nil
+}
+
+func (u *user) CreateNewProfilePic(profPicParam domain.ProfilePicture) (string, error) {
+	profPics, err := u.userRepository.SelectProfilePicture(profPicParam.UserId, nil)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return "", domain.ErrTooLongAccessingDB
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", ErrRefUserIdField
+		}
+		return "", err
+	}
+	if len(profPics) >= 5 {
+		return "", ErrMaxProfilePicture
+	}
+	if profPicParam.Selected {
+		_, err := u.userRepository.ProfilePicSelectedToFalse(profPicParam.UserId)
+		if err != nil {
+			if errors.Is(err, context.Canceled) {
+				return "", domain.ErrTooLongAccessingDB
+			}
+			return "", err
+		}
+	}
+	profPicParam.PictureLink = filepath.Base(profPicParam.PictureLink)
+	id, err := u.userRepository.CreateProfilePicture(profPicParam.UserId, profPicParam.PictureLink, profPicParam.Selected)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return "", domain.ErrTooLongAccessingDB
+		}
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) {
+			if pqErr.Code == "23503" {
+				return "", ErrRefUserIdField
+			}
+			return "", pqErr
+		}
+		return "", err
+	}
+	return id, nil
 }
 
 func hashAndSalt(password string) (string, error) {

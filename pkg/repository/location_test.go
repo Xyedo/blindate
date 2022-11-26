@@ -94,7 +94,8 @@ func Test_GetClosestUser(t *testing.T) {
 		useri := createNewAccount(t)
 		createNewLocation(t, useri.ID)
 	}
-	users, err := repo.GetClosestUser(fromUser.Geog, limit)
+	log.Println("request User", user.ID)
+	users, err := repo.GetClosestUser(user.ID, fromUser.Geog, limit)
 	assert.NoError(t, err)
 	assert.NotZero(t, users)
 	assert.Len(t, users, limit)

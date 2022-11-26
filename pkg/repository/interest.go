@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -12,14 +13,40 @@ import (
 	"github.com/xyedo/blindate/pkg/util"
 )
 
+type Interest interface {
+	InsertNewStats(interestId string) error
+
+	GetInterest(userId string) (*domain.Interest, error)
+
+	InsertInterestBio(intr *domain.Bio) error
+	SelectInterestBio(userId string) (*domain.Bio, error)
+	UpdateInterestBio(intr *domain.Bio) error
+
+	InsertInterestHobbies(interestId string, hobbies []domain.Hobbie) error
+	UpdateInterestHobbies(interestId string, hobbies []domain.Hobbie) (int64, error)
+	DeleteInterestHobbies(interestId string, ids []string) (int64, error)
+
+	InsertInterestMovieSeries(interestId string, movieSeries []domain.MovieSerie) error
+	UpdateInterestMovieSeries(interestId string, movieSeries []domain.MovieSerie) (int64, error)
+	DeleteInterestMovieSeries(interestId string, ids []string) (int64, error)
+
+	InsertInterestTraveling(interestId string, travels []domain.Travel) error
+	UpdateInterestTraveling(interestId string, travels []domain.Travel) (int64, error)
+	DeleteInterestTraveling(interestId string, ids []string) (int64, error)
+
+	InsertInterestSports(interestId string, sports []domain.Sport) error
+	UpdateInterestSport(interestId string, sports []domain.Sport) (int64, error)
+	DeleteInterestSports(interestId string, ids []string) (int64, error)
+}
+
 func NewInterest(db *sqlx.DB) *interest {
 	return &interest{
-		db,
+		conn: db,
 	}
 }
 
 type interest struct {
-	*sqlx.DB
+	conn *sqlx.DB
 }
 
 func (i *interest) GetInterest(userId string) (*domain.Interest, error) {
@@ -35,12 +62,12 @@ func (i *interest) GetInterest(userId string) (*domain.Interest, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	var intr domain.Interest
-	err := i.GetContext(ctx, &intr.Bio, query, userId)
+	err := i.conn.GetContext(ctx, &intr.Bio, query, userId)
 	if err != nil {
 		return nil, err
 	}
 	query = `SELECT id, hobbie FROM hobbies WHERE interest_id = $1`
-	err = i.SelectContext(ctx, &intr.Hobbies, query, intr.Id)
+	err = i.conn.SelectContext(ctx, &intr.Hobbies, query, intr.Id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 		} else {
@@ -49,7 +76,7 @@ func (i *interest) GetInterest(userId string) (*domain.Interest, error) {
 	}
 
 	query = `SELECT id, movie_serie FROM movie_series WHERE interest_id = $1`
-	err = i.SelectContext(ctx, &intr.MovieSeries, query, intr.Id)
+	err = i.conn.SelectContext(ctx, &intr.MovieSeries, query, intr.Id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 		} else {
@@ -57,7 +84,7 @@ func (i *interest) GetInterest(userId string) (*domain.Interest, error) {
 		}
 	}
 	query = `SELECT id, travel FROM traveling WHERE interest_id = $1`
-	err = i.SelectContext(ctx, &intr.Travels, query, intr.Id)
+	err = i.conn.SelectContext(ctx, &intr.Travels, query, intr.Id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 		} else {
@@ -66,7 +93,7 @@ func (i *interest) GetInterest(userId string) (*domain.Interest, error) {
 
 	}
 	query = `SELECT id, sport FROM sports WHERE interest_id = $1`
-	err = i.SelectContext(ctx, &intr.Sports, query, intr.Id)
+	err = i.conn.SelectContext(ctx, &intr.Sports, query, intr.Id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 		} else {
@@ -87,7 +114,7 @@ func (i *interest) InsertInterestBio(intr *domain.Bio) error {
 			updated_at)
 		VALUES($1,$2,$3,$3) 
 		RETURNING id`
-	err := i.GetContext(ctx, &intr.Id, q1, intr.UserId, intr.Bio, time.Now())
+	err := i.conn.GetContext(ctx, &intr.Id, q1, intr.UserId, intr.Bio, time.Now())
 	if err != nil {
 		return err
 	}
@@ -101,7 +128,7 @@ func (i *interest) InsertNewStats(interestId string) error {
 	INSERT INTO interest_statistics(interest_id)
 	VALUES($1)`
 
-	_, err := i.ExecContext(ctx, q, interestId)
+	_, err := i.conn.ExecContext(ctx, q, interestId)
 	if err != nil {
 		return err
 	}
@@ -121,7 +148,7 @@ func (i *interest) SelectInterestBio(userId string) (*domain.Bio, error) {
 	defer cancel()
 
 	var bio domain.Bio
-	err := i.GetContext(ctx, &bio, query, userId)
+	err := i.conn.GetContext(ctx, &bio, query, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +158,7 @@ func (i *interest) UpdateInterestBio(intr *domain.Bio) error {
 	query := `UPDATE interests SET bio = $1, updated_at=$2  WHERE user_id = $3 RETURNING id`
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	err := i.GetContext(ctx, &intr.Id, query, intr.Bio, time.Now(), intr.UserId)
+	err := i.conn.GetContext(ctx, &intr.Id, query, intr.Bio, time.Now(), intr.UserId)
 	if err != nil {
 		return err
 	}
@@ -172,7 +199,12 @@ func (i *interest) InsertInterestHobbies(interestId string, hobbies []domain.Hob
 		if err != nil {
 			return err
 		}
-		defer rows.Close()
+		defer func(rows *sqlx.Rows) {
+			err := rows.Close()
+			if err != nil {
+				log.Panic(err)
+			}
+		}(rows)
 
 		iter := 0
 		for rows.Next() {
@@ -337,7 +369,12 @@ func (i *interest) InsertInterestMovieSeries(interestId string, movieSeries []do
 		if err != nil {
 			return err
 		}
-		defer rows.Close()
+		defer func(rows *sqlx.Rows) {
+			err := rows.Close()
+			if err != nil {
+				log.Panic(err)
+			}
+		}(rows)
 
 		iter := 0
 		for rows.Next() {
@@ -498,7 +535,12 @@ func (i *interest) InsertInterestTraveling(interestId string, travels []domain.T
 		if err != nil {
 			return err
 		}
-		defer rows.Close()
+		defer func(rows *sqlx.Rows) {
+			err := rows.Close()
+			if err != nil {
+				log.Panic(err)
+			}
+		}(rows)
 
 		iter := 0
 		for rows.Next() {
@@ -662,7 +704,12 @@ func (i *interest) InsertInterestSports(interestId string, sports []domain.Sport
 		if err != nil {
 			return err
 		}
-		defer rows.Close()
+		defer func(rows *sqlx.Rows) {
+			err := rows.Close()
+			if err != nil {
+				log.Panic(err)
+			}
+		}(rows)
 
 		iter := 0
 		for rows.Next() {
@@ -793,5 +840,5 @@ func (i *interest) DeleteInterestSports(interestId string, ids []string) (int64,
 }
 
 func (i *interest) execTx(ctx context.Context, q func(q *sqlx.DB) error) error {
-	return execGeneric(i.DB, ctx, q, &sql.TxOptions{Isolation: sql.LevelReadCommitted, ReadOnly: false})
+	return execGeneric(i.conn, ctx, q, &sql.TxOptions{Isolation: sql.LevelReadCommitted, ReadOnly: false})
 }

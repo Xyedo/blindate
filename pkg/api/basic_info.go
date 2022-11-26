@@ -42,17 +42,17 @@ func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Gender":           "required and must have an gender enums",
-			"FromLoc":          "maximal character is 100",
-			"Height":           "must have valid height in cm",
-			"EducationLevel":   "maximal character is 50",
-			"Drinking":         "maximal character is 50",
-			"Smoking":          "maximal character is 50",
-			"RelationshipPref": "maximal character is 50",
-			"LookingFor":       "required and must have an gender enums",
-			"Zodiac":           "must have zodiac enums",
-			"Kids":             "minimum is 0 and maximal number is 100",
-			"Work":             "maximal character is 50",
+			"gender":           "required and must have an gender enums",
+			"fromLoc":          "maximal character is 100",
+			"height":           "must have valid height in cm",
+			"educationLevel":   "maximal character is 50",
+			"drinking":         "maximal character is 50",
+			"smoking":          "maximal character is 50",
+			"relationshipPref": "maximal character is 50",
+			"lookingFor":       "required and must have an gender enums",
+			"zodiac":           "must have zodiac enums",
+			"kids":             "minimum is 0 and maximal number is 100",
+			"work":             "maximal character is 50",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -83,7 +83,7 @@ func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, res)
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -100,7 +100,7 @@ func (b *basicinfo) getBasicInfoHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	basicInfo, err := b.basicinfoService.GetBasicInfoByUserId(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -123,7 +123,7 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	basicInfo, err := b.basicinfoService.GetBasicInfoByUserId(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -150,17 +150,17 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 	err = c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Gender":           "maximal character is 25",
-			"FromLoc":          "maximal character is 100",
-			"Height":           "must have valid height in cm",
-			"EducationLevel":   "maximal character is 50",
-			"Drinking":         "maximal character is 50",
-			"Smoking":          "maximal character is 50",
-			"RelationshipPref": "maximal character is 50",
-			"LookingFor":       "maximal character is 25",
-			"Zodiac":           "maximal character is 50",
-			"Kids":             "minimum is 0 and maximal number is 100",
-			"Work":             "maximal character is 50",
+			"gender":           "maximal character is 25",
+			"fromLoc":          "maximal character is 100",
+			"height":           "must have valid height in cm",
+			"educationLevel":   "maximal character is 50",
+			"drinking":         "maximal character is 50",
+			"smoking":          "maximal character is 50",
+			"relationshipPref": "maximal character is 50",
+			"lookingFor":       "maximal character is 25",
+			"zodiac":           "maximal character is 50",
+			"kids":             "minimum is 0 and maximal number is 100",
+			"work":             "maximal character is 50",
 		})
 		if errjson != nil {
 			errServerResp(c, err)
@@ -208,7 +208,7 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, res)
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccesingDB) {
+		if errors.Is(err, domain.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
