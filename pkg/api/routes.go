@@ -51,7 +51,9 @@ func Routes(route Route) http.Handler {
 		auth.PUT("/profile-picture", ru.putUserImageProfile)
 
 		rm := route.Match
-		auth.GET("/match", rm.getNewMatchHandler)
+		auth.GET("/new-match", rm.getNewMatchCandidateHandler)
+		auth.GET("/match", rm.getAllMatchHandler)
+		auth.POST("/match", rm.postNewMatchHandler)
 		match := auth.Group("match/:matchId", validateMatch())
 		{
 			match.PUT("/request", rm.putRequestHandler)

@@ -2,12 +2,14 @@ package repository
 
 import (
 	"database/sql"
+	"encoding/json"
 	"log"
 	"strings"
 	"testing"
 
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/xyedo/blindate/pkg/entity"
 	"github.com/xyedo/blindate/pkg/util"
 )
@@ -95,11 +97,14 @@ func Test_GetClosestUser(t *testing.T) {
 		createNewLocation(t, useri.ID)
 	}
 	log.Println("request User", user.ID)
-	users, err := repo.GetClosestUser(user.ID, fromUser.Geog, limit)
-	assert.NoError(t, err)
-	assert.NotZero(t, users)
-	assert.Len(t, users, limit)
-	log.Println(users)
+	candidateMatch, err := repo.GetClosestUser(user.ID, fromUser.Geog, limit)
+	require.NoError(t, err)
+	assert.NotZero(t, candidateMatch)
+	assert.Len(t, candidateMatch, limit)
+	jsonCandidate, err := json.Marshal(candidateMatch)
+	require.NoError(t, err)
+	log.Println(string(jsonCandidate))
+
 }
 
 func createNewLocation(t *testing.T, userId string) *entity.Location {

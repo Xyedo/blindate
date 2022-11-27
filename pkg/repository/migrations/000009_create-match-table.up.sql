@@ -5,6 +5,7 @@ INSERT INTO
 VALUES
   ('unknown'),
   ('requested'),
+  ('declined'),
   ('accepted');
 
 CREATE TABLE match(

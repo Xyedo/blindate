@@ -93,7 +93,7 @@ func main() {
 
 	matchRepo := repository.NewMatch(db)
 	matchSvc := service.NewMatch(matchRepo, locationRepo)
-	matchHandler := api.NewMatch(matchSvc, interestSvc, basicInfoSvc)
+	matchHandler := api.NewMatch(matchSvc)
 
 	convRepo := repository.NewConversation(db)
 	convSvc := service.NewConversation(convRepo, matchRepo)
