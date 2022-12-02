@@ -148,7 +148,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "basic_info with this user id is already created",
+				"message": "already created",
 			},
 		},
 		{

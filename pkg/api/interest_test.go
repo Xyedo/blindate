@@ -75,7 +75,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "violate unique constraint",
+				"message": "already created",
 			},
 		},
 		{
