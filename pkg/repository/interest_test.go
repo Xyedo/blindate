@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"log"
 	"strings"
 	"testing"
 
@@ -27,7 +28,17 @@ func Test_InsertBio(t *testing.T) {
 		var pqErr *pq.Error
 		assert.ErrorAs(t, err, &pqErr)
 		assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
-		assert.True(t, strings.Contains(pqErr.Constraint, "user_id"))
+		assert.Contains(t, pqErr.Constraint, "user_id")
+	})
+	t.Run("invalid on unique constraint", func(t *testing.T) {
+		user := createNewAccount(t)
+		bio := createNewInterestBio(t, user.ID)
+		err := repo.InsertInterestBio(bio)
+		require.Error(t, err)
+		var pqErr *pq.Error
+		require.ErrorAs(t, err, &pqErr)
+		assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
+		assert.Contains(t, pqErr.Constraint, "interests_user_id")
 	})
 }
 func Test_SelectBio(t *testing.T) {
@@ -94,7 +105,8 @@ func Test_InsertHobbies(t *testing.T) {
 		var pqErr *pq.Error
 		assert.ErrorAs(t, err, &pqErr)
 		assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
-		assert.True(t, strings.Contains(pqErr.Constraint, "interest_id"))
+		log.Println(pqErr.Constraint)
+		assert.True(t, strings.Contains(pqErr.Constraint, "hobbies"))
 	})
 	t.Run("Invalid Unique", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -105,7 +117,7 @@ func Test_InsertHobbies(t *testing.T) {
 		var pqErr *pq.Error
 		assert.ErrorAs(t, err, &pqErr)
 		assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
-		assert.True(t, strings.Contains(pqErr.Constraint, "interest_id"))
+		assert.Contains(t, pqErr.Constraint, "hobbie_unique")
 	})
 	t.Run("Too much bio", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -203,7 +215,7 @@ func Test_InsertMovieSeries(t *testing.T) {
 		var pqErr *pq.Error
 		assert.ErrorAs(t, err, &pqErr)
 		assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
-		assert.True(t, strings.Contains(pqErr.Constraint, "interest_id"))
+		assert.Contains(t, pqErr.Constraint, "interest_id")
 	})
 	t.Run("Invalid Unique", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -214,7 +226,7 @@ func Test_InsertMovieSeries(t *testing.T) {
 		var pqErr *pq.Error
 		assert.ErrorAs(t, err, &pqErr)
 		assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
-		assert.True(t, strings.Contains(pqErr.Constraint, "interest_id"))
+		assert.Contains(t, pqErr.Constraint, "movie_serie_unique")
 	})
 	t.Run("Too much movies", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -312,7 +324,7 @@ func Test_InsertTraveling(t *testing.T) {
 		var pqErr *pq.Error
 		assert.ErrorAs(t, err, &pqErr)
 		assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
-		assert.True(t, strings.Contains(pqErr.Constraint, "interest_id"))
+		assert.Contains(t, pqErr.Constraint, "interest_id")
 	})
 	t.Run("Invalid Unique", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -323,7 +335,7 @@ func Test_InsertTraveling(t *testing.T) {
 		var pqErr *pq.Error
 		assert.ErrorAs(t, err, &pqErr)
 		assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
-		assert.True(t, strings.Contains(pqErr.Constraint, "interest_id"))
+		assert.Contains(t, pqErr.Constraint, "travel_unique")
 	})
 	t.Run("Too much travels", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -420,7 +432,7 @@ func Test_InsertSports(t *testing.T) {
 		var pqErr *pq.Error
 		assert.ErrorAs(t, err, &pqErr)
 		assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
-		assert.True(t, strings.Contains(pqErr.Constraint, "interest_id"))
+		assert.Contains(t, pqErr.Constraint, "interest_id")
 	})
 	t.Run("Invalid Unique", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -431,7 +443,7 @@ func Test_InsertSports(t *testing.T) {
 		var pqErr *pq.Error
 		assert.ErrorAs(t, err, &pqErr)
 		assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
-		assert.True(t, strings.Contains(pqErr.Constraint, "interest_id"))
+		assert.Contains(t, pqErr.Constraint, "sport_unique")
 	})
 	t.Run("Too much sports", func(t *testing.T) {
 		user := createNewAccount(t)

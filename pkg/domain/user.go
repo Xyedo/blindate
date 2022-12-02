@@ -61,7 +61,7 @@ type Online struct {
 
 // Interest one to one with user
 type Interest struct {
-	Bio         `json:"-" db:"-"`
+	Bio         `db:"-"`
 	Hobbies     []Hobbie     `json:"hobbies" db:"-"`
 	MovieSeries []MovieSerie `json:"movieSeries" db:"-"`
 	Travels     []Travel     `json:"travels" db:"-"`

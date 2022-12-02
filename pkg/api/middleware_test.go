@@ -13,6 +13,7 @@ import (
 	"github.com/xyedo/blindate/pkg/util"
 )
 
+// TODO: extends this test to match new middleware
 func addAutho(t *testing.T, req *http.Request, tokennizer jwtSvc, id, typeAuth string) {
 	token, err := tokennizer.GenerateAccessToken(id)
 	assert.NoError(t, err)

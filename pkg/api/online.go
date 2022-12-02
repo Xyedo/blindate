@@ -1,12 +1,10 @@
 package api
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/service"
 )
 
 type onlineSvc interface {
@@ -30,19 +28,7 @@ func (o *online) postUserOnlineHandler(c *gin.Context) {
 
 	err := o.onlineSvc.CreateNewOnline(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrRefNotFound23503) {
-			errNotFoundResp(c, "userId is not found!")
-			return
-		}
-		if errors.Is(err, service.ErrUniqueConstrainUserId) {
-			errUnprocessableEntityResp(c, "users is already registered")
-			return
-		}
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 
@@ -56,15 +42,7 @@ func (o *online) getUserOnlineHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	onlineUser, err := o.onlineSvc.GetOnline(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "userId is not found")
-			return
-		}
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -92,15 +70,7 @@ func (o *online) putuserOnlineHandler(c *gin.Context) {
 	}
 	err = o.onlineSvc.PutOnline(userId, *input.Online)
 	if err != nil {
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "userId is not found")
-			return
-		}
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{

@@ -1,14 +1,11 @@
 package api
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/service"
 )
 
 const (
@@ -63,15 +60,7 @@ func validateToken(c *gin.Context, jwtSvc jwtSvc) string {
 	accessToken := fields[1]
 	id, err := jwtSvc.ValidateAccessToken(accessToken)
 	if err != nil {
-		if errors.Is(err, service.ErrTokenExpired) {
-			errUnauthorizedResp(c, "token is expired, please login!")
-			return ""
-		}
-		if errors.Is(err, domain.ErrNotMatchCredential) {
-			errUnauthorizedResp(c, "token is invalid, please login!")
-			return ""
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return ""
 	}
 	return id

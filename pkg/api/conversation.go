@@ -9,6 +9,7 @@ import (
 	"github.com/xyedo/blindate/pkg/domain"
 )
 
+// TODO: Create conversation_test.go
 type conversationSvc interface {
 	CreateConversation(matchId string) (string, error)
 	FindConversationById(convoId string) (*domain.Conversation, error)

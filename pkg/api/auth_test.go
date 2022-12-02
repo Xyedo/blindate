@@ -24,7 +24,7 @@ func Test_postAuthHandler(t *testing.T) {
 	tests := []struct {
 		name      string
 		reqBody   string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *auth
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) auth
 		wantCode  int
 		respFunc  func(t *testing.T, rr *httptest.ResponseRecorder)
 	}{
@@ -34,7 +34,7 @@ func Test_postAuthHandler(t *testing.T) {
 				"email":"uncleBob23@cool.com",
 				"password":"pa55word"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *auth {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) auth {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 
@@ -70,7 +70,7 @@ func Test_postAuthHandler(t *testing.T) {
 				"email":0,
 				"password":"pa55word"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *auth {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) auth {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 
@@ -97,7 +97,7 @@ func Test_postAuthHandler(t *testing.T) {
 				"email":"hummm",
 				"password":"pa55w"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *auth {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) auth {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 
@@ -128,7 +128,7 @@ func Test_postAuthHandler(t *testing.T) {
 				"email":"uncleBob23@cool.com",
 				"password":"pa55word"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *auth {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) auth {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 
@@ -144,7 +144,7 @@ func Test_postAuthHandler(t *testing.T) {
 			respFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
 				respBody, err := json.Marshal(map[string]any{
 					"status":  "fail",
-					"message": "email or password do not match",
+					"message": "invalid credentials",
 				})
 				assert.NoError(t, err)
 				assert.JSONEq(t, string(respBody), rr.Body.String())
@@ -175,13 +175,13 @@ func Test_putAuthHandler(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) (*auth, string)
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) (auth, string)
 		wantCode  int
 		respFunc  func(t *testing.T, rr *httptest.ResponseRecorder)
 	}{
 		{
 			name: "Valid PutAuthHandler",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (*auth, string) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (auth, string) {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 				id := util.RandomUUID()
@@ -207,7 +207,7 @@ func Test_putAuthHandler(t *testing.T) {
 		},
 		{
 			name: "Invalid RefreshToken",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (*auth, string) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (auth, string) {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 				id := util.RandomUUID()
@@ -264,13 +264,13 @@ func Test_deleteAuthHandler(t *testing.T) {
 	jwt := service.NewJwt("test-access-secret", "test-refresh-secret", "1s", "720h")
 	tests := []struct {
 		name      string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) (*auth, string)
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) (auth, string)
 		wantCode  int
 		respFunc  func(t *testing.T, rr *httptest.ResponseRecorder)
 	}{
 		{
 			name: "Valid Log out",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (*auth, string) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (auth, string) {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 				id := util.RandomUUID()
@@ -295,7 +295,7 @@ func Test_deleteAuthHandler(t *testing.T) {
 		},
 		{
 			name: "InValid Log out",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (*auth, string) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (auth, string) {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 				id := util.RandomUUID()

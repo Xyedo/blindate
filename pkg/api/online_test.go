@@ -93,7 +93,7 @@ func Test_postUserOnlineHandler(t *testing.T) {
 			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "userId is not found!",
+				"message": "provided userId is not match with our resource",
 			},
 		},
 		{
@@ -117,7 +117,7 @@ func Test_postUserOnlineHandler(t *testing.T) {
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "users is already registered",
+				"message": "already created",
 			},
 		},
 	}
@@ -187,7 +187,7 @@ func Test_getUserOnlineHandler(t *testing.T) {
 			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "userId is not found",
+				"message": "resource not found",
 			},
 		},
 	}
@@ -280,7 +280,7 @@ func Test_putsUserOnlineHandler(t *testing.T) {
 			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "userId is not found",
+				"message": "resource not found",
 			},
 		},
 	}

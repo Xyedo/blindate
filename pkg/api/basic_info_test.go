@@ -26,7 +26,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 		name      string
 		id        string
 		reqBody   string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *basicinfo
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) basicinfo
 		wantCode  int
 		wantResp  map[string]any
 	}{
@@ -46,7 +46,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"kids": 0,
 				"Work":"Software Engineer"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfo := &entity.BasicInfo{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
@@ -106,7 +106,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"gender":"Male",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfo := &entity.BasicInfo{
 					UserId:     "8c540e20-75d1-4513-a8e3-72dc4bc68619",
@@ -130,7 +130,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"gender":"Male",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfo := &entity.BasicInfo{
 					UserId:     "8c540e20-75d1-4513-a8e3-72dc4bc68619",
@@ -158,7 +158,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"gender":0,
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Any()).Times(0)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
@@ -176,7 +176,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 			reqBody: `{
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Any()).Times(0)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
@@ -198,7 +198,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"gender":"Non-Binary",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfo := &entity.BasicInfo{
 					UserId:     "8c540e20-75d1-4513-a8e3-72dc4bc68619",
@@ -230,7 +230,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"educationLevel":"Bachelor",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfo := &entity.BasicInfo{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
@@ -266,7 +266,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"drinking":"Sukakkulah",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfo := &entity.BasicInfo{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
@@ -302,7 +302,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"smoking":"Sukakkulah",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfo := &entity.BasicInfo{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
@@ -338,7 +338,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"relationshipPref":"Sukakkulah",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfo := &entity.BasicInfo{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
@@ -373,7 +373,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"gender":"Male",
 				"lookingFor":"Non-Binary"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfo := &entity.BasicInfo{
 					UserId:     "8c540e20-75d1-4513-a8e3-72dc4bc68619",
@@ -405,7 +405,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"lookingFor":"Non-Binary",
 				"zodiac":"Propagandalf"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfo := &entity.BasicInfo{
 					UserId:     "8c540e20-75d1-4513-a8e3-72dc4bc68619",
@@ -440,7 +440,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"gender":"Non-Binary",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfo := &entity.BasicInfo{
 					UserId:     "8c540e20-75d1-4513-a8e3-72dc4bc68619",
@@ -480,7 +480,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"kids":125,
 				"work":"MaleSDfhSOIFHoshdfasofhhaosdfhaojghaosjgbasodgjbasjgbasdgbas;gbasjdgasdgbaasdfasdfasdfasdfasdfasdfasfasdfasf"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Any()).Times(0)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
@@ -537,14 +537,14 @@ func Test_getBasicInfoHandler(t *testing.T) {
 	tests := []struct {
 		name      string
 		id        string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *basicinfo
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) basicinfo
 		wantCode  int
 		wantResp  map[string]any
 	}{
 		{
 			name: "Valid Getter",
 			id:   validBasicInfo.UserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfo := &entity.BasicInfo{
 					UserId:     validBasicInfo.UserId,
@@ -566,7 +566,7 @@ func Test_getBasicInfoHandler(t *testing.T) {
 		{
 			name: "invalid Id",
 			id:   validBasicInfo.UserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq(validBasicInfo.UserId)).Times(1).Return(nil, sql.ErrNoRows)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
@@ -575,13 +575,13 @@ func Test_getBasicInfoHandler(t *testing.T) {
 			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "user Id not match with our basic info",
+				"message": "resource not found",
 			},
 		},
 		{
 			name: "Accessing Too Long ",
 			id:   validBasicInfo.UserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq(validBasicInfo.UserId)).Times(1).Return(nil, context.Canceled)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
@@ -621,7 +621,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 		name      string
 		id        string
 		reqBody   string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *basicinfo
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) basicinfo
 		wantCode  int
 		wantResp  map[string]any
 	}{
@@ -641,7 +641,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 			"kids": 0,
 			"Work":"Software Engineer"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfo := createValidBasicInfo()
 				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(&basicInfo, nil)
@@ -658,7 +658,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 		{
 			name: "Accessing Too Long",
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(nil, context.Canceled)
 				basicInfoRepo.EXPECT().UpdateBasicInfo(gomock.Any()).Times(0)
@@ -678,7 +678,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"gender":0,
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicinfo := createValidBasicInfo()
 				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(&basicinfo, nil)
@@ -708,7 +708,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"kids":125,
 				"work":"MaleSDfhSOIFHoshdfasofhhaosdfhaojghaosjgbasodgjbasjgbasdgbas;gbasjdgasdgbaasdfasdfasdfasdfasdfasdfasfasdfasf"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicinfo := createValidBasicInfo()
 				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(&basicinfo, nil)
@@ -742,7 +742,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"gender":"Non-Binary",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				validbasicInfo := createValidBasicInfo()
 				basicinfo := createValidBasicInfo()
@@ -775,7 +775,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"educationLevel":"Bachelor",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				validBasicInfo := createValidBasicInfo()
 				basicInfo := createValidBasicInfo()
@@ -812,7 +812,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"drinking":"Sukakkulah",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				validBasicInfo := createValidBasicInfo()
 				basicInfo := createValidBasicInfo()
@@ -849,7 +849,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"smoking":"Sukakkulah",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				validBasicInfo := createValidBasicInfo()
 				basicInfo := createValidBasicInfo()
@@ -886,7 +886,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"relationshipPref":"Sukakkulah",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				validBasicInfo := createValidBasicInfo()
 				basicInfo := createValidBasicInfo()
@@ -923,7 +923,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"gender":"Male",
 				"lookingFor":"Non-Binary"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				validBasicInfo := createValidBasicInfo()
 				basicInfo := createValidBasicInfo()
@@ -956,7 +956,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"lookingFor":"Female",
 				"zodiac":"Propagandalf"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				validBasicInfo := createValidBasicInfo()
 				basicInfo := createValidBasicInfo()

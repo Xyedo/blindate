@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -9,7 +10,7 @@ import (
 )
 
 var (
-	ErrTokenExpired = errors.New("jwt: token expired")
+	ErrTokenExpired = domain.WrapWithNewError(errors.New("jwt: token expired"), http.StatusUnauthorized, "token is expired, please login!")
 )
 
 type customClaims struct {

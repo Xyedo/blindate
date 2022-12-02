@@ -1,7 +1,6 @@
 package api
 
 import (
-	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -14,7 +13,7 @@ import (
 type userSvc interface {
 	CreateUser(newUser *domain.User) error
 	VerifyCredential(email, password string) (string, error)
-	GetUserById(id string, withProfPic bool) (*domain.User, error)
+	GetUserById(id string) (*domain.User, error)
 	UpdateUser(user *domain.User) error
 	CreateNewProfilePic(profPicParam domain.ProfilePicture) (string, error)
 }
@@ -68,15 +67,7 @@ func (u *user) postUserHandler(c *gin.Context) {
 	}
 	err := u.userService.CreateUser(&user)
 	if err != nil {
-		if errors.Is(err, domain.ErrUniqueConstraint23505) {
-			errUnprocessableEntityResp(c, "email is already taken")
-			return
-		}
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 
@@ -89,21 +80,13 @@ func (u *user) postUserHandler(c *gin.Context) {
 	})
 }
 
-func (u *user) putUserImageProfile(c *gin.Context) {
+func (u *user) putUserImageProfileHandler(c *gin.Context) {
 	selectedQ := c.Query("selected")
 	selected := strings.EqualFold(selectedQ, "true")
 	userId := c.GetString("userId")
-	userDb, err := u.userService.GetUserById(userId, false)
+	userDb, err := u.userService.GetUserById(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "id not found")
-			return
-		}
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	var validImageTypes = []string{
@@ -124,15 +107,7 @@ func (u *user) putUserImageProfile(c *gin.Context) {
 	}
 	id, err := u.userService.CreateNewProfilePic(newProfPic)
 	if err != nil {
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "users.Id not found!")
-			return
-		}
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -147,17 +122,9 @@ func (u *user) putUserImageProfile(c *gin.Context) {
 }
 func (u *user) getUserByIdHandler(c *gin.Context) {
 	userId := c.GetString("userId")
-	user, err := u.userService.GetUserById(userId, false)
+	user, err := u.userService.GetUserById(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "id not found")
-			return
-		}
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 
@@ -171,17 +138,9 @@ func (u *user) getUserByIdHandler(c *gin.Context) {
 
 func (u *user) patchUserByIdHandler(c *gin.Context) {
 	userId := c.GetString("userId")
-	user, err := u.userService.GetUserById(userId, false)
+	user, err := u.userService.GetUserById(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "id not found")
-			return
-		}
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	var input struct {
@@ -212,7 +171,7 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 	if input.NewPassword != nil && input.OldPassword != nil {
 		_, err := u.userService.VerifyCredential(user.Email, *input.OldPassword)
 		if err != nil {
-			errUnauthorizedResp(c, "email or password do not match")
+			jsonHandleError(c, err)
 			return
 		}
 		user.Password = *input.NewPassword
@@ -236,15 +195,7 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 
 	err = u.userService.UpdateUser(user)
 	if err != nil {
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "users.Id not found!")
-			return
-		}
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{

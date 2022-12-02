@@ -75,7 +75,7 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "user id is not found",
+				"message": "provided userId is not match with our resource",
 			},
 		},
 		{
@@ -101,7 +101,7 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "location with this user id is already created",
+				"message": "already created",
 			},
 		},
 		{
@@ -405,7 +405,7 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "user id is not found",
+				"message": "resource not found",
 			},
 		},
 	}

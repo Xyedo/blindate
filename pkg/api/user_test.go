@@ -401,7 +401,7 @@ func Test_GetUserByIdHandler(t *testing.T) {
 
 				expResBody, err := json.Marshal(map[string]any{
 					"status":  "fail",
-					"message": "id not found",
+					"message": "resource not found",
 				})
 				assert.NoError(t, err)
 				assert.JSONEq(t, string(expResBody), resp.Body.String())
@@ -517,7 +517,7 @@ func Test_PatchUserById(t *testing.T) {
 			},
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "email or password do not match",
+				"message": "invalid credentials",
 			},
 		},
 		{
@@ -581,7 +581,7 @@ func Test_PatchUserById(t *testing.T) {
 			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "id not found",
+				"message": "resource not found",
 			},
 		},
 		{
@@ -867,7 +867,7 @@ func Test_PutUserImageProfile(t *testing.T) {
 			}
 
 			c.Request = req
-			userH.putUserImageProfile(c)
+			userH.putUserImageProfileHandler(c)
 			assert.Equal(t, tt.wantCode, rr.Code)
 			assert.Contains(t, rr.Header().Get("Content-Type"), "application/json")
 			if tt.wantResp != nil {
@@ -906,7 +906,7 @@ func Test_PutUserImageProfile(t *testing.T) {
 		c.Set("userId", validUserId)
 		req := httptest.NewRequest("PUT", "/users/"+validUserId+"/profile-picture", strings.NewReader(`{"fullName":"Bob Martin"}`))
 		c.Request = req
-		userApi.putUserImageProfile(c)
+		userApi.putUserImageProfileHandler(c)
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 		require.Contains(t, rr.Header().Get("Content-Type"), "application/json")
 		expResBody, err := json.Marshal(map[string]any{"status": "fail", "message": "content-Type header is not valid"})

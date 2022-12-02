@@ -12,6 +12,7 @@ import (
 	"github.com/xyedo/blindate/pkg/util"
 )
 
+// TODO: Create chat_test.go
 type chatSvc interface {
 	CreateNewChat(content *domain.Chat) error
 	GetMessages(convoId string, filter entity.ChatFilter) ([]domain.Chat, error)

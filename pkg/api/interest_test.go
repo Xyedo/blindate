@@ -75,7 +75,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "interest with this user id is already created",
+				"message": "violate unique constraint",
 			},
 		},
 		{
@@ -140,7 +140,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "userId is not match with our resource",
+				"message": "provided userId is not match with our resource",
 			},
 		},
 		{
@@ -163,7 +163,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "userId is not match with our resource",
+				"message": "provided userId is not match with our resource",
 			},
 		},
 		{
@@ -425,7 +425,7 @@ func Test_putInterestBioHandler(t *testing.T) {
 			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "userId is not match with our resource",
+				"message": "resource not found",
 			},
 		},
 	}
@@ -661,7 +661,7 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 				hobbies = append(hobbies, domain.Hobbie{
 					Hobbie: "coding",
 				})
-				pqErr := pq.Error{Code: "23505", Constraint: "interest_id_ref"}
+				pqErr := pq.Error{Code: "23505", Constraint: "hobbie_unique"}
 				interestRepo.EXPECT().InsertInterestHobbies(gomock.Any(), gomock.Eq(hobbies)).Times(1).Return(&pqErr)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
@@ -782,7 +782,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 				}
 				pqErr := pq.Error{
 					Code:       "23505",
-					Constraint: "interest_id",
+					Constraint: "hobbie_unique",
 				}
 				interestRepo.EXPECT().UpdateInterestHobbies(gomock.Eq(validId), gomock.Eq(hobbies)).Times(1).Return(int64(0), &pqErr)
 				interestSvc := service.NewInterest(interestRepo)
@@ -791,7 +791,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "all of the hobbies must be unique",
+				"message": "every hobbies must be unique",
 			},
 		},
 		{
@@ -965,7 +965,7 @@ func Test_deleteInterestHobbiesHandler(t *testing.T) {
 			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "one of the id is not found",
+				"message": "resource not found",
 			},
 		},
 		{
@@ -1214,7 +1214,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 			},
 		},
 		{
-			name:       "valid but violates hobbies uniqueness",
+			name:       "valid but violates movieSeries uniqueness",
 			interestId: util.RandomUUID(),
 			reqBody: fmt.Sprintf(`{
 				"movieSeries":%s
@@ -1231,7 +1231,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 				movieSeries = append(movieSeries, domain.MovieSerie{
 					MovieSerie: "coding",
 				})
-				pqErr := pq.Error{Code: "23505", Constraint: "interest_id_ref"}
+				pqErr := pq.Error{Code: "23505", Constraint: "movie_serie_unique"}
 				interestRepo.EXPECT().InsertInterestMovieSeries(gomock.Any(), gomock.Eq(movieSeries)).Times(1).Return(&pqErr)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
@@ -1352,7 +1352,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 				}
 				pqErr := pq.Error{
 					Code:       "23505",
-					Constraint: "interest_id",
+					Constraint: "movie_serie_unique",
 				}
 				interestRepo.EXPECT().UpdateInterestMovieSeries(gomock.Eq(validId), gomock.Eq(movieSeries)).Times(1).Return(int64(0), &pqErr)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1361,7 +1361,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "all of the movieSeries must be unique",
+				"message": "every moviesSeries must be unique",
 			},
 		},
 		{
@@ -1535,7 +1535,7 @@ func Test_deleteInterestMovieSeriesHandler(t *testing.T) {
 			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "one of the id is not found",
+				"message": "resource not found",
 			},
 		},
 		{
@@ -1784,7 +1784,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 			},
 		},
 		{
-			name:       "valid but violates hobbies uniqueness",
+			name:       "valid but violates travels uniqueness",
 			interestId: util.RandomUUID(),
 			reqBody: fmt.Sprintf(`{
 				"travels":%s
@@ -1801,7 +1801,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 				travels = append(travels, domain.Travel{
 					Travel: "coding",
 				})
-				pqErr := pq.Error{Code: "23505", Constraint: "interest_id_ref"}
+				pqErr := pq.Error{Code: "23505", Constraint: "travel_unique"}
 				interestRepo.EXPECT().InsertInterestTraveling(gomock.Any(), gomock.Eq(travels)).Times(1).Return(&pqErr)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
@@ -1922,7 +1922,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 				}
 				pqErr := pq.Error{
 					Code:       "23505",
-					Constraint: "interest_id",
+					Constraint: "travel_unique",
 				}
 				interestRepo.EXPECT().UpdateInterestTraveling(gomock.Eq(validId), gomock.Eq(travels)).Times(1).Return(int64(0), &pqErr)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1931,7 +1931,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "all of the travels must be unique",
+				"message": "every travels must be unique",
 			},
 		},
 		{
@@ -2105,7 +2105,7 @@ func Test_deleteInterestTravelingHandler(t *testing.T) {
 			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "one of the id is not found",
+				"message": "resource not found",
 			},
 		},
 		{
@@ -2370,7 +2370,7 @@ func Test_postInterestSportsHandler(t *testing.T) {
 				sports = append(sports, domain.Sport{
 					Sport: "coding",
 				})
-				pqErr := pq.Error{Code: "23505", Constraint: "interest_id_ref"}
+				pqErr := pq.Error{Code: "23505", Constraint: "sport_unique"}
 				interestRepo.EXPECT().InsertInterestSports(gomock.Any(), gomock.Eq(sports)).Times(1).Return(&pqErr)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
@@ -2491,7 +2491,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 				}
 				pqErr := pq.Error{
 					Code:       "23505",
-					Constraint: "interest_id",
+					Constraint: "sport_unique",
 				}
 				interestRepo.EXPECT().UpdateInterestSport(gomock.Eq(validId), gomock.Eq(sports)).Times(1).Return(int64(0), &pqErr)
 				interestSvc := service.NewInterest(interestRepo)
@@ -2500,7 +2500,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "all of the sports must be unique",
+				"message": "every sports must be unique",
 			},
 		},
 		{
@@ -2674,7 +2674,7 @@ func Test_deleteInterestSportsHandler(t *testing.T) {
 			wantCode: http.StatusNotFound,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "one of the id is not found",
+				"message": "resource not found",
 			},
 		},
 		{

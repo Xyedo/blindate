@@ -9,6 +9,7 @@ import (
 	"github.com/xyedo/blindate/pkg/service"
 )
 
+// TODO: Create match_test.go
 type matchSvc interface {
 	FindUserToMatch(userId string) ([]domain.BigUser, error)
 	PostNewMatch(fromUserId, toUserId string, matchStatus domain.MatchStatus) (string, error)
@@ -27,7 +28,7 @@ type match struct {
 	matchSvc matchSvc
 }
 
-func (m *match) getNewMatchCandidateHandler(c *gin.Context) {
+func (m *match) getNewUserToMatchHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	res, err := m.matchSvc.FindUserToMatch(userId)
 	if err != nil {
@@ -88,7 +89,7 @@ func (m *match) postNewMatchHandler(c *gin.Context) {
 	})
 
 }
-func (m *match) getAllMatchHandler(c *gin.Context) {
+func (m *match) getAllMatchRequestedHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	matcheds, err := m.matchSvc.GetMatchReqToUserId(userId)
 	if err != nil {
@@ -109,11 +110,11 @@ func (m *match) getAllMatchHandler(c *gin.Context) {
 
 func (m *match) putRequestHandler(c *gin.Context) {
 	var input struct {
-		Request string `form:"request" json:"request" binding:"required,oneof=requested declined accepted"`
+		Request string `form:"request" json:"request" binding:"required,oneof=declined accepted"`
 	}
 	if err := c.ShouldBind(&input); err != nil {
 		if errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Request": "required and the value must be `requested` or `accepted` or `declined`",
+			"Request": "required and the value must be `accepted` or `declined`",
 		}); errjson != nil {
 			errServerResp(c, err)
 			return
