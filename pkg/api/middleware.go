@@ -17,39 +17,14 @@ const (
 
 func validateUser(jwtService jwtSvc) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		authorizationHeader := c.GetHeader(authorizationHeaderKey)
-		fields := strings.Fields(authorizationHeader)
-		if len(fields) < 2 {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"status":  "fail",
-				"message": "Invalid Authorization Header format",
-			})
+		id := validateToken(c, jwtService)
+		if id == "" {
 			return
 		}
-		if !strings.EqualFold("Bearer", fields[0]) {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"status":  "fail",
-				"message": fmt.Sprintf("Unsupported Authorization type %s", fields[0]),
-			})
-			return
-		}
-
-		accessToken := fields[1]
-		id, err := jwtService.ValidateAccessToken(accessToken)
-		if err != nil {
-			if errors.Is(err, service.ErrTokenExpired) {
-				errUnauthorizedResp(c, "token is expired, please login!")
-			}
-			if errors.Is(err, domain.ErrNotMatchCredential) {
-				errUnauthorizedResp(c, "token is invalid, please login!")
-			}
-			return
-		}
-
 		var url struct {
 			UserId string `uri:"userId" binding:"required,uuid"`
 		}
-		err = c.ShouldBindUri(&url)
+		err := c.ShouldBindUri(&url)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 				"status":  "fail",
@@ -65,6 +40,41 @@ func validateUser(jwtService jwtSvc) gin.HandlerFunc {
 		c.Set("userId", url.UserId)
 		c.Next()
 	}
+}
+
+func validateToken(c *gin.Context, jwtSvc jwtSvc) string {
+	authorizationHeader := c.GetHeader(authorizationHeaderKey)
+	fields := strings.Fields(authorizationHeader)
+	if len(fields) < 2 {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"status":  "fail",
+			"message": "Invalid Authorization Header format",
+		})
+		return ""
+	}
+	if !strings.EqualFold("Bearer", fields[0]) {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+			"status":  "fail",
+			"message": fmt.Sprintf("Unsupported Authorization type %s", fields[0]),
+		})
+		return ""
+	}
+
+	accessToken := fields[1]
+	id, err := jwtSvc.ValidateAccessToken(accessToken)
+	if err != nil {
+		if errors.Is(err, service.ErrTokenExpired) {
+			errUnauthorizedResp(c, "token is expired, please login!")
+			return ""
+		}
+		if errors.Is(err, domain.ErrNotMatchCredential) {
+			errUnauthorizedResp(c, "token is invalid, please login!")
+			return ""
+		}
+		errServerResp(c, err)
+		return ""
+	}
+	return id
 }
 
 func validateInterest() gin.HandlerFunc {

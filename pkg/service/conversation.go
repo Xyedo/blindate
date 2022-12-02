@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	ErrRefMatchId     = fmt.Errorf("%w:invalid matchId", domain.ErrRefNotFound23503)
-	ErrNotYetAccepted = errors.New("not yet accepted/revealed in matchId")
+	ErrRefMatchId         = fmt.Errorf("%w:invalid matchId", domain.ErrRefNotFound23503)
+	ErrInvalidMatchStatus = errors.New("not yet accepted/revealed in matchId")
 )
 
 func NewConversation(convRepo repository.Conversation, matchRepo repository.Match) *conversation {
@@ -40,7 +40,7 @@ func (c *conversation) CreateConversation(matchId string) (string, error) {
 		return "", err
 	}
 	if matchEntity.RequestStatus != string(domain.Accepted) {
-		return "", ErrNotYetAccepted
+		return "", ErrInvalidMatchStatus
 	}
 	id, err := c.convRepo.InsertConversation(matchId)
 	if err != nil {

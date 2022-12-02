@@ -3,13 +3,42 @@ package domain
 import (
 	"errors"
 	"strconv"
+	"time"
 )
+
+type BigUser struct {
+	UserId           string       ` json:"userId"`
+	Alias            string       ` json:"alias"`
+	Dob              time.Time    ` json:"dob"`
+	Gender           *string      `json:"gender"`
+	FromLoc          *string      `json:"fromLoc"`
+	Height           *int         `json:"height"`
+	EducationLevel   *string      `json:"educationLevel"`
+	Drinking         *string      `json:"drinking"`
+	Smoking          *string      `json:"smoking"`
+	RelationshipPref *string      `json:"relationshipPref"`
+	LookingFor       *string      `json:"lookingFor"`
+	Zodiac           *string      `json:"zodiac"`
+	Kids             *int         `json:"kids"`
+	Work             *string      `json:"work"`
+	BioId            *string      `json:"bioId"`
+	Bio              *string      `json:"bio" db:"bio"`
+	Hobbies          []Hobbie     `json:"hobbies"`
+	MovieSeries      []MovieSerie `json:"movieSeries"`
+	Travels          []Travel     `json:"travels"`
+	Sports           []Sport      `json:"sports"`
+}
+type MatchUser struct {
+	MatchId string `json:"matchId"`
+	BigUser
+}
 
 type MatchStatus string
 
 const (
 	Unknown   MatchStatus = "unknown"
 	Requested MatchStatus = "requested"
+	Declined  MatchStatus = "declined"
 	Accepted  MatchStatus = "accepted"
 )
 

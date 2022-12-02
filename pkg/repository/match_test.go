@@ -2,6 +2,8 @@ package repository
 
 import (
 	"database/sql"
+	"encoding/json"
+	"log"
 	"testing"
 	"time"
 
@@ -21,7 +23,7 @@ func Test_InsertNewMatch(t *testing.T) {
 	})
 	t.Run("invalid newMatch requestFrom", func(t *testing.T) {
 		toUsr := createNewAccount(t)
-		_, err := matchRepo.InsertNewMatch(util.RandomUUID(), toUsr.ID)
+		_, err := matchRepo.InsertNewMatch(util.RandomUUID(), toUsr.ID, domain.Accepted)
 		require.Error(t, err)
 		var pqErr *pq.Error
 		require.ErrorAs(t, err, &pqErr)
@@ -30,7 +32,7 @@ func Test_InsertNewMatch(t *testing.T) {
 	})
 	t.Run("invalid newMatch requestTo", func(t *testing.T) {
 		fromUsr := createNewAccount(t)
-		_, err := matchRepo.InsertNewMatch(fromUsr.ID, util.RandomUUID())
+		_, err := matchRepo.InsertNewMatch(fromUsr.ID, util.RandomUUID(), domain.Declined)
 		require.Error(t, err)
 		var pqErr *pq.Error
 		require.ErrorAs(t, err, &pqErr)
@@ -42,10 +44,10 @@ func Test_InsertNewMatch(t *testing.T) {
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
 
-		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Unknown)
 		require.NoError(t, err)
 		assert.NotEmpty(t, matchId)
-		matchId, err = matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+		matchId, err = matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Accepted)
 		require.Error(t, err)
 		assert.Empty(t, matchId)
 		var pqErr *pq.Error
@@ -55,29 +57,48 @@ func Test_InsertNewMatch(t *testing.T) {
 	})
 }
 
-func Test_SelectMatchByUserId(t *testing.T) {
+func Test_SelectMatchReqToUserId(t *testing.T) {
 	matchRepo := NewMatch(testQuery)
 	t.Run("valid match", func(t *testing.T) {
-		fromUsr := createNewAccount(t)
+		toUser := createNewAccount(t)
+		var ExpectedfirstFirstUserId string
 		for i := 0; i < 5; i++ {
-			toUsr := createNewAccount(t)
-			matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+			fromUsr := createNewAccount(t)
+			if i == 0 {
+				ExpectedfirstFirstUserId = fromUsr.ID
+			}
+			bio := createNewInterestBio(t, fromUsr.ID)
+			createNewInterestHobbie(t, bio.Id)
+			createNewInterestMovieSeries(t, bio.Id)
+			createNewInterestSport(t, bio.Id)
+			createNewInterestTraveling(t, bio.Id)
+			matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUser.ID, domain.Requested)
 			require.NoError(t, err)
 			assert.NotEmpty(t, matchId)
+			if i%2 == 0 {
+				fromUsrOdd := createNewAccount(t)
+				matchId, err := matchRepo.InsertNewMatch(fromUsrOdd.ID, toUser.ID, domain.Unknown)
+				require.NoError(t, err)
+				assert.NotEmpty(t, matchId)
+			}
 		}
-		matchs, err := matchRepo.SelectMatchByUserId(fromUsr.ID)
+
+		matchs, err := matchRepo.SelectMatchReqToUserId(toUser.ID)
 		require.NoError(t, err)
-		assert.Len(t, matchs, 5)
-		assert.Equal(t, fromUsr.ID, matchs[0].RequestFrom)
+		require.NotEmpty(t, matchs)
+		assert.Equal(t, ExpectedfirstFirstUserId, matchs[0].UserId)
+		jsonCandidate, err := json.MarshalIndent(matchs, "", " ")
+		require.NoError(t, err)
+		log.Println(string(jsonCandidate))
 	})
 	t.Run("zero matchs with valid user", func(t *testing.T) {
 		user := createNewAccount(t)
-		convs, err := matchRepo.SelectMatchByUserId(user.ID)
+		convs, err := matchRepo.SelectMatchReqToUserId(user.ID)
 		require.NoError(t, err)
 		assert.Empty(t, convs)
 	})
 	t.Run("zero matchs with invalid user", func(t *testing.T) {
-		convs, err := matchRepo.SelectMatchByUserId(util.RandomUUID())
+		convs, err := matchRepo.SelectMatchReqToUserId(util.RandomUUID())
 		require.NoError(t, err)
 		assert.Empty(t, convs)
 	})
@@ -103,7 +124,7 @@ func Test_UpdateMatchById(t *testing.T) {
 	setupFunc := func(t *testing.T) entity.Match {
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
-		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Accepted)
 		require.NoError(t, err)
 		require.NotEmpty(t, matchId)
 		match, err := matchRepo.GetMatchById(matchId)
@@ -153,8 +174,13 @@ func createNewMatch(t *testing.T) string {
 	matchRepo := NewMatch(testQuery)
 	fromUsr := createNewAccount(t)
 	toUsr := createNewAccount(t)
-
-	matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+	matchStatus := domain.Unknown
+	if util.RandomBool() {
+		matchStatus = domain.Accepted
+	} else {
+		matchStatus = domain.Declined
+	}
+	matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, matchStatus)
 	require.NoError(t, err)
 	return matchId
 }
