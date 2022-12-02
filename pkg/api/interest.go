@@ -1,13 +1,11 @@
 package api
 
 import (
-	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/service"
 )
 
 type interestSvc interface {
@@ -48,15 +46,7 @@ func (i *interest) getInterestHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	intr, err := i.interestSvc.GetInterest(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "userId is not match with our resource")
-			return
-		}
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 
@@ -91,19 +81,7 @@ func (i *interest) postInterestBioHandler(c *gin.Context) {
 
 	err = i.interestSvc.CreateNewBio(&bio)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, service.ErrRefUserIdField) {
-			errNotFoundResp(c, "userId is not match with our resource")
-			return
-		}
-		if errors.Is(err, service.ErrUniqueConstrainUserId) {
-			errUnprocessableEntityResp(c, "interest with this user id is already created")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 
@@ -117,15 +95,7 @@ func (i *interest) putInterestBioHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	bio, err := i.interestSvc.GetBio(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "userId is not match with our resource")
-			return
-		}
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	var input struct {
@@ -153,15 +123,7 @@ func (i *interest) putInterestBioHandler(c *gin.Context) {
 	bio.Bio = changedBio
 	err = i.interestSvc.PutBio(bio)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "userId is not found in our db!")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 
@@ -196,23 +158,7 @@ func (i *interest) postInterestHobbiesHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.CreateNewHobbies(interestId, hobbies)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, service.ErrRefInterestField) {
-			errNotFoundResp(c, "interestId is not found")
-			return
-		}
-		if errors.Is(err, service.ErrUniqueConstrainInterestId) {
-			errUnprocessableEntityResp(c, "every hobbies must be unique")
-			return
-		}
-		if errors.Is(err, service.ErrCheckConstrainHobbie) {
-			errUnprocessableEntityResp(c, "hobbies must less than 10")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
@@ -243,23 +189,7 @@ func (i *interest) putInterestHobbiesHandler(c *gin.Context) {
 
 	err = i.interestSvc.PutHobbies(interestId, input.Hobbies)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, service.ErrRefInterestField) {
-			errNotFoundResp(c, "interestId is not found")
-			return
-		}
-		if errors.Is(err, service.ErrUniqueConstrainInterestId) {
-			errUnprocessableEntityResp(c, "all of the hobbies must be unique")
-			return
-		}
-		if errors.Is(err, service.ErrCheckConstrainHobbie) {
-			errUnprocessableEntityResp(c, "hobbies must less than 10")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 
@@ -289,15 +219,7 @@ func (i *interest) deleteInterestHobbiesHandler(c *gin.Context) {
 	interestId := c.GetString("interestId")
 	err = i.interestSvc.DeleteHobbies(interestId, input.Ids)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "one of the id is not found")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 
@@ -332,23 +254,7 @@ func (i *interest) postInterestMovieSeriesHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.CreateNewMovieSeries(interestId, movieSeries)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, service.ErrRefInterestField) {
-			errNotFoundResp(c, "interestId is not found")
-			return
-		}
-		if errors.Is(err, service.ErrUniqueConstrainInterestId) {
-			errUnprocessableEntityResp(c, "every moviesSeries must be unique")
-			return
-		}
-		if errors.Is(err, service.ErrCheckConstrainMovieSeries) {
-			errUnprocessableEntityResp(c, "movieSeries must less than 10")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
@@ -377,24 +283,7 @@ func (i *interest) putInterestMovieSeriesHandler(c *gin.Context) {
 
 	err = i.interestSvc.PutMovieSeries(interestId, input.MovieSeries)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, service.ErrRefInterestField) {
-			errNotFoundResp(c, "interestId is not found")
-			return
-		}
-		if errors.Is(err, service.ErrUniqueConstrainInterestId) {
-			errUnprocessableEntityResp(c, "all of the movieSeries must be unique")
-
-			return
-		}
-		if errors.Is(err, service.ErrCheckConstrainMovieSeries) {
-			errUnprocessableEntityResp(c, "movieSeries must less than 10")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 
@@ -424,15 +313,7 @@ func (i *interest) deleteInterestMovieSeriesHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.DeleteMovieSeries(interestId, input.Ids)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "one of the id is not found")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 
@@ -467,23 +348,7 @@ func (i *interest) postInterestTravelingHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.CreateNewTraveling(interestId, travels)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, service.ErrRefInterestField) {
-			errNotFoundResp(c, "interestId is not found")
-			return
-		}
-		if errors.Is(err, service.ErrUniqueConstrainInterestId) {
-			errUnprocessableEntityResp(c, "every travels must be unique")
-			return
-		}
-		if errors.Is(err, service.ErrCheckConstrainTraveling) {
-			errUnprocessableEntityResp(c, "travels must less than 10")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
@@ -513,24 +378,7 @@ func (i *interest) putInterestTravelingHandler(c *gin.Context) {
 
 	err = i.interestSvc.PutTraveling(interestId, input.Travels)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, service.ErrRefInterestField) {
-			errNotFoundResp(c, "interestId is not found")
-			return
-		}
-		if errors.Is(err, service.ErrUniqueConstrainInterestId) {
-			errUnprocessableEntityResp(c, "all of the travels must be unique")
-			return
-		}
-		if errors.Is(err, service.ErrCheckConstrainTraveling) {
-			errUnprocessableEntityResp(c, "travels must less than 10")
-			return
-		}
-
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 
@@ -559,15 +407,7 @@ func (i *interest) deleteInterestTravelingHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.DeleteTravels(interestId, input.Ids)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "one of the id is not found")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 
@@ -602,23 +442,7 @@ func (i *interest) postInterestSportHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.CreateNewSports(interestId, sports)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, service.ErrRefInterestField) {
-			errNotFoundResp(c, "interestId is not found")
-			return
-		}
-		if errors.Is(err, service.ErrUniqueConstrainInterestId) {
-			errUnprocessableEntityResp(c, "every sports must be unique")
-			return
-		}
-		if errors.Is(err, service.ErrCheckConstrainSports) {
-			errUnprocessableEntityResp(c, "sports must less than 10")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
@@ -647,23 +471,7 @@ func (i *interest) putInterestSportHandler(c *gin.Context) {
 
 	err = i.interestSvc.PutSports(interestId, input.Sports)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, service.ErrRefInterestField) {
-			errNotFoundResp(c, "interestId is not found")
-			return
-		}
-		if errors.Is(err, service.ErrUniqueConstrainInterestId) {
-			errUnprocessableEntityResp(c, "all of the sports must be unique")
-			return
-		}
-		if errors.Is(err, service.ErrCheckConstrainSports) {
-			errUnprocessableEntityResp(c, "sports must less than 10")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 
@@ -692,15 +500,7 @@ func (i *interest) deleteInterestSportHandler(c *gin.Context) {
 	}
 	err = i.interestSvc.DeleteSports(interestId, input.Ids)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "one of the id is not found")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 

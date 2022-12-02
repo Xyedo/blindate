@@ -14,19 +14,32 @@ import (
 )
 
 func jsonBindingErrResp(err error, c *gin.Context, errorMap map[string]string) error {
-	err1 := util.ReadJSONDecoderErr(err)
-	if err1 != nil {
-		errBadRequestResp(c, err1.Error())
+	if err := util.ReadJSONDecoderErr(err); err != nil {
+		errBadRequestResp(c, err.Error())
 		return nil
 	}
-	errMap := util.ReadValidationErr(err, errorMap)
-	if errMap != nil {
+	if errMap := util.ReadValidationErr(err, errorMap); errMap != nil {
 		errValidationResp(c, errMap)
 		return nil
 	}
 	return err
 }
 
+func jsonHandleError(c *gin.Context, err error) {
+	var apiErr domain.APIError
+	if errors.As(err, &apiErr) {
+		status, msg := apiErr.APIError()
+		c.AbortWithStatusJSON(status, gin.H{
+			"status":  "fail",
+			"message": msg,
+		})
+	} else {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+			"status":  "fail",
+			"message": "the server encountered a problem and could not process your request",
+		})
+	}
+}
 func uploadFile(c *gin.Context, uploader attachmentManager, validMimeTypes []string, prefix string) (key string, mediaType string) {
 	fileHeader, err := c.FormFile("file")
 	if err != nil {

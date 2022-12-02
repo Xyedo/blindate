@@ -20,23 +20,178 @@
   ],
   "tags": [
     {
-      "name": "signup"
+      "name": "Signup"
     },
     {
-      "name": "users",
+      "name": "Authentication",
+      "description": "login, get new accessToken, logout"
+    },
+    {
+      "name": "Users",
       "description": "must sign in first"
+    },
+    {
+      "name": "Match",
+      "description": "to search,accept,decline and find match"
     }
   ],
   "paths": {
+    "/auth": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Log in User",
+        "operationId": "postAuthHandler",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/authReq"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "successfull login",
+            "headers": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string",
+                  "example": "refreshToken=IAHH_CAHAC; maxAge:304343; path=/api/v1"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/authRes"
+                }
+              }
+            }
+          },
+          "409": {
+            "$ref": "#/components/responses/resource_conflict"
+          },
+          "400": {
+            "$ref": "#/components/responses/bad_request_json"
+          },
+          "401": {
+            "description": "invalid email or password",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/auth_response_unauth"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/auth_post_err_validation"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "when accessToken is invalid, you have to use this path to get it using your cookie refreshToken",
+        "tags": [
+          "Authentication"
+        ],
+        "operationId": "putAuthHandler",
+        "summary": "to get new AccessToken",
+        "security": [
+          {
+            "refreshAuth": []
+          }
+        ],
+        "responses": {
+          "409": {
+            "$ref": "#/components/responses/resource_conflict"
+          },
+          "403": {
+            "$ref": "#/components/responses/invalid_refresh_cookie"
+          },
+          "401": {
+            "$ref": "#/components/responses/invalid_creds_refresh_token"
+          },
+          "200": {
+            "description": "success refreshing accessToken",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/authRes"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAuthHandler",
+        "tags": [
+          "Authentication"
+        ],
+        "security": [
+          {
+            "refreshAuth": []
+          }
+        ],
+        "description": "use when logging out, it removes the refreshToken",
+        "summary": "using when log out",
+        "responses": {
+          "409": {
+            "$ref": "#/components/responses/resource_conflict"
+          },
+          "403": {
+            "$ref": "#/components/responses/invalid_refresh_cookie"
+          },
+          "401": {
+            "$ref": "#/components/responses/invalid_creds_refresh_token"
+          },
+          "200": {
+            "description": "success logging out",
+            "content": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string",
+                  "example": "refreshToken=IAHH_CAHAC; maxAge:-1; path=/api/v1"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "log out success"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/users": {
       "post": {
         "tags": [
-          "signup"
+          "Signup"
         ],
         "summary": "Sign Up New User",
         "operationId": "postUserHandler",
         "requestBody": {
-          "description": "Inventory item to add",
           "content": {
             "application/json": {
               "schema": {
@@ -47,6 +202,9 @@
           "required": true
         },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/bad_request_json"
+          },
           "201": {
             "description": "item created",
             "content": {
@@ -58,50 +216,36 @@
             }
           },
           "409": {
-            "description": "conflict",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/inline_response_409"
-                }
-              }
-            }
+            "$ref": "#/components/responses/resource_conflict"
           },
           "422": {
-            "description": "unique value on email",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/inline_response_422"
-                }
-              }
-            }
+            "$ref": "#/components/responses/error_validation_user"
           }
         }
       }
     },
     "/users/{userId}": {
+      "parameters": [
+        {
+          "name": "userId",
+          "in": "path",
+          "description": "unique indentifier for users",
+          "required": true,
+          "style": "simple",
+          "explode": false,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+          }
+        }
+      ],
       "get": {
         "tags": [
-          "users"
+          "Users"
         ],
         "summary": "Get User By Id",
         "operationId": "getUserById",
-        "parameters": [
-          {
-            "name": "userId",
-            "in": "path",
-            "description": "unique indentifier for users",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "item created",
@@ -114,48 +258,19 @@
             }
           },
           "404": {
-            "description": "userId not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/inline_response_404"
-                }
-              }
-            }
+            "$ref": "#/components/responses/not_found_user_id"
           },
           "409": {
-            "description": "conflict",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/inline_response_409"
-                }
-              }
-            }
+            "$ref": "#/components/responses/resource_conflict"
           }
         }
       },
       "patch": {
         "tags": [
-          "users"
+          "Users"
         ],
         "summary": "Edit current User",
         "operationId": "patchUserByIdHandler",
-        "parameters": [
-          {
-            "name": "userId",
-            "in": "path",
-            "description": "unique indentifier for users",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
-            }
-          }
-        ],
         "requestBody": {
           "description": "if using oldPassword props, you must use newPassword prop too",
           "content": {
@@ -178,43 +293,591 @@
               }
             }
           },
+          "400": {
+            "$ref": "#/components/responses/bad_request_json"
+          },
           "404": {
-            "description": "userId not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/inline_response_404"
+            "$ref": "#/components/responses/not_found_user_id"
+          },
+          "422": {
+            "$ref": "#/components/responses/error_validation_user"
+          },
+          "409": {
+            "$ref": "#/components/responses/resource_conflict"
+          }
+        }
+      }
+    },
+    "/users/{userId}/profile-picture": {
+      "parameters": [
+        {
+          "name": "userId",
+          "in": "path",
+          "description": "unique indentifier for users",
+          "required": true,
+          "style": "simple",
+          "explode": false,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+          }
+        }
+      ],
+      "put": {
+        "summary": "upload user profile image",
+        "description": "upload user profile image",
+        "tags": [
+          "Users"
+        ],
+        "operationId": "putUserImageProfileHandler",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "selected",
+            "schema": {
+              "type": "boolean",
+              "example": true
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "type": "array",
+                    "items": {
+                      "format": "binary",
+                      "type": "string"
+                    }
+                  }
                 }
               }
             }
+          }
+        },
+        "responses": {
+          "404": {
+            "$ref": "#/components/responses/not_found_user_id"
           },
           "409": {
-            "description": "conflict",
+            "$ref": "#/components/responses/resource_conflict"
+          },
+          "400": {
+            "$ref": "#/components/responses/bad_request_json"
+          },
+          "413": {
+            "$ref": "#/components/responses/request_too_large"
+          },
+          "422": {
+            "$ref": "#/components/responses/invalid_mime_type"
+          },
+          "200": {
+            "description": "valid put profile image",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/inline_response_409"
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "user profile upload success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "profilePicture": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "example": "d290f1ee-6c54-4b01-90e6-d701748f0851.png"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
                 }
               }
             }
           }
         }
       }
+    },
+    "/users/{userId}/new-match": {
+      "description": "to find a new match with another user",
+      "summary": "find a new match",
+      "parameters": [
+        {
+          "name": "userId",
+          "in": "path",
+          "description": "unique indentifier for users",
+          "required": true,
+          "style": "simple",
+          "explode": false,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Match"
+        ],
+        "description": "finding a new user to match, after this, you can go to the postNewMatchHandler to decline or request to match",
+        "operationId": "getNewUserToMatchHandler",
+        "summary": "new match candidate",
+        "responses": {
+          "404": {
+            "$ref": "#/components/responses/not_found_user_id"
+          },
+          "409": {
+            "$ref": "#/components/responses/resource_conflict"
+          },
+          "200": {
+            "description": "get new user to match",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "newCandidateMatch": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/bigUser_obj"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{userId}/match": {
+      "parameters": [
+        {
+          "name": "userId",
+          "in": "path",
+          "description": "unique indentifier for users",
+          "required": true,
+          "style": "simple",
+          "explode": false,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Match"
+        ],
+        "description": "to get all match requested user",
+        "summary": "get match req user",
+        "operationId": "getAllMatchRequestedHandler",
+        "responses": {
+          "409": {
+            "$ref": "#/components/responses/resource_conflict"
+          },
+          "404": {
+            "$ref": "#/components/responses/not_found_user_id"
+          },
+          "200": {
+            "description": "get all match requested",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "newCandidateMatchs": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/bigUser_obj"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Match"
+        ],
+        "description": "after getting a match, you have to decline it or request it",
+        "summary": "to match or decline user",
+        "operationId": "postNewMatchHandler",
+        "requestBody": {
+          "description": "to what user and what match response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "required": [
+                  "toUserId",
+                  "matchStatus"
+                ],
+                "type": "object",
+                "properties": {
+                  "toUserId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "matchStatus": {
+                    "type": "string",
+                    "enum": [
+                      "requested",
+                      "declined"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/bad_request_json"
+          },
+          "409": {
+            "description": "invalid validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "example": "fail"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "please refer to the documentation"
+                        },
+                        "errors": {
+                          "type": "object",
+                          "properties": {
+                            "toUserId": {
+                              "type": "string",
+                              "example": "must be provided and must be valid uuid "
+                            },
+                            "matchStatus": {
+                              "type": "string",
+                              "example": "must be provided and the values is one of `requested` or `declined`"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "example": "fail"
+                        },
+                        "message": {
+                          "type": "string",
+                          "example": "already matched"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/not_found_user_id"
+          },
+          "201": {
+            "description": "success creating match",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "matchId": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/{userId}/match/{matchId}/request": {
+      "description": "request to "
     }
   },
   "components": {
+    "responses": {
+      "invalid_mime_type": {
+        "description": "invalid mime type",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "fail"
+                },
+                "message": {
+                  "type": "string",
+                  "example": "not valid mime-type"
+                }
+              }
+            }
+          }
+        }
+      },
+      "request_too_large": {
+        "description": "request too large",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "fail"
+                },
+                "message": {
+                  "type": "string",
+                  "example": "max byte to upload is 8mB"
+                }
+              }
+            }
+          }
+        }
+      },
+      "error_validation_user": {
+        "description": "error on validation json body",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "fail"
+                },
+                "message": {
+                  "type": "string",
+                  "enum": [
+                    "please refer to the documentation",
+                    "email is already taken"
+                  ]
+                },
+                "errors": {
+                  "type": "object",
+                  "properties": {
+                    "fullname": {
+                      "type": "string",
+                      "example": "must be required and between 1-50 characters"
+                    },
+                    "alias": {
+                      "type": "string",
+                      "example": "must be required and between 1-15 characters"
+                    },
+                    "email": {
+                      "type": "string",
+                      "example": "must be required and have an valid email"
+                    },
+                    "password": {
+                      "type": "string",
+                      "example": "must be required and have more than 8 character"
+                    },
+                    "dob": {
+                      "type": "string",
+                      "example": "must be required and between today and after 1990"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "bad_request_json": {
+        "description": "bad request on json body",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "fail"
+                },
+                "message": {
+                  "type": "string",
+                  "example": "body contains badly-formed JSON (at character 20)"
+                }
+              }
+            }
+          }
+        }
+      },
+      "resource_conflict": {
+        "description": "conflict",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "fail"
+                },
+                "message": {
+                  "type": "string",
+                  "example": "requirest conflicted, please try again"
+                }
+              }
+            }
+          }
+        }
+      },
+      "invalid_refresh_cookie": {
+        "description": "not having a refreshToken cookie",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/auth_response_forbidden"
+            }
+          }
+        }
+      },
+      "invalid_creds_refresh_token": {
+        "description": "invalid refreshToken Cookie",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/auth_response_unauth_token"
+            }
+          }
+        }
+      },
+      "not_found_user_id": {
+        "description": "userId not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "fail"
+                },
+                "message": {
+                  "type": "string",
+                  "example": "userId is not found"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "schemas": {
+      "authReq": {
+        "required": [
+          "email",
+          "password"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "password": {
+            "type": "string",
+            "format": "password"
+          }
+        }
+      },
+      "authRes": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "success"
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "accessToken": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          }
+        }
+      },
       "user": {
         "required": [
           "dob",
           "email",
-          "fullName"
+          "fullName",
+          "alias"
         ],
         "type": "object",
         "properties": {
           "fullName": {
             "type": "string",
             "example": "Najwa Sihab"
+          },
+          "alias": {
+            "type": "string",
+            "example": "theQueen"
           },
           "email": {
             "uniqueItems": true,
@@ -249,7 +912,7 @@
         "required": [
           "createdAt",
           "id",
-          "imageProfile",
+          "profilePicture",
           "updatedAt"
         ],
         "type": "object",
@@ -268,10 +931,10 @@
             "type": "string",
             "format": "email"
           },
-          "imageProfile": {
+          "profilePicture": {
             "type": "string",
             "format": "uuid",
-            "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
+            "example": "d290f1ee-6c54-4b01-90e6-d701748f0851.png"
           },
           "createdAt": {
             "type": "string",
@@ -287,6 +950,342 @@
             "$ref": "#/components/schemas/user"
           }
         ]
+      },
+      "bigUser_obj": {
+        "required": [
+          "userId",
+          "alias"
+        ],
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "userId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "alias": {
+                "type": "string",
+                "example": "huaa"
+              },
+              "dob": {
+                "type": "string",
+                "format": "date"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/simple_basic_info"
+          },
+          {
+            "$ref": "#/components/schemas/simple_interest"
+          }
+        ]
+      },
+      "simple_basic_info": {
+        "type": "object",
+        "properties": {
+          "gender": {
+            "type": "string",
+            "example": "Male",
+            "enum": [
+              "Female",
+              "Male",
+              "Other"
+            ]
+          },
+          "fromLoc": {
+            "type": "string",
+            "format": "jakarta"
+          },
+          "height": {
+            "type": "integer",
+            "example": "180"
+          },
+          "educationLevel": {
+            "type": "string",
+            "enum": [
+              "Less than high school diploma",
+              "High school",
+              "Some college, no degree",
+              "Assosiate's Degree",
+              "Bachelor's Degree",
+              "Master's Degree",
+              "Professional Degree",
+              "Doctorate Degree"
+            ]
+          },
+          "drinking": {
+            "type": "string",
+            "enum": [
+              "Never",
+              "Ocassionally",
+              "Once a week",
+              "More than 2/3 times a week",
+              "Every day"
+            ]
+          },
+          "smoking": {
+            "type": "string",
+            "enum": [
+              "Never",
+              "Ocassionally",
+              "Once a week",
+              "More than 2/3 times a week",
+              "Every day"
+            ]
+          },
+          "relationshipPref": {
+            "type": "string",
+            "enum": [
+              "One night Stand",
+              "Having fun",
+              "Serious"
+            ]
+          },
+          "lookingFor": {
+            "type": "string",
+            "enum": [
+              "Female",
+              "Male",
+              "Other"
+            ]
+          },
+          "zodiac": {
+            "type": "string",
+            "enum": [
+              "Aries",
+              "Taurus",
+              "Gemini",
+              "Cancer",
+              "Leo",
+              "Virgo",
+              "Libra",
+              "Scorpio",
+              "Sagittarius",
+              "Capricorn",
+              "Aquarius",
+              "Pisces"
+            ]
+          },
+          "kids": {
+            "type": "integer",
+            "example": 0
+          }
+        }
+      },
+      "basic_info_obj": {
+        "required": [
+          "userId",
+          "gender",
+          "lookingFor",
+          "createdAt",
+          "updatedAt"
+        ],
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "userId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "datetime"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "datetime"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/simple_basic_info"
+          }
+        ]
+      },
+      "interest_bio": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/simple_bio"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "userId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "createdAt": {
+                "type": "string",
+                "format": "datetime"
+              },
+              "updatedAt": {
+                "type": "string",
+                "format": "datetime"
+              }
+            }
+          }
+        ]
+      },
+      "simple_bio": {
+        "type": "object",
+        "properties": {
+          "bio": {
+            "type": "string",
+            "example": "being bored"
+          }
+        }
+      },
+      "simple_interest": {
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "bioId": {
+                "type": "string",
+                "format": "uuid"
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/simple_bio"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "hobbies": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/interest_hobbies"
+                }
+              },
+              "movieSeries": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/interest_movie_series"
+                }
+              },
+              "travels": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/interest_travels"
+                }
+              },
+              "sports": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/interest_sports"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "interest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/interest_bio"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "hobbies": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/interest_hobbies"
+                }
+              },
+              "movieSeries": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/interest_movie_series"
+                }
+              },
+              "travels": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/interest_travels"
+                }
+              },
+              "sports": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/interest_sports"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "interest_hobbies": {
+        "type": "object",
+        "required": [
+          "hobbie"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "hobbie": {
+            "type": "string",
+            "example": "reading"
+          }
+        }
+      },
+      "interest_movie_series": {
+        "type": "object",
+        "required": [
+          "movieSerie"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "movieSerie": {
+            "type": "string",
+            "example": "game of thrones"
+          }
+        }
+      },
+      "interest_travels": {
+        "type": "object",
+        "required": [
+          "travel"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "travel": {
+            "type": "string",
+            "example": "bali"
+          }
+        }
+      },
+      "interest_sports": {
+        "type": "object",
+        "required": [
+          "sport"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "sport": {
+            "type": "string",
+            "example": "running"
+          }
+        }
       },
       "inline_response_201": {
         "type": "object",
@@ -304,32 +1303,6 @@
           }
         }
       },
-      "inline_response_422": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "example": "fail"
-          },
-          "message": {
-            "type": "string",
-            "example": "email is already taken"
-          }
-        }
-      },
-      "inline_response_409": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "example": "fail"
-          },
-          "message": {
-            "type": "string",
-            "example": "requirest conflicted, please try again"
-          }
-        }
-      },
       "inline_response_200": {
         "type": "object",
         "properties": {
@@ -342,25 +1315,16 @@
           }
         }
       },
-      "inline_response_404": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "example": "fail"
-          },
-          "message": {
-            "type": "string",
-            "example": "userId is not found"
-          }
-        }
-      },
       "users_userId_body": {
         "type": "object",
         "properties": {
           "fullName": {
             "type": "string",
             "example": "Najwa Sihab"
+          },
+          "alias": {
+            "type": "string",
+            "example": "najhab"
           },
           "email": {
             "uniqueItems": true,
@@ -421,7 +1385,85 @@
             "$ref": "#/components/schemas/ResUser"
           }
         }
+      },
+      "auth_response_unauth": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "fail"
+          },
+          "message": {
+            "type": "string",
+            "example": "email or password is invalid"
+          }
+        }
+      },
+      "auth_response_unauth_token": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "fail"
+          },
+          "message": {
+            "type": "string",
+            "example": "invalid credentials"
+          }
+        }
+      },
+      "auth_response_forbidden": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "fail"
+          },
+          "message": {
+            "type": "string",
+            "example": "Cookie not found in your browser, must be login"
+          }
+        }
+      },
+      "auth_post_err_validation": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "example": "fail"
+          },
+          "message": {
+            "type": "string",
+            "example": "please refer to the documentation"
+          },
+          "errors": {
+            "type": "object",
+            "example": {
+              "email": "required and must be a valid email"
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "loginAuth": {
+        "type": "jwt token",
+        "in": "header",
+        "name": "Authorization Bearer"
+      },
+      "refreshAuth": {
+        "type": "jwt token",
+        "in": "cookie",
+        "name": "refreshToken"
       }
     }
-  }
+  },
+  "security": [
+    {
+      "loginAuth": []
+    },
+    {
+      "refreshAuth": []
+    }
+  ]
 }

@@ -91,9 +91,6 @@ func (m *match) RequestChange(matchId string, matchStatus domain.MatchStatus) er
 		}
 		matchEntity.RequestStatus = string(domain.Requested)
 	case domain.Declined:
-		if !(matchEntity.RequestStatus == string(domain.Unknown) || matchEntity.RevealStatus == string(domain.Requested)) {
-			return ErrInvalidMatchStatus
-		}
 		matchEntity.RequestStatus = string(domain.Declined)
 	case domain.Accepted:
 		if matchEntity.RequestStatus != string(domain.Requested) {
@@ -123,7 +120,7 @@ func (m *match) RevealChange(matchId string, matchStatus domain.MatchStatus) err
 		}
 		matchEntity.RevealStatus = string(domain.Requested)
 	case domain.Declined:
-		if !(matchEntity.RevealStatus == string(domain.Unknown) || matchEntity.RevealStatus == string(domain.Requested)) {
+		if matchEntity.RevealStatus == string(domain.Unknown) {
 			return ErrInvalidMatchStatus
 		}
 		matchEntity.RevealStatus = string(domain.Declined)

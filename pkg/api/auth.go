@@ -1,11 +1,9 @@
 package api
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xyedo/blindate/pkg/domain"
 )
 
 type authSvc interface {
@@ -20,8 +18,8 @@ type jwtSvc interface {
 	ValidateAccessToken(token string) (string, error)
 }
 
-func NewAuth(authService authSvc, userService userSvc, token jwtSvc) *auth {
-	return &auth{
+func NewAuth(authService authSvc, userService userSvc, token jwtSvc) auth {
+	return auth{
 		authService: authService,
 		userService: userService,
 		tokenizer:   token,
@@ -34,7 +32,7 @@ type auth struct {
 	tokenizer   jwtSvc
 }
 
-func (a *auth) postAuthHandler(c *gin.Context) {
+func (a auth) postAuthHandler(c *gin.Context) {
 	var input struct {
 		Email    string `json:"email" binding:"required,email"`
 		Password string `json:"password" binding:"required,min=8"`
@@ -53,15 +51,7 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 	}
 	id, err := a.userService.VerifyCredential(input.Email, input.Password)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, domain.ErrNotMatchCredential) {
-			errUnauthorizedResp(c, "email or password do not match")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	accessToken, err := a.tokenizer.GenerateAccessToken(id)
@@ -76,18 +66,7 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 	}
 	err = a.authService.AddRefreshToken(refreshToken)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, domain.ErrUniqueConstraint23505) {
-			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, gin.H{
-				"status":  "fail",
-				"message": "token is already taken, please try again",
-			})
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.SetCookie("refreshToken", refreshToken, 2592000, "/api/v1", "localhost", true, true)
@@ -100,7 +79,7 @@ func (a *auth) postAuthHandler(c *gin.Context) {
 	})
 }
 
-func (a *auth) putAuthHandler(c *gin.Context) {
+func (a auth) putAuthHandler(c *gin.Context) {
 	refreshTokenCookie, err := c.Cookie("refreshToken")
 	if err != nil {
 		errForbiddenResp(c, "Cookie not found in your browser, must be login")
@@ -108,23 +87,13 @@ func (a *auth) putAuthHandler(c *gin.Context) {
 	}
 	err = a.authService.VerifyRefreshToken(refreshTokenCookie)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, domain.ErrNotMatchCredential) {
-			errUnauthorizedResp(c, "invalid credentials")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	id, err := a.tokenizer.ValidateRefreshToken(refreshTokenCookie)
 	if err != nil {
-		if errors.Is(err, domain.ErrNotMatchCredential) {
-			errUnauthorizedResp(c, "invalid credentials")
-			return
-		}
+		jsonHandleError(c, err)
+		return
 	}
 	accessToken, err := a.tokenizer.GenerateAccessToken(id)
 	if err != nil {
@@ -139,7 +108,7 @@ func (a *auth) putAuthHandler(c *gin.Context) {
 	})
 
 }
-func (a *auth) deleteAuthHandler(c *gin.Context) {
+func (a auth) deleteAuthHandler(c *gin.Context) {
 	refreshTokenCookie, err := c.Cookie("refreshToken")
 	if err != nil {
 		errForbiddenResp(c, "Cookie not found in your browser, must be login")
@@ -147,28 +116,12 @@ func (a *auth) deleteAuthHandler(c *gin.Context) {
 	}
 	err = a.authService.VerifyRefreshToken(refreshTokenCookie)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, domain.ErrNotMatchCredential) {
-			errUnauthorizedResp(c, "invalid credentials")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	err = a.authService.DeleteRefreshToken(refreshTokenCookie)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, domain.ErrNotMatchCredential) {
-			errUnauthorizedResp(c, "invalid credentials")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.SetCookie("refreshToken", "", -1, "/api/v1", "localhost", true, true)

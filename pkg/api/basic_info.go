@@ -15,8 +15,8 @@ type basicInfoSvc interface {
 	UpdateBasicInfo(bInfo *domain.BasicInfo) error
 }
 
-func NewBasicInfo(basicInfoService basicInfoSvc) *basicinfo {
-	return &basicinfo{
+func NewBasicInfo(basicInfoService basicInfoSvc) basicinfo {
+	return basicinfo{
 		basicinfoService: basicInfoService,
 	}
 }
@@ -25,7 +25,7 @@ type basicinfo struct {
 	basicinfoService basicInfoSvc
 }
 
-func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
+func (b basicinfo) postBasicInfoHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	var input struct {
 		Gender           string  `json:"gender" binding:"required,max=25"`
@@ -83,11 +83,7 @@ func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, res)
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
@@ -96,19 +92,11 @@ func (b *basicinfo) postBasicInfoHandler(c *gin.Context) {
 	})
 }
 
-func (b *basicinfo) getBasicInfoHandler(c *gin.Context) {
+func (b basicinfo) getBasicInfoHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	basicInfo, err := b.basicinfoService.GetBasicInfoByUserId(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "user Id not match with our basic info")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -119,19 +107,11 @@ func (b *basicinfo) getBasicInfoHandler(c *gin.Context) {
 	})
 }
 
-func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
+func (b basicinfo) patchBasicInfoHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	basicInfo, err := b.basicinfoService.GetBasicInfoByUserId(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "user Id not match with our basic info")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	var input struct {
@@ -208,11 +188,7 @@ func (b *basicinfo) patchBasicInfoHandler(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusUnprocessableEntity, res)
 			return
 		}
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
@@ -256,9 +232,6 @@ func referencesDbErr(err error) map[string]any {
 		res["status"] = "fail"
 		res["message"] = "please refer to the documentation"
 		res["errors"] = map[string]string{"zodiac": "not valid enums"}
-	case errors.Is(err, service.ErrUniqueConstrainUserId):
-		res["status"] = "fail"
-		res["message"] = "basic_info with this user id is already created"
 	default:
 		res = nil
 	}

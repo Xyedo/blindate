@@ -9,9 +9,9 @@ import (
 type Route struct {
 	Healthcheck    *healthcheck
 	User           *user
-	BasicInfo      *basicinfo
+	BasicInfo      basicinfo
 	Location       *location
-	Authentication *auth
+	Authentication auth
 	Tokenizer      jwtSvc
 	Interest       *interest
 	Online         *online
@@ -48,11 +48,11 @@ func Routes(route Route) http.Handler {
 	{
 		auth.GET("/", ru.getUserByIdHandler)
 		auth.PATCH("/", ru.patchUserByIdHandler)
-		auth.PUT("/profile-picture", ru.putUserImageProfile)
+		auth.PUT("/profile-picture", ru.putUserImageProfileHandler)
 
 		rm := route.Match
-		auth.GET("/new-match", rm.getNewMatchCandidateHandler)
-		auth.GET("/match", rm.getAllMatchHandler)
+		auth.GET("/new-match", rm.getNewUserToMatchHandler)
+		auth.GET("/match", rm.getAllMatchRequestedHandler)
 		auth.POST("/match", rm.postNewMatchHandler)
 		match := auth.Group("match/:matchId", validateMatch())
 		{

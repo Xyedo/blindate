@@ -22,7 +22,6 @@ func errServerResp(c *gin.Context, err error) {
 		"message": "the server encountered a problem and could not process your request",
 	})
 }
-
 func errUnauthorizedResp(c *gin.Context, message string) {
 	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
 		"status":  "fail",

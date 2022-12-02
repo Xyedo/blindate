@@ -1,12 +1,10 @@
 package api
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/service"
 )
 
 type locationSvc interface {
@@ -45,19 +43,7 @@ func (l *location) postLocationByUserIdHandler(c *gin.Context) {
 	}
 	err = l.locationService.CreateNewLocation(&domain.Location{UserId: userId, Lat: input.Lat, Lng: input.Lng})
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, service.ErrRefUserIdField) {
-			errNotFoundResp(c, "user id is not found")
-			return
-		}
-		if errors.Is(err, service.ErrUniqueConstrainUserId) {
-			errUnprocessableEntityResp(c, "location with this user id is already created")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
@@ -69,15 +55,7 @@ func (l *location) getLocationByUserIdHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	location, err := l.locationService.GetLocation(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "user id is not found")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -108,15 +86,7 @@ func (l *location) patchLocationByUserIdHandler(c *gin.Context) {
 	}
 	location, err := l.locationService.GetLocation(userId)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "user id is not found")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	if input.Lat != nil {
@@ -128,15 +98,7 @@ func (l *location) patchLocationByUserIdHandler(c *gin.Context) {
 
 	err = l.locationService.UpdateLocation(location)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
-			errResourceConflictResp(c)
-			return
-		}
-		if errors.Is(err, domain.ErrResourceNotFound) {
-			errNotFoundResp(c, "user id is not found")
-			return
-		}
-		errServerResp(c, err)
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/lib/pq"
@@ -14,7 +15,7 @@ import (
 )
 
 var (
-	ErrRefUserIdField           = fmt.Errorf("%w::user_id", domain.ErrRefNotFound23503)
+	ErrRefUserIdField           = domain.WrapWithNewError(fmt.Errorf("%w::user_id", domain.ErrRefNotFound23503), http.StatusNotFound, "provided userId is not match with our resource")
 	ErrRefGenderField           = fmt.Errorf("%w::gender", domain.ErrRefNotFound23503)
 	ErrRefEducationLevelField   = fmt.Errorf("%w::education", domain.ErrRefNotFound23503)
 	ErrRefDrinkingField         = fmt.Errorf("%w::drinking", domain.ErrRefNotFound23503)
@@ -24,8 +25,8 @@ var (
 	ErrRefZodiacField           = fmt.Errorf("%w::zodiac", domain.ErrRefNotFound23503)
 )
 
-func NewBasicInfo(bInfoRepo repository.BasicInfo) *basicInfo {
-	return &basicInfo{
+func NewBasicInfo(bInfoRepo repository.BasicInfo) basicInfo {
+	return basicInfo{
 		BasicInfoRepo: bInfoRepo,
 	}
 }
@@ -34,11 +35,11 @@ type basicInfo struct {
 	BasicInfoRepo repository.BasicInfo
 }
 
-func (b *basicInfo) CreateBasicInfo(bInfo *domain.BasicInfo) error {
+func (b basicInfo) CreateBasicInfo(bInfo *domain.BasicInfo) error {
 	rows, err := b.BasicInfoRepo.InsertBasicInfo(b.domainToEntity(bInfo))
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccessingDB
+			return domain.WrapError(err, domain.ErrTooLongAccessingDB)
 		}
 		if err := parsingPostgreError(err); err != nil {
 			return err
@@ -51,14 +52,14 @@ func (b *basicInfo) CreateBasicInfo(bInfo *domain.BasicInfo) error {
 	return nil
 }
 
-func (b *basicInfo) GetBasicInfoByUserId(id string) (*domain.BasicInfo, error) {
+func (b basicInfo) GetBasicInfoByUserId(id string) (*domain.BasicInfo, error) {
 	basicInfo, err := b.BasicInfoRepo.GetBasicInfoByUserId(id)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccessingDB
+			return nil, domain.WrapError(err, domain.ErrTooLongAccessingDB)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domain.ErrResourceNotFound
+			return nil, domain.WrapError(err, domain.ErrResourceNotFound)
 		}
 		return nil, err
 
@@ -66,14 +67,14 @@ func (b *basicInfo) GetBasicInfoByUserId(id string) (*domain.BasicInfo, error) {
 	return b.entityToDomain(basicInfo), nil
 }
 
-func (b *basicInfo) UpdateBasicInfo(bInfo *domain.BasicInfo) error {
+func (b basicInfo) UpdateBasicInfo(bInfo *domain.BasicInfo) error {
 	rows, err := b.BasicInfoRepo.UpdateBasicInfo(b.domainToEntity(bInfo))
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccessingDB
+			return domain.WrapError(err, domain.ErrTooLongAccessingDB)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return domain.ErrResourceNotFound
+			return domain.WrapError(err, domain.ErrResourceNotFound)
 		}
 		if err := parsingPostgreError(err); err != nil {
 			return err
@@ -86,7 +87,7 @@ func (b *basicInfo) UpdateBasicInfo(bInfo *domain.BasicInfo) error {
 	return nil
 }
 
-func (*basicInfo) entityToDomain(basicInfo *entity.BasicInfo) *domain.BasicInfo {
+func (basicInfo) entityToDomain(basicInfo *entity.BasicInfo) *domain.BasicInfo {
 	return &domain.BasicInfo{
 		UserId:           basicInfo.UserId,
 		Gender:           basicInfo.Gender,
@@ -104,7 +105,7 @@ func (*basicInfo) entityToDomain(basicInfo *entity.BasicInfo) *domain.BasicInfo 
 		UpdatedAt:        basicInfo.UpdatedAt,
 	}
 }
-func (*basicInfo) domainToEntity(basicInfo *domain.BasicInfo) *entity.BasicInfo {
+func (basicInfo) domainToEntity(basicInfo *domain.BasicInfo) *entity.BasicInfo {
 	return &entity.BasicInfo{
 		UserId:           basicInfo.UserId,
 		Gender:           basicInfo.Gender,
@@ -181,7 +182,7 @@ func parsingPostgreError(err error) error {
 			}
 		}
 		if pqErr.Code == "23505" {
-			return ErrUniqueConstrainUserId
+			return domain.ErrUniqueConstraint23505
 		}
 		return pqErr
 	}

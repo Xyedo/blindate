@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/lib/pq"
@@ -13,13 +14,16 @@ import (
 )
 
 var (
-	ErrRefInterestField          = fmt.Errorf("%w::interest_id", domain.ErrRefNotFound23503)
-	ErrUniqueConstrainInterestId = fmt.Errorf("%w::interest_id", domain.ErrUniqueConstraint23505)
-	ErrUniqueConstrainUserId     = fmt.Errorf("%w::user_id", domain.ErrUniqueConstraint23505)
-	ErrCheckConstrainHobbie      = fmt.Errorf("database: over than 10 unit")
-	ErrCheckConstrainMovieSeries = fmt.Errorf("database: over than 10 unit")
-	ErrCheckConstrainTraveling   = fmt.Errorf("database: over than 10 unit")
-	ErrCheckConstrainSports      = fmt.Errorf("database: over than 10 unit")
+	ErrRefInterestField           = domain.WrapWithNewError(fmt.Errorf("%w::interest_id", domain.ErrRefNotFound23503), http.StatusNotFound, "interestId is not found")
+	ErrUniqueConstrainInterestId  = domain.WrapWithNewError(fmt.Errorf("%w::interest_id", domain.ErrUniqueConstraint23505), http.StatusUnprocessableEntity, "interest with this user id is already created")
+	ErrUniqueConstrainHobbies     = domain.WrapWithNewError(fmt.Errorf("%w::hobbies", domain.ErrUniqueConstraint23505), http.StatusUnprocessableEntity, "every hobbies must be unique")
+	ErrUniqueConstrainMovieSeries = domain.WrapWithNewError(fmt.Errorf("%w::movieSeries", domain.ErrUniqueConstraint23505), http.StatusUnprocessableEntity, "every moviesSeries must be unique")
+	ErrUniqueConstrainTraveling   = domain.WrapWithNewError(fmt.Errorf("%w::traveling", domain.ErrUniqueConstraint23505), http.StatusUnprocessableEntity, "every travels must be unique")
+	ErrUniqueConstrainSport       = domain.WrapWithNewError(fmt.Errorf("%w::sport", domain.ErrUniqueConstraint23505), http.StatusUnprocessableEntity, "every sports must be unique")
+	ErrCheckConstrainHobbie       = domain.WrapWithNewError(errors.New("database: over than 10 unit"), http.StatusUnprocessableEntity, "hobbies must less than 10")
+	ErrCheckConstrainMovieSeries  = domain.WrapWithNewError(errors.New("database: over than 10 unit"), http.StatusUnprocessableEntity, "movieSeries must less than 10")
+	ErrCheckConstrainTraveling    = domain.WrapWithNewError(errors.New("database: over than 10 unit"), http.StatusUnprocessableEntity, "travels must less than 10")
+	ErrCheckConstrainSports       = domain.WrapWithNewError(errors.New("database: over than 10 unit"), http.StatusUnprocessableEntity, "sports must less than 10")
 )
 
 func NewInterest(intrRepo repository.Interest) *interest {
@@ -178,9 +182,9 @@ func (*interest) parsingError(err error) error {
 	var pqErr *pq.Error
 	switch {
 	case errors.Is(err, context.Canceled):
-		return domain.ErrTooLongAccessingDB
+		return domain.WrapError(err, domain.ErrTooLongAccessingDB)
 	case errors.Is(err, sql.ErrNoRows):
-		return domain.ErrResourceNotFound
+		return domain.WrapError(err, domain.ErrResourceNotFound)
 	case errors.As(err, &pqErr):
 		if pqErr.Code == "23503" {
 			if strings.Contains(pqErr.Constraint, "interest_id") {
@@ -192,11 +196,23 @@ func (*interest) parsingError(err error) error {
 			return err
 		}
 		if pqErr.Code == "23505" {
-			if strings.Contains(pqErr.Constraint, "interest_id") {
+			if strings.Contains(pqErr.Constraint, "interests_user_id_key") {
 				return ErrUniqueConstrainInterestId
 			}
+			if strings.Contains(pqErr.Constraint, "hobbie_unique") {
+				return ErrUniqueConstrainHobbies
+			}
+			if strings.Contains(pqErr.Constraint, "movie_serie_unique") {
+				return ErrUniqueConstrainMovieSeries
+			}
+			if strings.Contains(pqErr.Constraint, "travel_unique") {
+				return ErrUniqueConstrainTraveling
+			}
+			if strings.Contains(pqErr.Constraint, "sport_unique") {
+				return ErrUniqueConstrainSport
+			}
 			if strings.Contains(pqErr.Constraint, "user_id") {
-				return ErrUniqueConstrainUserId
+				return domain.ErrUniqueConstraint23505
 			}
 			return err
 		}
