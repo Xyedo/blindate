@@ -49,7 +49,7 @@ func (c *chat) CreateNewChat(content *domain.Chat) error {
 		return ErrAuthorNotValid
 	}
 	if matchEntity.RequestStatus != string(domain.Accepted) {
-		return ErrNotYetAccepted
+		return ErrInvalidMatchStatus
 	}
 	cleanChats := c.sanitizeChat(chatEntity)
 	for _, cleanChat := range cleanChats {

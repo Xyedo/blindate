@@ -9,6 +9,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/entity"
 	"github.com/xyedo/blindate/pkg/util"
 )
@@ -72,7 +73,7 @@ func Test_SelectConversationById(t *testing.T) {
 			_, err := user.CreateProfilePicture(toUsr.ID, fmt.Sprintf("%d.png", i), false)
 			require.NoError(t, err)
 		}
-		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Requested)
 		require.NoError(t, err)
 		convoId, err := conv.InsertConversation(matchId)
 		require.NoError(t, err)
@@ -113,7 +114,7 @@ func Test_SelectConversationById(t *testing.T) {
 		assert.Equal(t, expectedProfilePicCreator, conv.FromUser.ProfilePic)
 		assert.Equal(t, expectedProfilePicRecipient, conv.ToUser.ProfilePic)
 		assert.Equal(t, expectedCreatorMsg, conv.LastMessage)
-		assert.Equal(t, "unknown", conv.RequestStatus)
+		assert.Equal(t, "requested", conv.RequestStatus)
 		assert.Equal(t, "unknown", conv.RevealStatus)
 	})
 	t.Run("invalid convoId", func(t *testing.T) {
@@ -155,7 +156,7 @@ func Test_SelectConvoByUserId(t *testing.T) {
 			_, err := user.CreateProfilePicture(toUsr.ID, fmt.Sprintf("%d.png", i), false)
 			require.NoError(t, err)
 		}
-		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Requested)
 		require.NoError(t, err)
 		convoId, err := conv.InsertConversation(matchId)
 		require.NoError(t, err)
@@ -202,7 +203,7 @@ func Test_SelectConvoByUserId(t *testing.T) {
 		matchRepo := NewMatch(testQuery)
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
-		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Requested)
 		require.NoError(t, err)
 		_, err = conv.InsertConversation(matchId)
 		require.NoError(t, err)
@@ -222,7 +223,7 @@ func Test_SelectConvoByUserId(t *testing.T) {
 			toUsr := createNewAccount(t)
 			_, err = user.CreateProfilePicture(toUsr.ID, util.RandomUUID()+".png", false)
 			require.NoError(t, err)
-			matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+			matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Requested)
 			require.NoError(t, err)
 			convoId, err := conv.InsertConversation(matchId)
 			require.NoError(t, err)
@@ -298,7 +299,7 @@ func Test_DeleteConvoById(t *testing.T) {
 		matchRepo := NewMatch(testQuery)
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
-		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID)
+		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Requested)
 		require.NoError(t, err)
 		convoId, err := conv.InsertConversation(matchId)
 		require.NoError(t, err)

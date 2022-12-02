@@ -8,6 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
+	domain "github.com/xyedo/blindate/pkg/domain"
 	entity "github.com/xyedo/blindate/pkg/entity"
 )
 
@@ -64,19 +65,19 @@ func (mr *MockMatchMockRecorder) InsertNewMatch(arg0, arg1 interface{}) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertNewMatch", reflect.TypeOf((*MockMatch)(nil).InsertNewMatch), arg0, arg1)
 }
 
-// SelectMatchByUserId mocks base method.
-func (m *MockMatch) SelectMatchByUserId(arg0 string) ([]entity.Match, error) {
+// SelectMatchReqToUserId mocks base method.
+func (m *MockMatch) SelectMatchReqToUserId(arg0 string) ([]domain.MatchUser, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SelectMatchByUserId", arg0)
-	ret0, _ := ret[0].([]entity.Match)
+	ret := m.ctrl.Call(m, "SelectMatchReqToUserId", arg0)
+	ret0, _ := ret[0].([]domain.MatchUser)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// SelectMatchByUserId indicates an expected call of SelectMatchByUserId.
-func (mr *MockMatchMockRecorder) SelectMatchByUserId(arg0 interface{}) *gomock.Call {
+// SelectMatchReqToUserId indicates an expected call of SelectMatchReqToUserId.
+func (mr *MockMatchMockRecorder) SelectMatchReqToUserId(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectMatchByUserId", reflect.TypeOf((*MockMatch)(nil).SelectMatchByUserId), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectMatchReqToUserId", reflect.TypeOf((*MockMatch)(nil).SelectMatchReqToUserId), arg0)
 }
 
 // UpdateMatchById mocks base method.

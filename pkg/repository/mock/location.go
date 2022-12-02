@@ -36,10 +36,10 @@ func (m *MockLocation) EXPECT() *MockLocationMockRecorder {
 }
 
 // GetClosestUser mocks base method.
-func (m *MockLocation) GetClosestUser(arg0, arg1 string, arg2 int) ([]domain.User, error) {
+func (m *MockLocation) GetClosestUser(arg0, arg1 string, arg2 int) ([]domain.BigUser, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetClosestUser", arg0, arg1, arg2)
-	ret0, _ := ret[0].([]domain.User)
+	ret0, _ := ret[0].([]domain.BigUser)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

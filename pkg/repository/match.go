@@ -2,15 +2,19 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"log"
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
+	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/entity"
 )
 
 type Match interface {
-	InsertNewMatch(fromUserId, toUserId string) (string, error)
-	SelectMatchByUserId(userId string) ([]entity.Match, error)
+	InsertNewMatch(fromUserId, toUserId string, reqStatus domain.MatchStatus) (string, error)
+	SelectMatchReqToUserId(userId string) ([]domain.MatchUser, error)
 	UpdateMatchById(matchEntity entity.Match) error
 	GetMatchById(matchId string) (*entity.Match, error)
 }
@@ -25,51 +29,209 @@ type match struct {
 	conn *sqlx.DB
 }
 
-func (m *match) InsertNewMatch(fromUserId, toUserId string) (string, error) {
+func (m *match) InsertNewMatch(fromUserId, toUserId string, reqStatus domain.MatchStatus) (string, error) {
 	query := `
 	INSERT INTO match(
 		request_from, 
 		request_to, 
+		request_status,
 		created_at
 		)
-	VALUES($1,$2,$3)
+	VALUES($1,$2,$3,$4)
 	RETURNING id`
+	args := []any{fromUserId, toUserId, string(reqStatus), time.Now()}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	var matchId string
-	err := m.conn.GetContext(ctx, &matchId, query, fromUserId, toUserId, time.Now())
+	err := m.conn.GetContext(ctx, &matchId, query, args...)
 	if err != nil {
 		return "", err
 	}
 	return matchId, nil
 }
 
-func (m *match) SelectMatchByUserId(userId string) ([]entity.Match, error) {
+func (m *match) SelectMatchReqToUserId(userId string) ([]domain.MatchUser, error) {
 	query := `
 	SELECT 
-		id,
-		request_from, 
-		request_to, 
-		request_status, 
-		created_at, 
-		accepted_at, 
-		reveal_status, 
-		revealed_at
-	FROM match
-	WHERE request_from = $1 
-		OR request_to = $1
-	ORDER BY created_at ASC
+		m.id as match_id,
+		u.id as user_id,
+		u.alias,
+		u.dob, 
+		b.gender,
+		b.from_loc,
+		b.height,
+		b.education_level,
+		b.drinking,
+		b.smoking,
+		b.relationship_pref,
+		b.looking_for,
+		b.zodiac,
+		b.kids,
+		b.work,
+		i.id as bio_id,
+		i.bio,
+		ARRAY(
+			SELECT hobbie 
+			FROM hobbies
+			WHERE i.id IS NOT NULL AND interest_id = i.id
+		) as interest_hobbies,
+		ARRAY(
+			SELECT movie_serie 
+			FROM movie_series
+			WHERE i.id IS NOT NULL AND interest_id = i.id
+		) as interest_movie_series,
+		ARRAY(
+			SELECT travel 
+			FROM traveling
+			WHERE i.id IS NOT NULL AND interest_id = i.id
+		) as interest_traveling,
+		ARRAY(
+			SELECT sport 
+			FROM sports
+			WHERE i.id IS NOT NULL AND interest_id = i.id
+		) as interest_sport
+	FROM match m
+	RIGHT JOIN users u
+		ON u.id = m.request_from
+	LEFT JOIN basic_info b
+		ON u.id = b.user_id
+	LEFT JOIN interests i
+		ON i.user_id = u.id
+	WHERE m.request_to = $1
+		AND m.request_status = 'requested'
+	ORDER BY m.created_at ASC
 	LIMIT 20`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	matchs := make([]entity.Match, 0)
-	err := m.conn.SelectContext(ctx, &matchs, query, userId)
+
+	rows, err := m.conn.QueryxContext(ctx, query, userId)
 	if err != nil {
 		return nil, err
 	}
+	defer func(rows *sqlx.Rows) {
+		err := rows.Close()
+		if err != nil {
+			log.Panic(err)
+		}
+	}(rows)
+	matchs := make([]domain.MatchUser, 0)
+	for rows.Next() {
+		newMatch, err := m.createCandidatematch(rows)
+		if err != nil {
+			return nil, err
+		}
+		matchs = append(matchs, newMatch)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return matchs, nil
 
+}
+
+func (*match) createCandidatematch(row sqlx.ColScanner) (domain.MatchUser, error) {
+	var newMatch domain.MatchUser
+	var newBasicInfo entity.BasicInfo
+	var newBasicInfoGender sql.NullString
+	var newBasicInfoLookingFor sql.NullString
+	var newMatchBioId sql.NullString
+	var newMatchBio sql.NullString
+	var hobbies pq.StringArray
+	var movieSeries pq.StringArray
+	var travels pq.StringArray
+	var sports pq.StringArray
+	err := row.Scan(
+		&newMatch.MatchId,
+		&newMatch.UserId,
+		&newMatch.Alias,
+		&newMatch.Dob,
+		&newBasicInfoGender,
+		&newBasicInfo.FromLoc,
+		&newBasicInfo.Height,
+		&newBasicInfo.EducationLevel,
+		&newBasicInfo.Drinking,
+		&newBasicInfo.Smoking,
+		&newBasicInfo.RelationshipPref,
+		&newBasicInfoLookingFor,
+		&newBasicInfo.Zodiac,
+		&newBasicInfo.Kids,
+		&newBasicInfo.Work,
+		&newMatchBioId,
+		&newMatchBio,
+		&hobbies,
+		&movieSeries,
+		&travels,
+		&sports,
+	)
+	if err != nil {
+		return domain.MatchUser{}, err
+	}
+	if newBasicInfoGender.Valid {
+		newMatch.Gender = &newBasicInfoGender.String
+	}
+
+	if newBasicInfo.FromLoc.Valid {
+		newMatch.FromLoc = &newBasicInfo.FromLoc.String
+	}
+	if newBasicInfo.Height.Valid {
+		basicInfoHeight := int(newBasicInfo.Height.Int16)
+		newMatch.Height = &basicInfoHeight
+	}
+	if newBasicInfo.EducationLevel.Valid {
+		newMatch.EducationLevel = &newBasicInfo.EducationLevel.String
+	}
+	if newBasicInfo.Drinking.Valid {
+		newMatch.Drinking = &newBasicInfo.Drinking.String
+	}
+	if newBasicInfo.Smoking.Valid {
+		newMatch.Smoking = &newBasicInfo.Smoking.String
+	}
+	if newBasicInfo.RelationshipPref.Valid {
+		newMatch.RelationshipPref = &newBasicInfo.RelationshipPref.String
+	}
+	if newBasicInfoLookingFor.Valid {
+		newMatch.LookingFor = &newBasicInfoLookingFor.String
+	}
+	if newBasicInfo.Zodiac.Valid {
+		newMatch.Zodiac = &newBasicInfo.Zodiac.String
+	}
+	if newBasicInfo.Kids.Valid {
+		basicInfoKids := int(newBasicInfo.Kids.Int16)
+		newMatch.Kids = &basicInfoKids
+	}
+	if newBasicInfo.Work.Valid {
+		newMatch.Work = &newBasicInfo.Work.String
+	}
+	if newMatchBioId.Valid {
+		newMatch.BioId = &newMatchBioId.String
+	}
+	if newMatchBio.Valid {
+		newMatch.Bio = &newMatchBio.String
+	}
+	for i := range hobbies {
+		newMatch.Hobbies = append(newMatch.Hobbies, domain.Hobbie{
+			Hobbie: hobbies[i],
+		})
+	}
+	for i := range movieSeries {
+		newMatch.MovieSeries = append(newMatch.MovieSeries, domain.MovieSerie{
+			MovieSerie: movieSeries[i],
+		})
+	}
+	for i := range travels {
+		newMatch.Travels = append(newMatch.Travels, domain.Travel{
+			Travel: travels[i],
+		})
+	}
+	for i := range sports {
+		newMatch.Sports = append(newMatch.Sports, domain.Sport{
+			Sport: sports[i],
+		})
+	}
+	return newMatch, nil
 }
 
 func (m *match) GetMatchById(matchId string) (*entity.Match, error) {
