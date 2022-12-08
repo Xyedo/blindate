@@ -3,10 +3,10 @@ MG_PATH=./pkg/repository/migrations
 REPO_PATH=github.com/xyedo/blindate/pkg/repository
 
 migrate-up: 
-	migrate -path $(MG_PATH) -database $(dsn) up
+	migrate -path $(MG_PATH) -database $(DB_DSN) up
 
 migrate-down:
-	migrate -path $(MG_PATH) -database $(dsn) down
+	migrate -path $(MG_PATH) -database $(DB_DSN) down
 
 migrate-create:
 	migrate create -dir $(MG_PATH) -seq -ext .sql $(name)
