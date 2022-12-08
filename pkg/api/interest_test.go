@@ -15,6 +15,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
 	mockrepo "github.com/xyedo/blindate/pkg/repository/mock"
 	"github.com/xyedo/blindate/pkg/service"
@@ -27,7 +28,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 		name      string
 		id        string
 		reqBody   string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *interest
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *Interest
 		wantCode  int
 		wantResp  map[string]any
 	}{
@@ -37,7 +38,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"bio":"%s"
 			}`, "alah lo"),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interest := &domain.Bio{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
@@ -61,7 +62,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"bio":"%s"
 			}`, "alah lo"),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interest := &domain.Bio{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
@@ -81,7 +82,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 		{
 			name: "invalid body interest",
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestBio(gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -100,7 +101,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 		{
 			name: "valid but empty",
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interest := &domain.Bio{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
@@ -123,13 +124,13 @@ func Test_postInterestBioHandler(t *testing.T) {
 		{
 			name: "Valid but userId not found",
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interest := &domain.Bio{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Bio:    "alah lo",
 				}
-				interestRepo.EXPECT().InsertInterestBio(gomock.Eq(interest)).Times(1).Return(service.ErrRefUserIdField)
+				interestRepo.EXPECT().InsertInterestBio(gomock.Eq(interest)).Times(1).Return(common.ErrRefNotFound23503)
 				interestRepo.EXPECT().InsertNewStats(gomock.Eq(interest.Id)).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
@@ -146,13 +147,13 @@ func Test_postInterestBioHandler(t *testing.T) {
 		{
 			name: "Valid but userId not found",
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interest := &domain.Bio{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Bio:    "alah lo",
 				}
-				interestRepo.EXPECT().InsertInterestBio(gomock.Eq(interest)).Times(1).Return(service.ErrRefUserIdField)
+				interestRepo.EXPECT().InsertInterestBio(gomock.Eq(interest)).Times(1).Return(common.ErrRefNotFound23503)
 				interestRepo.EXPECT().InsertNewStats(gomock.Eq(interest.Id)).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
@@ -169,13 +170,13 @@ func Test_postInterestBioHandler(t *testing.T) {
 		{
 			name: "Conflict",
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interest := &domain.Bio{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Bio:    "alah lo",
 				}
-				interestRepo.EXPECT().InsertInterestBio(gomock.Eq(interest)).Times(1).Return(domain.ErrTooLongAccessingDB)
+				interestRepo.EXPECT().InsertInterestBio(gomock.Eq(interest)).Times(1).Return(common.ErrTooLongAccessingDB)
 				interestRepo.EXPECT().InsertNewStats(gomock.Eq(interest.Id)).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
@@ -227,14 +228,14 @@ func Test_getInterestBioHandler(t *testing.T) {
 	tests := []struct {
 		name      string
 		id        string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *interest
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *Interest
 		wantCode  int
 		wantResp  map[string]any
 	}{
 		{
 			name: "Valid getter with bio",
 			id:   validId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 
 				interestRepo.EXPECT().GetInterest(gomock.Eq(validId)).Times(1).Return(validBio, nil)
@@ -252,7 +253,7 @@ func Test_getInterestBioHandler(t *testing.T) {
 		{
 			name: "Invalid",
 			id:   validId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 
 				interestRepo.EXPECT().GetInterest(gomock.Eq(validId)).Times(1).Return(validBio, nil)
@@ -300,7 +301,7 @@ func Test_putInterestBioHandler(t *testing.T) {
 		name      string
 		id        string
 		reqBody   string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *interest
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *Interest
 		wantCode  int
 		wantResp  map[string]any
 	}{
@@ -310,7 +311,7 @@ func Test_putInterestBioHandler(t *testing.T) {
 			reqBody: `{
 				"bio":"im not that good with bio"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				validBio := domain.Bio{
 					Id:     util.RandomUUID(),
@@ -336,7 +337,7 @@ func Test_putInterestBioHandler(t *testing.T) {
 			reqBody: `{
 				"bio": null
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				validBio := domain.Bio{
 					Id:     util.RandomUUID(),
@@ -363,7 +364,7 @@ func Test_putInterestBioHandler(t *testing.T) {
 			reqBody: `{
 				"bio":"old bio"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				validBio := domain.Bio{
 					Id:     util.RandomUUID(),
@@ -387,7 +388,7 @@ func Test_putInterestBioHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"bio":"%s"
 			}`, util.RandomString(500)),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				validBio := domain.Bio{
 					Id:     util.RandomUUID(),
@@ -414,7 +415,7 @@ func Test_putInterestBioHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"bio":"%s"
 			}`, util.RandomString(500)),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 
 				interestRepo.EXPECT().SelectInterestBio(gomock.Any()).Times(1).Return(nil, sql.ErrNoRows)
@@ -460,7 +461,7 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 		name       string
 		interestId string
 		reqBody    string
-		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *interest
+		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *Interest
 
 		wantCode int
 		wantResp map[string]any
@@ -471,7 +472,7 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"hobbies":%s
 			}`, validHobbies),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				hobbies := make([]domain.Hobbie, 0)
 				hobbies = append(hobbies, domain.Hobbie{
@@ -512,7 +513,7 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"hobbies":%s
 			}`, `["main", "mendaki","coding", "gatau", "pengen", "lebih", "dari", "sepuluh"]`),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				hobbies := make([]domain.Hobbie, 0, 11)
 				hobbies = append(hobbies, domain.Hobbie{
@@ -557,7 +558,7 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"hobbies":%s
 			}`, `["main", "main"]`),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestHobbies(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -578,7 +579,7 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"hobbies":%s
 			}`, `["m", "a"]`),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestHobbies(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -592,7 +593,7 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"hobbies":%s
 			}`, fmt.Sprintf(`["%s", "%s"]`, util.RandomString(60), util.RandomString(60))),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestHobbies(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -606,7 +607,7 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"hobbies":%s
 			}`, fmt.Sprintf(`["%s", "%s"]`, util.RandomString(60), util.RandomString(60))),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestHobbies(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -620,7 +621,7 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"hobbies":%s
 			}`, validHobbies),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				hobbies := make([]domain.Hobbie, 0)
 				hobbies = append(hobbies, domain.Hobbie{
@@ -649,7 +650,7 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"hobbies":%s
 			}`, validHobbies),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				hobbies := make([]domain.Hobbie, 0)
 				hobbies = append(hobbies, domain.Hobbie{
@@ -678,7 +679,7 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 			reqBody: `{
 				"hobbies":"not valid array"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestHobbies(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -726,7 +727,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 		name       string
 		interestId string
 		reqBody    map[string]any
-		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *interest
+		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *Interest
 		wantCode   int
 		wantResp   map[string]any
 	}{
@@ -740,7 +741,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				hobbies := []domain.Hobbie{
 					{
@@ -773,7 +774,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				hobbies := []domain.Hobbie{
 					{
@@ -804,7 +805,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				hobbies := []domain.Hobbie{
 					{
@@ -835,7 +836,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				hobbies := []domain.Hobbie{
 					{
@@ -865,7 +866,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				hobbies := []domain.Hobbie{
 					{
@@ -926,7 +927,7 @@ func Test_deleteInterestHobbiesHandler(t *testing.T) {
 		name       string
 		interestId string
 		reqBody    map[string]any
-		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *interest
+		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *Interest
 		wantCode   int
 		wantResp   map[string]any
 	}{
@@ -939,7 +940,7 @@ func Test_deleteInterestHobbiesHandler(t *testing.T) {
 				},
 			},
 
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().DeleteInterestHobbies(gomock.Eq(validId), gomock.Any()).Times(1).Return(int64(3), nil)
 				interestSvc := service.NewInterest(interestRepo)
@@ -956,7 +957,7 @@ func Test_deleteInterestHobbiesHandler(t *testing.T) {
 				},
 			},
 
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().DeleteInterestHobbies(gomock.Eq(validId), gomock.Any()).Times(1).Return(int64(0), sql.ErrNoRows)
 				interestSvc := service.NewInterest(interestRepo)
@@ -977,7 +978,7 @@ func Test_deleteInterestHobbiesHandler(t *testing.T) {
 				},
 			},
 
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().DeleteInterestHobbies(gomock.Eq(validId), gomock.Eq([]string{hobbiesId, hobbiesId})).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1030,7 +1031,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 		name       string
 		interestId string
 		reqBody    string
-		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *interest
+		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *Interest
 
 		wantCode int
 		wantResp map[string]any
@@ -1041,7 +1042,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"movieSeries":%s
 			}`, validMovieSeries),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				movieSeries := make([]domain.MovieSerie, 0)
 				movieSeries = append(movieSeries, domain.MovieSerie{
@@ -1082,7 +1083,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"movieSeries":%s
 			}`, `["main", "mendaki","coding", "gatau", "pengen", "lebih", "dari", "sepuluh"]`),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				movieSeries := make([]domain.MovieSerie, 0, 11)
 				movieSeries = append(movieSeries, domain.MovieSerie{
@@ -1127,7 +1128,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"movieSeries":%s
 			}`, `["main", "main"]`),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestMovieSeries(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1148,7 +1149,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"movieSeries":%s
 			}`, `["m", "a"]`),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestMovieSeries(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1162,7 +1163,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"movieSeries":%s
 			}`, fmt.Sprintf(`["%s", "%s"]`, util.RandomString(60), util.RandomString(60))),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestMovieSeries(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1176,7 +1177,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"movieSeries":%s
 			}`, fmt.Sprintf(`["%s", "%s"]`, util.RandomString(60), util.RandomString(60))),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestMovieSeries(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1190,7 +1191,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"movieSeries":%s
 			}`, validMovieSeries),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				movieSeries := make([]domain.MovieSerie, 0)
 				movieSeries = append(movieSeries, domain.MovieSerie{
@@ -1219,7 +1220,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"movieSeries":%s
 			}`, validMovieSeries),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				movieSeries := make([]domain.MovieSerie, 0)
 				movieSeries = append(movieSeries, domain.MovieSerie{
@@ -1248,7 +1249,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 			reqBody: `{
 				"movieSeries":"not valid array"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestMovieSeries(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1296,7 +1297,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 		name       string
 		interestId string
 		reqBody    map[string]any
-		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *interest
+		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *Interest
 		wantCode   int
 		wantResp   map[string]any
 	}{
@@ -1310,7 +1311,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				movieSeries := []domain.MovieSerie{
 					{
@@ -1343,7 +1344,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				movieSeries := []domain.MovieSerie{
 					{
@@ -1374,7 +1375,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				movieSeries := []domain.MovieSerie{
 					{
@@ -1405,7 +1406,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				movieSeries := []domain.MovieSerie{
 					{
@@ -1435,7 +1436,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				movieSeries := []domain.MovieSerie{
 					{
@@ -1496,7 +1497,7 @@ func Test_deleteInterestMovieSeriesHandler(t *testing.T) {
 		name       string
 		interestId string
 		reqBody    map[string]any
-		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *interest
+		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *Interest
 		wantCode   int
 		wantResp   map[string]any
 	}{
@@ -1509,7 +1510,7 @@ func Test_deleteInterestMovieSeriesHandler(t *testing.T) {
 				},
 			},
 
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().DeleteInterestMovieSeries(gomock.Eq(validId), gomock.Any()).Times(1).Return(int64(3), nil)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1526,7 +1527,7 @@ func Test_deleteInterestMovieSeriesHandler(t *testing.T) {
 				},
 			},
 
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().DeleteInterestMovieSeries(gomock.Eq(validId), gomock.Any()).Times(1).Return(int64(0), sql.ErrNoRows)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1547,7 +1548,7 @@ func Test_deleteInterestMovieSeriesHandler(t *testing.T) {
 				},
 			},
 
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().DeleteInterestMovieSeries(gomock.Eq(validId), gomock.Eq([]string{movieSeriesId, movieSeriesId})).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1600,7 +1601,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 		name       string
 		interestId string
 		reqBody    string
-		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *interest
+		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *Interest
 
 		wantCode int
 		wantResp map[string]any
@@ -1611,7 +1612,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"travels":%s
 			}`, validTravels),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				travels := make([]domain.Travel, 0)
 				travels = append(travels, domain.Travel{
@@ -1652,7 +1653,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"travels":%s
 			}`, `["main", "mendaki","coding", "gatau", "pengen", "lebih", "dari", "sepuluh"]`),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				travels := make([]domain.Travel, 0, 11)
 				travels = append(travels, domain.Travel{
@@ -1697,7 +1698,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"travels":%s
 			}`, `["main", "main"]`),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestTraveling(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1718,7 +1719,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"travels":%s
 			}`, `["m", "a"]`),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestTraveling(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1732,7 +1733,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"travels":%s
 			}`, fmt.Sprintf(`["%s", "%s"]`, util.RandomString(60), util.RandomString(60))),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestTraveling(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1746,7 +1747,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"travels":%s
 			}`, fmt.Sprintf(`["%s", "%s"]`, util.RandomString(60), util.RandomString(60))),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestTraveling(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1760,7 +1761,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"travels":%s
 			}`, validTravels),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				travels := make([]domain.Travel, 0)
 				travels = append(travels, domain.Travel{
@@ -1789,7 +1790,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"travels":%s
 			}`, validTravels),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				travels := make([]domain.Travel, 0)
 				travels = append(travels, domain.Travel{
@@ -1818,7 +1819,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 			reqBody: `{
 				"travels":"not valid array"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestTraveling(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -1866,7 +1867,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 		name       string
 		interestId string
 		reqBody    map[string]any
-		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *interest
+		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *Interest
 		wantCode   int
 		wantResp   map[string]any
 	}{
@@ -1880,7 +1881,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				travels := []domain.Travel{
 					{
@@ -1913,7 +1914,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				travels := []domain.Travel{
 					{
@@ -1944,7 +1945,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				travels := []domain.Travel{
 					{
@@ -1975,7 +1976,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				travels := []domain.Travel{
 					{
@@ -2005,7 +2006,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				travels := []domain.Travel{
 					{
@@ -2066,7 +2067,7 @@ func Test_deleteInterestTravelingHandler(t *testing.T) {
 		name       string
 		interestId string
 		reqBody    map[string]any
-		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *interest
+		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *Interest
 		wantCode   int
 		wantResp   map[string]any
 	}{
@@ -2079,7 +2080,7 @@ func Test_deleteInterestTravelingHandler(t *testing.T) {
 				},
 			},
 
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().DeleteInterestTraveling(gomock.Eq(validId), gomock.Any()).Times(1).Return(int64(3), nil)
 				interestSvc := service.NewInterest(interestRepo)
@@ -2096,7 +2097,7 @@ func Test_deleteInterestTravelingHandler(t *testing.T) {
 				},
 			},
 
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().DeleteInterestTraveling(gomock.Eq(validId), gomock.Any()).Times(1).Return(int64(0), sql.ErrNoRows)
 				interestSvc := service.NewInterest(interestRepo)
@@ -2117,7 +2118,7 @@ func Test_deleteInterestTravelingHandler(t *testing.T) {
 				},
 			},
 
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().DeleteInterestTraveling(gomock.Eq(validId), gomock.Eq([]string{movieSeriesId, movieSeriesId})).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -2169,18 +2170,18 @@ func Test_postInterestSportsHandler(t *testing.T) {
 		name       string
 		interestId string
 		reqBody    string
-		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *interest
+		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *Interest
 
 		wantCode int
 		wantResp map[string]any
 	}{
 		{
-			name:       "Valid post interest",
+			name:       "Valid post *Interest",
 			interestId: validId,
 			reqBody: fmt.Sprintf(`{
 				"sports":%s
 			}`, validSports),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				sports := make([]domain.Sport, 0)
 				sports = append(sports, domain.Sport{
@@ -2221,7 +2222,7 @@ func Test_postInterestSportsHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"sports":%s
 			}`, `["main", "mendaki","coding", "gatau", "pengen", "lebih", "dari", "sepuluh"]`),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				sports := make([]domain.Sport, 0, 11)
 				sports = append(sports, domain.Sport{
@@ -2266,7 +2267,7 @@ func Test_postInterestSportsHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"sports":%s
 			}`, `["main", "main"]`),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestSports(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -2287,7 +2288,7 @@ func Test_postInterestSportsHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"sports":%s
 			}`, `["m", "a"]`),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestSports(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -2301,7 +2302,7 @@ func Test_postInterestSportsHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"sports":%s
 			}`, fmt.Sprintf(`["%s", "%s"]`, util.RandomString(60), util.RandomString(60))),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestSports(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -2315,7 +2316,7 @@ func Test_postInterestSportsHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"sports":%s
 			}`, fmt.Sprintf(`["%s", "%s"]`, util.RandomString(60), util.RandomString(60))),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestSports(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -2329,7 +2330,7 @@ func Test_postInterestSportsHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"sports":%s
 			}`, validSports),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				sports := make([]domain.Sport, 0)
 				sports = append(sports, domain.Sport{
@@ -2358,7 +2359,7 @@ func Test_postInterestSportsHandler(t *testing.T) {
 			reqBody: fmt.Sprintf(`{
 				"sports":%s
 			}`, validSports),
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				sports := make([]domain.Sport, 0)
 				sports = append(sports, domain.Sport{
@@ -2387,7 +2388,7 @@ func Test_postInterestSportsHandler(t *testing.T) {
 			reqBody: `{
 				"sports":"not valid array"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().InsertInterestSports(gomock.Any(), gomock.Any()).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
@@ -2435,7 +2436,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 		name       string
 		interestId string
 		reqBody    map[string]any
-		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *interest
+		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *Interest
 		wantCode   int
 		wantResp   map[string]any
 	}{
@@ -2449,7 +2450,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				sports := []domain.Sport{
 					{
@@ -2482,7 +2483,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				sports := []domain.Sport{
 					{
@@ -2513,7 +2514,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				sports := []domain.Sport{
 					{
@@ -2544,7 +2545,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				sports := []domain.Sport{
 					{
@@ -2574,7 +2575,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 					},
 				},
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				sports := []domain.Sport{
 					{
@@ -2635,7 +2636,7 @@ func Test_deleteInterestSportsHandler(t *testing.T) {
 		name       string
 		interestId string
 		reqBody    map[string]any
-		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *interest
+		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *Interest
 		wantCode   int
 		wantResp   map[string]any
 	}{
@@ -2648,7 +2649,7 @@ func Test_deleteInterestSportsHandler(t *testing.T) {
 				},
 			},
 
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().DeleteInterestSports(gomock.Eq(validId), gomock.Any()).Times(1).Return(int64(3), nil)
 				interestSvc := service.NewInterest(interestRepo)
@@ -2665,7 +2666,7 @@ func Test_deleteInterestSportsHandler(t *testing.T) {
 				},
 			},
 
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().DeleteInterestSports(gomock.Eq(validId), gomock.Any()).Times(1).Return(int64(0), sql.ErrNoRows)
 				interestSvc := service.NewInterest(interestRepo)
@@ -2686,7 +2687,7 @@ func Test_deleteInterestSportsHandler(t *testing.T) {
 				},
 			},
 
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *interest {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().DeleteInterestSports(gomock.Eq(validId), gomock.Eq([]string{movieSeriesId, movieSeriesId})).Times(0)
 				interestSvc := service.NewInterest(interestRepo)

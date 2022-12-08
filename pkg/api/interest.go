@@ -9,40 +9,40 @@ import (
 )
 
 type interestSvc interface {
-	GetInterest(userId string) (*domain.Interest, error)
+	GetInterest(userId string) (domain.Interest, error)
 
 	CreateNewBio(intr *domain.Bio) error
-	GetBio(userId string) (*domain.Bio, error)
-	PutBio(bio *domain.Bio) error
+	GetBio(userId string) (domain.Bio, error)
+	PutBio(bio domain.Bio) error
 
-	CreateNewHobbies(interestId string, hobbies []domain.Hobbie) error
+	CreateNewHobbies(interestId string, hobbies []string) error
 	PutHobbies(interestId string, hobbies []domain.Hobbie) error
 	DeleteHobbies(interestId string, ids []string) error
 
-	CreateNewMovieSeries(interestId string, movieSeries []domain.MovieSerie) error
+	CreateNewMovieSeries(interestId string, movieSeries []string) error
 	PutMovieSeries(interestId string, movieSeries []domain.MovieSerie) error
 	DeleteMovieSeries(interestId string, ids []string) error
 
-	CreateNewTraveling(interestId string, travels []domain.Travel) error
+	CreateNewTraveling(interestId string, travels []string) error
 	PutTraveling(interestId string, travels []domain.Travel) error
 	DeleteTravels(interestId string, ids []string) error
 
-	CreateNewSports(interestId string, sports []domain.Sport) error
+	CreateNewSports(interestId string, sports []string) error
 	PutSports(interestId string, sports []domain.Sport) error
 	DeleteSports(interestId string, ids []string) error
 }
 
-func NewInterest(interestSvc interestSvc) *interest {
-	return &interest{
+func NewInterest(interestSvc interestSvc) *Interest {
+	return &Interest{
 		interestSvc: interestSvc,
 	}
 }
 
-type interest struct {
+type Interest struct {
 	interestSvc interestSvc
 }
 
-func (i *interest) getInterestHandler(c *gin.Context) {
+func (i *Interest) getInterestHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	intr, err := i.interestSvc.GetInterest(userId)
 	if err != nil {
@@ -58,7 +58,7 @@ func (i *interest) getInterestHandler(c *gin.Context) {
 	})
 }
 
-func (i *interest) postInterestBioHandler(c *gin.Context) {
+func (i *Interest) postInterestBioHandler(c *gin.Context) {
 	var input struct {
 		Bio *string `json:"bio" binding:"required,max=300"`
 	}
@@ -76,9 +76,8 @@ func (i *interest) postInterestBioHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	bio := domain.Bio{
 		UserId: userId,
+		Bio:    *input.Bio,
 	}
-	bio.Bio = strings.TrimSpace(*input.Bio)
-
 	err = i.interestSvc.CreateNewBio(&bio)
 	if err != nil {
 		jsonHandleError(c, err)
@@ -88,10 +87,13 @@ func (i *interest) postInterestBioHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"status":  "success",
 		"message": "interest bio created",
+		"data": gin.H{
+			"interestId": bio.Id,
+		},
 	})
 
 }
-func (i *interest) putInterestBioHandler(c *gin.Context) {
+func (i *Interest) putInterestBioHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	bio, err := i.interestSvc.GetBio(userId)
 	if err != nil {
@@ -134,7 +136,7 @@ func (i *interest) putInterestBioHandler(c *gin.Context) {
 
 }
 
-func (i *interest) postInterestHobbiesHandler(c *gin.Context) {
+func (i *Interest) postInterestHobbiesHandler(c *gin.Context) {
 	interestId := c.GetString("interestId")
 	var input struct {
 		Hobbies []string `json:"hobbies" binding:"required,max=10,unique,dive,min=2,max=50"`
@@ -150,13 +152,8 @@ func (i *interest) postInterestHobbiesHandler(c *gin.Context) {
 		}
 		return
 	}
-	hobbies := make([]domain.Hobbie, 0, len(input.Hobbies))
-	for _, hobbie := range input.Hobbies {
-		hobbies = append(hobbies, domain.Hobbie{
-			Hobbie: hobbie,
-		})
-	}
-	err = i.interestSvc.CreateNewHobbies(interestId, hobbies)
+
+	err = i.interestSvc.CreateNewHobbies(interestId, input.Hobbies)
 	if err != nil {
 		jsonHandleError(c, err)
 		return
@@ -164,13 +161,13 @@ func (i *interest) postInterestHobbiesHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
 		"data": gin.H{
-			"hobbies": hobbies,
+			"hobbies": input.Hobbies,
 		},
 	})
 
 }
 
-func (i *interest) putInterestHobbiesHandler(c *gin.Context) {
+func (i *Interest) putInterestHobbiesHandler(c *gin.Context) {
 	var input struct {
 		Hobbies []domain.Hobbie `json:"hobbies" binding:"required,max=10,unique=Hobbie"`
 	}
@@ -201,7 +198,7 @@ func (i *interest) putInterestHobbiesHandler(c *gin.Context) {
 	})
 
 }
-func (i *interest) deleteInterestHobbiesHandler(c *gin.Context) {
+func (i *Interest) deleteInterestHobbiesHandler(c *gin.Context) {
 	var input struct {
 		Ids []string `json:"ids" binding:"required,unique,dive,uuid"`
 	}
@@ -230,7 +227,7 @@ func (i *interest) deleteInterestHobbiesHandler(c *gin.Context) {
 
 }
 
-func (i *interest) postInterestMovieSeriesHandler(c *gin.Context) {
+func (i *Interest) postInterestMovieSeriesHandler(c *gin.Context) {
 	interestId := c.GetString("interestId")
 	var input struct {
 		MovieSeries []string `json:"movieSeries" binding:"required,max=10,unique,dive,min=2,max=50"`
@@ -246,13 +243,7 @@ func (i *interest) postInterestMovieSeriesHandler(c *gin.Context) {
 		}
 		return
 	}
-	movieSeries := make([]domain.MovieSerie, 0, len(input.MovieSeries))
-	for _, movieSerie := range input.MovieSeries {
-		movieSeries = append(movieSeries, domain.MovieSerie{
-			MovieSerie: movieSerie,
-		})
-	}
-	err = i.interestSvc.CreateNewMovieSeries(interestId, movieSeries)
+	err = i.interestSvc.CreateNewMovieSeries(interestId, input.MovieSeries)
 	if err != nil {
 		jsonHandleError(c, err)
 		return
@@ -260,11 +251,11 @@ func (i *interest) postInterestMovieSeriesHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
 		"data": gin.H{
-			"movieSeries": movieSeries,
+			"movieSeries": input.MovieSeries,
 		},
 	})
 }
-func (i *interest) putInterestMovieSeriesHandler(c *gin.Context) {
+func (i *Interest) putInterestMovieSeriesHandler(c *gin.Context) {
 	var input struct {
 		MovieSeries []domain.MovieSerie `json:"movieSeries" binding:"required,max=10,unique=MovieSerie"`
 	}
@@ -295,7 +286,7 @@ func (i *interest) putInterestMovieSeriesHandler(c *gin.Context) {
 	})
 
 }
-func (i *interest) deleteInterestMovieSeriesHandler(c *gin.Context) {
+func (i *Interest) deleteInterestMovieSeriesHandler(c *gin.Context) {
 	interestId := c.GetString("interestId")
 	var input struct {
 		Ids []string `json:"ids" binding:"required,unique,dive,uuid"`
@@ -324,7 +315,7 @@ func (i *interest) deleteInterestMovieSeriesHandler(c *gin.Context) {
 
 }
 
-func (i *interest) postInterestTravelingHandler(c *gin.Context) {
+func (i *Interest) postInterestTravelingHandler(c *gin.Context) {
 	interestId := c.GetString("interestId")
 	var input struct {
 		Travels []string `json:"travels" binding:"required,max=10,unique,dive,min=2,max=50"`
@@ -340,13 +331,8 @@ func (i *interest) postInterestTravelingHandler(c *gin.Context) {
 		}
 		return
 	}
-	travels := make([]domain.Travel, 0, len(input.Travels))
-	for _, travel := range input.Travels {
-		travels = append(travels, domain.Travel{
-			Travel: travel,
-		})
-	}
-	err = i.interestSvc.CreateNewTraveling(interestId, travels)
+
+	err = i.interestSvc.CreateNewTraveling(interestId, input.Travels)
 	if err != nil {
 		jsonHandleError(c, err)
 		return
@@ -354,12 +340,12 @@ func (i *interest) postInterestTravelingHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
 		"data": gin.H{
-			"travels": travels,
+			"travels": input.Travels,
 		},
 	})
 }
 
-func (i *interest) putInterestTravelingHandler(c *gin.Context) {
+func (i *Interest) putInterestTravelingHandler(c *gin.Context) {
 	var input struct {
 		Travels []domain.Travel `json:"travels" binding:"required,max=10,unique=Travel"`
 	}
@@ -389,7 +375,7 @@ func (i *interest) putInterestTravelingHandler(c *gin.Context) {
 		},
 	})
 }
-func (i *interest) deleteInterestTravelingHandler(c *gin.Context) {
+func (i *Interest) deleteInterestTravelingHandler(c *gin.Context) {
 	interestId := c.GetString("interestId")
 	var input struct {
 		Ids []string `json:"ids" binding:"required,unique,dive,uuid"`
@@ -418,7 +404,7 @@ func (i *interest) deleteInterestTravelingHandler(c *gin.Context) {
 
 }
 
-func (i *interest) postInterestSportHandler(c *gin.Context) {
+func (i *Interest) postInterestSportHandler(c *gin.Context) {
 	interestId := c.GetString("interestId")
 	var input struct {
 		Sports []string `json:"sports" binding:"required,max=10,unique,dive,min=2,max=50"`
@@ -434,13 +420,8 @@ func (i *interest) postInterestSportHandler(c *gin.Context) {
 		}
 		return
 	}
-	sports := make([]domain.Sport, 0, len(input.Sports))
-	for _, sport := range input.Sports {
-		sports = append(sports, domain.Sport{
-			Sport: sport,
-		})
-	}
-	err = i.interestSvc.CreateNewSports(interestId, sports)
+
+	err = i.interestSvc.CreateNewSports(interestId, input.Sports)
 	if err != nil {
 		jsonHandleError(c, err)
 		return
@@ -448,11 +429,11 @@ func (i *interest) postInterestSportHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
 		"data": gin.H{
-			"sports": sports,
+			"sports": input.Sports,
 		},
 	})
 }
-func (i *interest) putInterestSportHandler(c *gin.Context) {
+func (i *Interest) putInterestSportHandler(c *gin.Context) {
 	var input struct {
 		Sports []domain.Sport `json:"sports" binding:"required,max=10,unique=Sport"`
 	}
@@ -482,7 +463,7 @@ func (i *interest) putInterestSportHandler(c *gin.Context) {
 		},
 	})
 }
-func (i *interest) deleteInterestSportHandler(c *gin.Context) {
+func (i *Interest) deleteInterestSportHandler(c *gin.Context) {
 	interestId := c.GetString("interestId")
 	var input struct {
 		Ids []string `json:"ids" binding:"required,unique,dive,uuid"`

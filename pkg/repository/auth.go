@@ -2,45 +2,52 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
+	"github.com/xyedo/blindate/pkg/common"
 )
 
 type Auth interface {
-	AddRefreshToken(token string) (int64, error)
+	AddRefreshToken(token string) error
 	VerifyRefreshToken(token string) error
-	DeleteRefreshToken(token string) (int64, error)
+	DeleteRefreshToken(token string) error
 }
 
-func NewAuth(conn *sqlx.DB) *authConn {
-	return &authConn{
+func NewAuth(conn *sqlx.DB) *AuthConn {
+	return &AuthConn{
 		conn: conn,
 	}
 }
 
-type authConn struct {
+type AuthConn struct {
 	conn *sqlx.DB
 }
 
-func (a *authConn) AddRefreshToken(token string) (int64, error) {
+func (a *AuthConn) AddRefreshToken(token string) error {
 	query := `INSERT INTO authentications VALUES($1)`
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	res, err := a.conn.ExecContext(ctx, query, token)
 	if err != nil {
-		return 0, err
+		return a.wrapError(err)
 	}
 	ret, err := res.RowsAffected()
 	if err != nil {
-		return 0, err
+		return err
 	}
-	return ret, nil
+	if ret == int64(0) {
+		return common.ErrResourceNotFound
+	}
+	return nil
 
 }
 
-func (a *authConn) VerifyRefreshToken(token string) error {
+func (a *AuthConn) VerifyRefreshToken(token string) error {
 	query := `SELECT token FROM authentications WHERE token = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -49,12 +56,12 @@ func (a *authConn) VerifyRefreshToken(token string) error {
 	var dbToken string
 	err := a.conn.QueryRowxContext(ctx, query, token).Scan(&dbToken)
 	if err != nil {
-		return err
+		return a.wrapError(err)
 	}
 	return nil
 }
 
-func (a *authConn) DeleteRefreshToken(token string) (int64, error) {
+func (a *AuthConn) DeleteRefreshToken(token string) error {
 	query := `DELETE FROM authentications WHERE token = $1`
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -62,11 +69,27 @@ func (a *authConn) DeleteRefreshToken(token string) (int64, error) {
 
 	row, err := a.conn.ExecContext(ctx, query, token)
 	if err != nil {
-		return 0, err
+		return a.wrapError(err)
 	}
 	retInt, err := row.RowsAffected()
 	if err != nil {
-		return 0, err
+		return a.wrapError(err)
 	}
-	return retInt, nil
+	if retInt == int64(0) {
+		return common.ErrResourceNotFound
+	}
+	return nil
+}
+func (AuthConn) wrapError(err error) error {
+	var pqErr *pq.Error
+	switch {
+	case errors.Is(err, context.Canceled):
+		return common.WrapError(err, common.ErrTooLongAccessingDB)
+	case errors.Is(err, sql.ErrNoRows):
+		return common.WrapError(err, common.ErrNotMatchCredential)
+	case errors.As(err, &pqErr) && pqErr.Code == "23505":
+		return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "token is already taken, please try again")
+	default:
+		return err
+	}
 }

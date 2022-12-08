@@ -14,7 +14,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
-	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/domain/entity"
 	mockrepo "github.com/xyedo/blindate/pkg/repository/mock"
 	"github.com/xyedo/blindate/pkg/service"
 	"github.com/xyedo/blindate/pkg/util"
@@ -25,7 +25,7 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 		name      string
 		id        string
 		reqBody   map[string]any
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *location
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *Location
 		wantCode  int
 		wantResp  map[string]any
 	}{
@@ -36,7 +36,7 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 				"lat": "80.23231",
 				"lng": "170.12112",
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *location {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := &entity.Location{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
@@ -59,7 +59,7 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 				"lat": "80.23231",
 				"lng": "170.12112",
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *location {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := &entity.Location{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68618",
@@ -85,7 +85,7 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 				"lat": "80.23231",
 				"lng": "170.12112",
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *location {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := &entity.Location{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68618",
@@ -111,7 +111,7 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 				"lat": 80.1391,
 				"lng": "170.12112",
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *location {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				locationRepo.EXPECT().InsertNewLocation(gomock.Any()).Times(0)
 				locationSvc := service.NewLocation(locationRepo)
@@ -130,7 +130,7 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 				"lat": "-91.2323232",
 				"lng": "170.12112",
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *location {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				locationRepo.EXPECT().InsertNewLocation(gomock.Any()).Times(0)
 				locationSvc := service.NewLocation(locationRepo)
@@ -177,14 +177,14 @@ func Test_getLocationByUserIdHandler(t *testing.T) {
 	tests := []struct {
 		name      string
 		id        string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *location
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *Location
 		wantCode  int
 		wantResp  map[string]any
 	}{
 		{
 			name: "valid Id",
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68618",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *location {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := validLoc
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
@@ -206,7 +206,7 @@ func Test_getLocationByUserIdHandler(t *testing.T) {
 		{
 			name: "Invalid Id",
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68618",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *location {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := createNewLocation(t)
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
@@ -247,7 +247,7 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 		name      string
 		id        string
 		reqBody   map[string]any
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *location
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *Location
 		wantCode  int
 		wantResp  map[string]any
 	}{
@@ -258,7 +258,7 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 				"lat": "70.1891",
 				"lng": "80.1291",
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *location {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := createNewLocation(t)
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
@@ -280,7 +280,7 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 			reqBody: map[string]any{
 				"lng": "80.1291",
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *location {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := createNewLocation(t)
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
@@ -302,7 +302,7 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 			reqBody: map[string]any{
 				"lat": "70.1891",
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *location {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := createNewLocation(t)
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
@@ -325,7 +325,7 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 				"lat": "70.1891asdad",
 				"lng": "80.1291",
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *location {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := createNewLocation(t)
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
@@ -349,7 +349,7 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 				"lat": "70.1891",
 				"lng": "80.1291asda",
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *location {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := createNewLocation(t)
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
@@ -373,7 +373,7 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 				"lat": 121221,
 				"lng": "80.1291",
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *location {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := createNewLocation(t)
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
@@ -394,7 +394,7 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 				"lat": "70.1891",
 				"lng": "80.1291",
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *location {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := createNewLocation(t)
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"

@@ -3,33 +3,36 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/domain/entity"
 )
 
 type Match interface {
 	InsertNewMatch(fromUserId, toUserId string, reqStatus domain.MatchStatus) (string, error)
 	SelectMatchReqToUserId(userId string) ([]domain.MatchUser, error)
 	UpdateMatchById(matchEntity entity.Match) error
-	GetMatchById(matchId string) (*entity.Match, error)
+	GetMatchById(matchId string) (entity.Match, error)
 }
 
-func NewMatch(conn *sqlx.DB) *match {
-	return &match{
+func NewMatch(conn *sqlx.DB) *MatchConn {
+	return &MatchConn{
 		conn: conn,
 	}
 }
 
-type match struct {
+type MatchConn struct {
 	conn *sqlx.DB
 }
 
-func (m *match) InsertNewMatch(fromUserId, toUserId string, reqStatus domain.MatchStatus) (string, error) {
+func (m *MatchConn) InsertNewMatch(fromUserId, toUserId string, reqStatus domain.MatchStatus) (string, error) {
 	query := `
 	INSERT INTO match(
 		request_from, 
@@ -45,12 +48,36 @@ func (m *match) InsertNewMatch(fromUserId, toUserId string, reqStatus domain.Mat
 	var matchId string
 	err := m.conn.GetContext(ctx, &matchId, query, args...)
 	if err != nil {
-		return "", err
+		var pqErr *pq.Error
+		switch {
+		case errors.Is(err, context.Canceled):
+			return "", common.WrapError(err, common.ErrTooLongAccessingDB)
+		case errors.As(err, &pqErr):
+			switch pqErr.Code {
+			case "23503":
+				switch {
+				case strings.Contains(pqErr.Constraint, "request_from"):
+					return "", common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid user on requestFrom")
+				case strings.Contains(pqErr.Constraint, "request_to"):
+					return "", common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid user on requestTo")
+				case strings.Contains(pqErr.Constraint, "request_status"):
+					return "", common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid enums on requestStatus")
+				case strings.Contains(pqErr.Constraint, "reveal_status"):
+					return "", common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid enums on revealStatus")
+				}
+			case "23505":
+				return "", common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "match already created")
+			default:
+				return "", pqErr
+			}
+		default:
+			return "", err
+		}
 	}
 	return matchId, nil
 }
 
-func (m *match) SelectMatchReqToUserId(userId string) ([]domain.MatchUser, error) {
+func (m *MatchConn) SelectMatchReqToUserId(userId string) ([]domain.MatchUser, error) {
 	query := `
 	SELECT 
 		m.id as match_id,
@@ -107,6 +134,10 @@ func (m *match) SelectMatchReqToUserId(userId string) ([]domain.MatchUser, error
 
 	rows, err := m.conn.QueryxContext(ctx, query, userId)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return nil, common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
+
 		return nil, err
 	}
 	defer func(rows *sqlx.Rows) {
@@ -132,7 +163,77 @@ func (m *match) SelectMatchReqToUserId(userId string) ([]domain.MatchUser, error
 
 }
 
-func (*match) createCandidatematch(row sqlx.ColScanner) (domain.MatchUser, error) {
+func (m *MatchConn) GetMatchById(matchId string) (entity.Match, error) {
+	query := `
+		SELECT
+			id,
+			request_from,
+			request_to,
+			request_status,
+			created_at,
+			accepted_at,
+			reveal_status,
+			revealed_at
+		FROM match
+		WHERE id = $1`
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	var matchEntity entity.Match
+	err := m.conn.GetContext(ctx, &matchEntity, query, matchId)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return entity.Match{}, common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.Match{}, common.WrapError(err, common.ErrResourceNotFound)
+		}
+		return entity.Match{}, err
+	}
+	return matchEntity, err
+}
+func (m *MatchConn) UpdateMatchById(matchEntity entity.Match) error {
+	query := `
+	UPDATE match SET
+		request_status=$1, 
+		accepted_at=$2, 
+		reveal_status=$3, 
+		revealed_at=$4
+	WHERE id = $5
+	RETURNING id`
+	args := []any{
+		matchEntity.RequestStatus,
+		matchEntity.AcceptedAt,
+		matchEntity.RevealStatus,
+		matchEntity.RevealedAt,
+		matchEntity.Id,
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err := m.conn.GetContext(ctx, &matchEntity.Id, query, args...)
+	if err != nil {
+		var pqErr *pq.Error
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return common.WrapError(err, common.ErrResourceNotFound)
+		case errors.Is(err, context.Canceled):
+			return common.WrapError(err, common.ErrTooLongAccessingDB)
+		case errors.As(err, &pqErr):
+			switch pqErr.Code {
+			case "23503":
+				switch {
+				case strings.Contains(pqErr.Constraint, "request_status"):
+					return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid enums on requestStatus")
+				case strings.Contains(pqErr.Constraint, "reveal_status"):
+					return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid enums on revealStatus")
+				}
+			}
+		default:
+			return err
+		}
+	}
+	return nil
+}
+func (*MatchConn) createCandidatematch(row sqlx.ColScanner) (domain.MatchUser, error) {
 	var newMatch domain.MatchUser
 	var newBasicInfo entity.BasicInfo
 	var newBasicInfoGender sql.NullString
@@ -232,51 +333,4 @@ func (*match) createCandidatematch(row sqlx.ColScanner) (domain.MatchUser, error
 		})
 	}
 	return newMatch, nil
-}
-
-func (m *match) GetMatchById(matchId string) (*entity.Match, error) {
-	query := `
-		SELECT
-			id,
-			request_from,
-			request_to,
-			request_status,
-			created_at,
-			accepted_at,
-			reveal_status,
-			revealed_at
-		FROM match
-		WHERE id = $1`
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	var matchEntity entity.Match
-	err := m.conn.GetContext(ctx, &matchEntity, query, matchId)
-	if err != nil {
-		return nil, err
-	}
-	return &matchEntity, err
-}
-func (m *match) UpdateMatchById(matchEntity entity.Match) error {
-	query := `
-	UPDATE match SET
-		request_status=$1, 
-		accepted_at=$2, 
-		reveal_status=$3, 
-		revealed_at=$4
-	WHERE id = $5
-	RETURNING id`
-	args := []any{
-		matchEntity.RequestStatus,
-		matchEntity.AcceptedAt,
-		matchEntity.RevealStatus,
-		matchEntity.RevealedAt,
-		matchEntity.Id,
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	err := m.conn.GetContext(ctx, &matchEntity.Id, query, args...)
-	if err != nil {
-		return err
-	}
-	return nil
 }

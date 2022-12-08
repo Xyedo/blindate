@@ -13,12 +13,10 @@ migrate-create:
 	migrate create -dir $(MG_PATH) -seq -ext .sql $(name)
 
 build-up:
-	docker compose up -d --build
-up:
-	docker compose up -d
+	docker compose --env-file ./.env.dev up -d --build 
 
 down: 
-	docker compose down
+	docker compose --env-file ./.env.dev down 
 
 mock-repo:
 	mockgen -destination pkg/repository/mock/$(mock_name) -package mockrepo $(REPO_PATH) $(interface) 

@@ -18,6 +18,15 @@ type User struct {
 	UpdatedAt      time.Time        `db:"updated_at" json:"updatedAt"`
 }
 
+type UpdateUser struct {
+	FullName    *string    `json:"fullName" binding:"omitempty,max=50"`
+	Alias       *string    `json:"alias" binding:"omitempty,max=15"`
+	Email       *string    `json:"email" binding:"omitempty,email"`
+	OldPassword *string    `json:"oldPassword" binding:"required_with=NewPassword,omitempty,min=8"`
+	NewPassword *string    `json:"newPassword" binding:"required_with=OldPassword,omitempty,min=8"`
+	Dob         *time.Time `json:"dob" binding:"omitempty,validdob"`
+}
+
 // Bio one to one with user
 type Bio struct {
 	Id        string    `json:"id,omitempty" db:"id"`
@@ -44,6 +53,19 @@ type BasicInfo struct {
 	CreatedAt        time.Time `json:"createdAt"`
 	UpdatedAt        time.Time `json:"updatedAt"`
 }
+type UpdateBasicInfo struct {
+	Gender           *string `json:"gender" binding:"omitempty,max=25"`
+	FromLoc          *string `json:"fromLoc" binding:"omitempty,max=25"`
+	Height           *int    `json:"height" binding:"omitempty,min=0,max=300"`
+	EducationLevel   *string `json:"educationLevel" binding:"omitempty,max=49"`
+	Drinking         *string `json:"drinking" binding:"omitempty,max=49"`
+	Smoking          *string `json:"smoking" binding:"omitempty,max=49"`
+	RelationshipPref *string `json:"relationshipPref" binding:"omitempty,max=49"`
+	LookingFor       *string `json:"lookingFor"  binding:"omitempty,max=25"`
+	Zodiac           *string `json:"zodiac" binding:"omitempty,max=50"`
+	Kids             *int    `json:"kids" binding:"omitempty,max=100"`
+	Work             *string `json:"work" binding:"omitempty,max=50"`
+}
 
 // Location one to one with user
 type Location struct {
@@ -61,11 +83,11 @@ type Online struct {
 
 // Interest one to one with user
 type Interest struct {
-	Bio         `db:"-"`
-	Hobbies     []Hobbie     `json:"hobbies" db:"-"`
-	MovieSeries []MovieSerie `json:"movieSeries" db:"-"`
-	Travels     []Travel     `json:"travels" db:"-"`
-	Sports      []Sport      `json:"sports" db:"-"`
+	Bio
+	Hobbies     []Hobbie     `json:"hobbies"`
+	MovieSeries []MovieSerie `json:"movieSeries"`
+	Travels     []Travel     `json:"travels"`
+	Sports      []Sport      `json:"sports"`
 }
 
 // ProfilePicture one to many with user

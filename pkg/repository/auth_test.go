@@ -1,11 +1,13 @@
-package repository
+package repository_test
 
 import (
-	"database/sql"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/xyedo/blindate/pkg/common"
+	"github.com/xyedo/blindate/pkg/repository"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
@@ -18,7 +20,7 @@ func Test_AddRefreshToken(t *testing.T) {
 }
 
 func Test_VerifyRefreshToken(t *testing.T) {
-	auth := NewAuth(testQuery)
+	auth := repository.NewAuth(testQuery)
 	t.Run("Valid Token", func(t *testing.T) {
 		token := createNewToken(t)
 
@@ -30,34 +32,32 @@ func Test_VerifyRefreshToken(t *testing.T) {
 		assert.NoError(t, err)
 		err = auth.VerifyRefreshToken(token)
 		assert.Error(t, err)
-		assert.ErrorIs(t, err, sql.ErrNoRows)
+		assert.ErrorIs(t, err, common.ErrNotMatchCredential)
 	})
 }
 
 func Test_DeleteRefreshToken(t *testing.T) {
-	auth := NewAuth(testQuery)
+	auth := repository.NewAuth(testQuery)
 	t.Run("Valid Token", func(t *testing.T) {
 		token := createNewToken(t)
-		rows, err := auth.DeleteRefreshToken(token)
+		err := auth.DeleteRefreshToken(token)
 		assert.NoError(t, err)
-		assert.Equal(t, int64(1), rows)
 	})
 	t.Run("Invalid token", func(t *testing.T) {
 		token, err := util.RandomToken(jwtSecret, 10*time.Second)
 		assert.NoError(t, err)
-		rows, err := auth.DeleteRefreshToken(token)
-		assert.NoError(t, err)
-		assert.Zero(t, rows)
+		err = auth.DeleteRefreshToken(token)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, common.ErrResourceNotFound)
 	})
 }
 
 func createNewToken(t *testing.T) string {
-	auth := NewAuth(testQuery)
+	auth := repository.NewAuth(testQuery)
 	token, err := util.RandomToken(jwtSecret, 15*time.Second)
 	assert.NoError(t, err)
 
-	rows, err := auth.AddRefreshToken(token)
+	err = auth.AddRefreshToken(token)
 	assert.NoError(t, err)
-	assert.Equal(t, int64(1), rows)
 	return token
 }

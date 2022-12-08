@@ -24,7 +24,7 @@ func Test_postAuthHandler(t *testing.T) {
 	tests := []struct {
 		name      string
 		reqBody   string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) auth
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *Auth
 		wantCode  int
 		respFunc  func(t *testing.T, rr *httptest.ResponseRecorder)
 	}{
@@ -34,7 +34,7 @@ func Test_postAuthHandler(t *testing.T) {
 				"email":"uncleBob23@cool.com",
 				"password":"pa55word"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) auth {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Auth {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 
@@ -46,9 +46,8 @@ func Test_postAuthHandler(t *testing.T) {
 				userRepo.EXPECT().GetUserByEmail(gomock.Eq("uncleBob23@cool.com")).Times(1).Return(validUser, nil)
 				authRepo.EXPECT().AddRefreshToken(gomock.Any()).Times(1).Return(int64(1), nil)
 
-				authSvc := service.NewAuth(authRepo)
-				userSvc := service.NewUser(userRepo)
-				return NewAuth(authSvc, userSvc, jwt)
+				authSvc := service.NewAuth(authRepo, userRepo, jwt)
+				return NewAuth(authSvc)
 			},
 			wantCode: http.StatusCreated,
 			respFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
@@ -70,16 +69,15 @@ func Test_postAuthHandler(t *testing.T) {
 				"email":0,
 				"password":"pa55word"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) auth {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Auth {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 
 				userRepo.EXPECT().GetUserByEmail(gomock.Any()).Times(0)
 				authRepo.EXPECT().AddRefreshToken(gomock.Any()).Times(0)
 
-				authSvc := service.NewAuth(authRepo)
-				userSvc := service.NewUser(userRepo)
-				return NewAuth(authSvc, userSvc, jwt)
+				authSvc := service.NewAuth(authRepo, userRepo, jwt)
+				return NewAuth(authSvc)
 			},
 			wantCode: http.StatusBadRequest,
 			respFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
@@ -97,16 +95,15 @@ func Test_postAuthHandler(t *testing.T) {
 				"email":"hummm",
 				"password":"pa55w"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) auth {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Auth {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 
 				userRepo.EXPECT().GetUserByEmail(gomock.Any()).Times(0)
 				authRepo.EXPECT().AddRefreshToken(gomock.Any()).Times(0)
 
-				authSvc := service.NewAuth(authRepo)
-				userSvc := service.NewUser(userRepo)
-				return NewAuth(authSvc, userSvc, jwt)
+				authSvc := service.NewAuth(authRepo, userRepo, jwt)
+				return NewAuth(authSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			respFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
@@ -128,7 +125,7 @@ func Test_postAuthHandler(t *testing.T) {
 				"email":"uncleBob23@cool.com",
 				"password":"pa55word"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) auth {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Auth {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 
@@ -136,9 +133,8 @@ func Test_postAuthHandler(t *testing.T) {
 				userRepo.EXPECT().GetUserByEmail(gomock.Eq("uncleBob23@cool.com")).Times(1).Return(validUser, nil)
 				authRepo.EXPECT().AddRefreshToken(gomock.Any()).Times(0)
 
-				authSvc := service.NewAuth(authRepo)
-				userSvc := service.NewUser(userRepo)
-				return NewAuth(authSvc, userSvc, jwt)
+				authSvc := service.NewAuth(authRepo, userRepo, jwt)
+				return NewAuth(authSvc)
 			},
 			wantCode: http.StatusUnauthorized,
 			respFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
@@ -175,13 +171,13 @@ func Test_putAuthHandler(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) (auth, string)
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) (*Auth, string)
 		wantCode  int
 		respFunc  func(t *testing.T, rr *httptest.ResponseRecorder)
 	}{
 		{
 			name: "Valid PutAuthHandler",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (auth, string) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (*Auth, string) {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 				id := util.RandomUUID()
@@ -189,9 +185,8 @@ func Test_putAuthHandler(t *testing.T) {
 				assert.NoError(t, err)
 				authRepo.EXPECT().VerifyRefreshToken(gomock.Eq(token)).Times(1).Return(nil)
 
-				authSvc := service.NewAuth(authRepo)
-				userSvc := service.NewUser(userRepo)
-				return NewAuth(authSvc, userSvc, jwt), token
+				authSvc := service.NewAuth(authRepo, userRepo, jwt)
+				return NewAuth(authSvc), token
 			},
 			wantCode: http.StatusOK,
 			respFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
@@ -207,7 +202,7 @@ func Test_putAuthHandler(t *testing.T) {
 		},
 		{
 			name: "Invalid RefreshToken",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (auth, string) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (*Auth, string) {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 				id := util.RandomUUID()
@@ -215,9 +210,8 @@ func Test_putAuthHandler(t *testing.T) {
 				assert.NoError(t, err)
 				authRepo.EXPECT().VerifyRefreshToken(gomock.Eq(token)).Times(1).Return(sql.ErrNoRows)
 
-				authSvc := service.NewAuth(authRepo)
-				userSvc := service.NewUser(userRepo)
-				return NewAuth(authSvc, userSvc, jwt), token
+				authSvc := service.NewAuth(authRepo, userRepo, jwt)
+				return NewAuth(authSvc), token
 			},
 			wantCode: http.StatusUnauthorized,
 			respFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
@@ -264,13 +258,13 @@ func Test_deleteAuthHandler(t *testing.T) {
 	jwt := service.NewJwt("test-access-secret", "test-refresh-secret", "1s", "720h")
 	tests := []struct {
 		name      string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) (auth, string)
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) (*Auth, string)
 		wantCode  int
 		respFunc  func(t *testing.T, rr *httptest.ResponseRecorder)
 	}{
 		{
 			name: "Valid Log out",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (auth, string) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (*Auth, string) {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 				id := util.RandomUUID()
@@ -278,9 +272,8 @@ func Test_deleteAuthHandler(t *testing.T) {
 				assert.NoError(t, err)
 				authRepo.EXPECT().VerifyRefreshToken(gomock.Eq(token)).Times(1).Return(nil)
 				authRepo.EXPECT().DeleteRefreshToken(gomock.Eq(token)).Times(1).Return(int64(1), nil)
-				authSvc := service.NewAuth(authRepo)
-				userSvc := service.NewUser(userRepo)
-				return NewAuth(authSvc, userSvc, jwt), token
+				authSvc := service.NewAuth(authRepo, userRepo, jwt)
+				return NewAuth(authSvc), token
 			},
 			wantCode: http.StatusOK,
 			respFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
@@ -295,7 +288,7 @@ func Test_deleteAuthHandler(t *testing.T) {
 		},
 		{
 			name: "InValid Log out",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (auth, string) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (*Auth, string) {
 				authRepo := mockrepo.NewMockAuth(ctrl)
 				userRepo := mockrepo.NewMockUser(ctrl)
 				id := util.RandomUUID()
@@ -303,9 +296,8 @@ func Test_deleteAuthHandler(t *testing.T) {
 				assert.NoError(t, err)
 				authRepo.EXPECT().VerifyRefreshToken(gomock.Eq(token)).Times(1).Return(sql.ErrNoRows)
 				authRepo.EXPECT().DeleteRefreshToken(gomock.Any()).Times(0)
-				authSvc := service.NewAuth(authRepo)
-				userSvc := service.NewUser(userRepo)
-				return NewAuth(authSvc, userSvc, jwt), token
+				authSvc := service.NewAuth(authRepo, userRepo, jwt)
+				return NewAuth(authSvc), token
 			},
 			wantCode: http.StatusUnauthorized,
 			respFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {

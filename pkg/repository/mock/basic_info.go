@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	entity "github.com/xyedo/blindate/pkg/entity"
+	entity "github.com/xyedo/blindate/pkg/domain/entity"
 )
 
 // MockBasicInfo is a mock of BasicInfo interface.
@@ -35,10 +35,10 @@ func (m *MockBasicInfo) EXPECT() *MockBasicInfoMockRecorder {
 }
 
 // GetBasicInfoByUserId mocks base method.
-func (m *MockBasicInfo) GetBasicInfoByUserId(arg0 string) (*entity.BasicInfo, error) {
+func (m *MockBasicInfo) GetBasicInfoByUserId(arg0 string) (entity.BasicInfo, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBasicInfoByUserId", arg0)
-	ret0, _ := ret[0].(*entity.BasicInfo)
+	ret0, _ := ret[0].(entity.BasicInfo)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -50,12 +50,11 @@ func (mr *MockBasicInfoMockRecorder) GetBasicInfoByUserId(arg0 interface{}) *gom
 }
 
 // InsertBasicInfo mocks base method.
-func (m *MockBasicInfo) InsertBasicInfo(arg0 *entity.BasicInfo) (int64, error) {
+func (m *MockBasicInfo) InsertBasicInfo(arg0 entity.BasicInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InsertBasicInfo", arg0)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // InsertBasicInfo indicates an expected call of InsertBasicInfo.
@@ -65,12 +64,11 @@ func (mr *MockBasicInfoMockRecorder) InsertBasicInfo(arg0 interface{}) *gomock.C
 }
 
 // UpdateBasicInfo mocks base method.
-func (m *MockBasicInfo) UpdateBasicInfo(arg0 *entity.BasicInfo) (int64, error) {
+func (m *MockBasicInfo) UpdateBasicInfo(arg0 entity.BasicInfo) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateBasicInfo", arg0)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // UpdateBasicInfo indicates an expected call of UpdateBasicInfo.

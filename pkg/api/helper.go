@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/gin-gonic/gin"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/util"
 )
@@ -26,7 +27,7 @@ func jsonBindingErrResp(err error, c *gin.Context, errorMap map[string]string) e
 }
 
 func jsonHandleError(c *gin.Context, err error) {
-	var apiErr domain.APIError
+	var apiErr common.APIError
 	if errors.As(err, &apiErr) {
 		status, msg := apiErr.APIError()
 		c.AbortWithStatusJSON(status, gin.H{

@@ -48,14 +48,14 @@ func Test_postUserOnlineHandler(t *testing.T) {
 	tests := []struct {
 		name      string
 		userId    string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *online
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *Online
 		wantCode  int
 		wantResp  map[string]any
 	}{
 		{
 			name:   "valid online post",
 			userId: validUserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
 				online := &domain.Online{
 					UserId:     validUserId,
@@ -75,7 +75,7 @@ func Test_postUserOnlineHandler(t *testing.T) {
 		{
 			name:   "userId not found",
 			userId: validUserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
 				online := &domain.Online{
 					UserId:     validUserId,
@@ -99,7 +99,7 @@ func Test_postUserOnlineHandler(t *testing.T) {
 		{
 			name:   "duplicate userId",
 			userId: validUserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
 				online := &domain.Online{
 					UserId:     validUserId,
@@ -155,14 +155,14 @@ func Test_getUserOnlineHandler(t *testing.T) {
 	tests := []struct {
 		name      string
 		userId    string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *online
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *Online
 		wantCode  int
 		wantResp  map[string]any
 	}{
 		{
 			name:   "valid online get",
 			userId: validUserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
 				online := &domain.Online{
 					UserId:     validUserId,
@@ -178,7 +178,7 @@ func Test_getUserOnlineHandler(t *testing.T) {
 		{
 			name:   "userId not found",
 			userId: validUserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
 				onlineRepo.EXPECT().SelectOnline(gomock.Eq(validUserId)).Times(1).Return(nil, sql.ErrNoRows)
 				onlineSvc := service.NewOnline(onlineRepo)
@@ -225,7 +225,7 @@ func Test_putsUserOnlineHandler(t *testing.T) {
 		name      string
 		userId    string
 		reqBody   map[string]bool
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *online
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *Online
 		wantCode  int
 		wantResp  map[string]any
 	}{
@@ -235,7 +235,7 @@ func Test_putsUserOnlineHandler(t *testing.T) {
 			reqBody: map[string]bool{
 				"online": true,
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
 				onlineRepo.EXPECT().UpdateOnline(gomock.Eq(validUserId), gomock.Eq(true)).Times(1).Return(nil)
 				onlineSvc := service.NewOnline(onlineRepo)
@@ -253,7 +253,7 @@ func Test_putsUserOnlineHandler(t *testing.T) {
 			reqBody: map[string]bool{
 				"online": false,
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
 				onlineRepo.EXPECT().UpdateOnline(gomock.Eq(validUserId), gomock.Eq(false)).Times(1).Return(nil)
 				onlineSvc := service.NewOnline(onlineRepo)
@@ -271,7 +271,7 @@ func Test_putsUserOnlineHandler(t *testing.T) {
 			reqBody: map[string]bool{
 				"online": true,
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
 				onlineRepo.EXPECT().UpdateOnline(gomock.Eq(validUserId), gomock.Eq(true)).Times(1).Return(sql.ErrNoRows)
 				onlineSvc := service.NewOnline(onlineRepo)

@@ -1,62 +1,77 @@
 package service
 
 import (
-	"context"
-	"database/sql"
 	"errors"
 
-	"github.com/lib/pq"
-	"github.com/xyedo/blindate/pkg/domain"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/repository"
+	"golang.org/x/crypto/bcrypt"
 )
 
-func NewAuth(authR repository.Auth) auth {
-	return auth{
+func NewAuth(authR repository.Auth, userR repository.User, tokenSvc *Jwt) *Auth {
+	return &Auth{
 		authRepo: authR,
+		userRepo: userR,
+		tokenSvc: tokenSvc,
 	}
 }
 
-type auth struct {
+type Auth struct {
 	authRepo repository.Auth
+	userRepo repository.User
+	tokenSvc *Jwt
 }
 
-func (a auth) AddRefreshToken(token string) error {
-	_, err := a.authRepo.AddRefreshToken(token)
+func (a *Auth) Login(email, password string) (accessToken string, refreshToken string, err error) {
+	user, err := a.userRepo.GetUserByEmail(email)
 	if err != nil {
-		return a.wrapError(err)
+		return
 	}
-	return nil
-}
-
-func (a auth) VerifyRefreshToken(token string) error {
-	err := a.authRepo.VerifyRefreshToken(token)
+	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
 	if err != nil {
-		return a.wrapError(err)
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return "", "", common.WrapError(err, common.ErrNotMatchCredential)
+		}
+		return
 	}
-	return nil
-}
-
-func (a auth) DeleteRefreshToken(token string) error {
-	rows, err := a.authRepo.DeleteRefreshToken(token)
+	accessToken, err = a.tokenSvc.GenerateAccessToken(user.ID)
 	if err != nil {
-		return a.wrapError(err)
+		panic(err)
 	}
-	if rows == 0 {
-		return domain.WrapError(err, domain.ErrNotMatchCredential)
+	refreshToken, err = a.tokenSvc.GenerateRefreshToken(user.ID)
+	if err != nil {
+		panic(err)
 	}
-	return nil
+	err = a.authRepo.AddRefreshToken(refreshToken)
+	if err != nil {
+		return
+	}
+	return accessToken, refreshToken, err
 }
+func (a *Auth) RevalidateRefreshToken(refreshToken string) (string, error) {
+	err := a.authRepo.VerifyRefreshToken(refreshToken)
+	if err != nil {
+		return "", err
+	}
+	id, err := a.tokenSvc.ValidateRefreshToken(refreshToken)
+	if err != nil {
+		return "", err
+	}
+	accessToken, err := a.tokenSvc.GenerateAccessToken(id)
+	if err != nil {
+		panic(err)
+	}
+	return accessToken, nil
 
-func (auth) wrapError(err error) error {
-	var pqErr *pq.Error
-	switch {
-	case errors.Is(err, context.Canceled):
-		return domain.WrapError(err, domain.ErrTooLongAccessingDB)
-	case errors.Is(err, sql.ErrNoRows):
-		return domain.WrapError(err, domain.ErrNotMatchCredential)
-	case errors.As(err, &pqErr) && pqErr.Code == "23505":
-		return domain.WrapErrorWithMsg(err, domain.ErrUniqueConstraint23505, "token is already taken, please try again")
-	default:
+}
+func (a *Auth) Logout(refreshToken string) error {
+	err := a.authRepo.VerifyRefreshToken(refreshToken)
+	if err != nil {
 		return err
 	}
+	err = a.authRepo.DeleteRefreshToken(refreshToken)
+	if err != nil {
+		return err
+	}
+	return nil
 }

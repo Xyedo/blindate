@@ -9,7 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	domain "github.com/xyedo/blindate/pkg/domain"
-	entity "github.com/xyedo/blindate/pkg/entity"
+	entity "github.com/xyedo/blindate/pkg/domain/entity"
 )
 
 // MockLocation is a mock of Location interface.
@@ -51,10 +51,10 @@ func (mr *MockLocationMockRecorder) GetClosestUser(arg0, arg1, arg2 interface{})
 }
 
 // GetLocationByUserId mocks base method.
-func (m *MockLocation) GetLocationByUserId(arg0 string) (*entity.Location, error) {
+func (m *MockLocation) GetLocationByUserId(arg0 string) (entity.Location, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetLocationByUserId", arg0)
-	ret0, _ := ret[0].(*entity.Location)
+	ret0, _ := ret[0].(entity.Location)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -66,12 +66,11 @@ func (mr *MockLocationMockRecorder) GetLocationByUserId(arg0 interface{}) *gomoc
 }
 
 // InsertNewLocation mocks base method.
-func (m *MockLocation) InsertNewLocation(arg0 *entity.Location) (int64, error) {
+func (m *MockLocation) InsertNewLocation(arg0 *entity.Location) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InsertNewLocation", arg0)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // InsertNewLocation indicates an expected call of InsertNewLocation.
@@ -81,12 +80,11 @@ func (mr *MockLocationMockRecorder) InsertNewLocation(arg0 interface{}) *gomock.
 }
 
 // UpdateLocation mocks base method.
-func (m *MockLocation) UpdateLocation(arg0 *entity.Location) (int64, error) {
+func (m *MockLocation) UpdateLocation(arg0 *entity.Location) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateLocation", arg0)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // UpdateLocation indicates an expected call of UpdateLocation.

@@ -3,34 +3,37 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/domain/entity"
 )
 
 type Conversation interface {
 	InsertConversation(matchId string) (string, error)
-	SelectConversationById(matchId string) (*domain.Conversation, error)
+	SelectConversationById(matchId string) (domain.Conversation, error)
 	SelectConversationByUserId(UserId string, filter *entity.ConvFilter) ([]domain.Conversation, error)
 	UpdateDayPass(convoId string) error
 	UpdateChatRow(convoId string) error
 	DeleteConversationById(convoId string) error
 }
 
-func NewConversation(conn *sqlx.DB) *conversation {
-	return &conversation{
+func NewConversation(conn *sqlx.DB) *ConvConn {
+	return &ConvConn{
 		conn: conn,
 	}
 }
 
-type conversation struct {
+type ConvConn struct {
 	conn *sqlx.DB
 }
 
-func (c *conversation) InsertConversation(matchId string) (string, error) {
+func (c *ConvConn) InsertConversation(matchId string) (string, error) {
 	query := `
 	INSERT INTO conversations(match_id)
 	VALUES($1)
@@ -42,6 +45,19 @@ func (c *conversation) InsertConversation(matchId string) (string, error) {
 	var convoId string
 	err := c.conn.GetContext(ctx, &convoId, query, matchId)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return "", common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) {
+			if pqErr.Code == "23503" {
+				return "", common.WrapError(err, common.ErrRefNotFound23503)
+			}
+			if pqErr.Code == "23505" {
+				return "", common.WrapError(err, common.ErrUniqueConstraint23505)
+			}
+			return "", pqErr
+		}
 		return "", err
 	}
 	return convoId, nil
@@ -96,7 +112,7 @@ LEFT JOIN (
 	ORDER BY conversation_id, sent_at DESC
 ) AS c ON c.conversation_id = conv.match_id`
 
-func (c *conversation) SelectConversationById(matchId string) (*domain.Conversation, error) {
+func (c *ConvConn) SelectConversationById(matchId string) (domain.Conversation, error) {
 	convQuery := selectConvo +
 		` WHERE conv.match_id = $1`
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -105,16 +121,22 @@ func (c *conversation) SelectConversationById(matchId string) (*domain.Conversat
 	row := c.conn.QueryRowxContext(ctx, convQuery, matchId)
 	newConv, err := c.createNewChat(row)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.Conversation{}, common.WrapError(err, common.ErrResourceNotFound)
+		}
+		if errors.Is(err, context.Canceled) {
+			return domain.Conversation{}, common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
+		return domain.Conversation{}, err
 	}
 	if err = row.Err(); err != nil {
-		return nil, err
+		return domain.Conversation{}, err
 	}
 	return newConv, nil
 
 }
 
-func (c *conversation) SelectConversationByUserId(UserId string, filter *entity.ConvFilter) ([]domain.Conversation, error) {
+func (c *ConvConn) SelectConversationByUserId(UserId string, filter *entity.ConvFilter) ([]domain.Conversation, error) {
 	convQuery := selectConvo +
 		` WHERE 
 			creator.id = $1 OR
@@ -133,6 +155,9 @@ func (c *conversation) SelectConversationByUserId(UserId string, filter *entity.
 
 	rows, err := c.conn.QueryxContext(ctx, convQuery, args...)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return nil, common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
 		return nil, err
 	}
 	defer func(rows *sqlx.Rows) {
@@ -148,14 +173,14 @@ func (c *conversation) SelectConversationByUserId(UserId string, filter *entity.
 		if err != nil {
 			return nil, err
 		}
-		convs = append(convs, *newConv)
+		convs = append(convs, newConv)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
 	return convs, nil
 }
-func (c *conversation) UpdateChatRow(convoId string) error {
+func (c *ConvConn) UpdateChatRow(convoId string) error {
 	query := `
 	UPDATE conversations SET
 		chat_rows = chat_rows + 1
@@ -167,12 +192,18 @@ func (c *conversation) UpdateChatRow(convoId string) error {
 	var id string
 	err := c.conn.GetContext(ctx, &id, query, convoId)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return common.WrapError(err, common.ErrRefNotFound23503)
+		}
+		if errors.Is(err, context.Canceled) {
+			return common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
 		return err
 	}
 	return nil
 }
 
-func (c *conversation) UpdateDayPass(convoId string) error {
+func (c *ConvConn) UpdateDayPass(convoId string) error {
 	query := `
 	UPDATE conversations SET
 		day_pass = day_pass +1
@@ -184,11 +215,17 @@ func (c *conversation) UpdateDayPass(convoId string) error {
 	var id string
 	err := c.conn.GetContext(ctx, &id, query, convoId)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return common.WrapError(err, common.ErrRefNotFound23503)
+		}
+		if errors.Is(err, context.Canceled) {
+			return common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
 		return err
 	}
 	return nil
 }
-func (c *conversation) DeleteConversationById(convoId string) error {
+func (c *ConvConn) DeleteConversationById(convoId string) error {
 	query := `
 	DELETE from conversations WHERE match_id = $1 RETURNING match_id`
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -196,12 +233,18 @@ func (c *conversation) DeleteConversationById(convoId string) error {
 	var id string
 	err := c.conn.GetContext(ctx, &id, query, convoId)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return common.WrapError(err, common.ErrRefNotFound23503)
+		}
+		if errors.Is(err, context.Canceled) {
+			return common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
 		return err
 	}
 	return nil
 }
 
-func (c *conversation) createNewChat(row sqlx.ColScanner) (*domain.Conversation, error) {
+func (*ConvConn) createNewChat(row sqlx.ColScanner) (domain.Conversation, error) {
 	var newConv domain.Conversation
 
 	var creatorProfPic sql.NullString
@@ -229,7 +272,7 @@ func (c *conversation) createNewChat(row sqlx.ColScanner) (*domain.Conversation,
 		&newConv.RevealStatus,
 	)
 	if err != nil {
-		return nil, err
+		return domain.Conversation{}, err
 	}
 	if creatorProfPic.Valid {
 		newConv.FromUser.ProfilePic = creatorProfPic.String
@@ -246,5 +289,5 @@ func (c *conversation) createNewChat(row sqlx.ColScanner) (*domain.Conversation,
 	if seenAt.Valid {
 		newConv.LastMessageSeenAt = &seenAt.Time
 	}
-	return &newConv, nil
+	return newConv, nil
 }

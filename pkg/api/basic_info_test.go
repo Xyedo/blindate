@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -14,8 +13,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/domain/entity"
 	mockrepo "github.com/xyedo/blindate/pkg/repository/mock"
 	"github.com/xyedo/blindate/pkg/service"
 	"github.com/xyedo/blindate/pkg/util"
@@ -26,7 +26,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 		name      string
 		id        string
 		reqBody   string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) basicinfo
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *BasicInfo
 		wantCode  int
 		wantResp  map[string]any
 	}{
@@ -46,9 +46,9 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"kids": 0,
 				"Work":"Software Engineer"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfo := &entity.BasicInfo{
+				basicInfo := entity.BasicInfo{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Gender: "Male",
 					FromLoc: sql.NullString{
@@ -89,7 +89,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 						String: "Software Engineer",
 					},
 				}
-				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(int64(1), nil)
+				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(nil)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
@@ -106,14 +106,14 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"gender":"Male",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfo := &entity.BasicInfo{
+				basicInfo := entity.BasicInfo{
 					UserId:     "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Gender:     "Male",
 					LookingFor: "Female",
 				}
-				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(int64(1), nil)
+				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(nil)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
@@ -130,18 +130,14 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"gender":"Male",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfo := &entity.BasicInfo{
+				basicInfo := entity.BasicInfo{
 					UserId:     "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Gender:     "Male",
 					LookingFor: "Female",
 				}
-				pqErr := &pq.Error{
-					Code:       "23505",
-					Constraint: "basic_info_pkey",
-				}
-				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(int64(0), pqErr)
+				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(common.ErrUniqueConstraint23505)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
@@ -158,7 +154,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"gender":0,
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Any()).Times(0)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
@@ -176,7 +172,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 			reqBody: `{
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Any()).Times(0)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
@@ -198,9 +194,9 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"gender":"Non-Binary",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfo := &entity.BasicInfo{
+				basicInfo := entity.BasicInfo{
 					UserId:     "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Gender:     "Non-Binary",
 					LookingFor: "Female",
@@ -209,17 +205,14 @@ func Test_postBasicInfoHandler(t *testing.T) {
 					Code:       "23503",
 					Constraint: "basic_info_gender",
 				}
-				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(int64(0), &pqErr)
+				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "gender value is not valid enums"))
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "please refer to the documentation",
-				"errors": map[string]any{
-					"gender": "not valid enums",
-				},
+				"message": "gender value is not valid enums",
 			},
 		},
 		{
@@ -230,9 +223,9 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"educationLevel":"Bachelor",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfo := &entity.BasicInfo{
+				basicInfo := entity.BasicInfo{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Gender: "Male",
 					EducationLevel: sql.NullString{
@@ -245,17 +238,15 @@ func Test_postBasicInfoHandler(t *testing.T) {
 					Code:       "23503",
 					Constraint: "basic_info_education_level",
 				}
-				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(int64(0), &pqErr)
+				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).
+					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "educationLevel value is not valid enums"))
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "please refer to the documentation",
-				"errors": map[string]any{
-					"educationLevel": "not valid enums",
-				},
+				"message": "educationLevel value is not valid enums",
 			},
 		},
 		{
@@ -266,9 +257,9 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"drinking":"Sukakkulah",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfo := &entity.BasicInfo{
+				basicInfo := entity.BasicInfo{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Gender: "Male",
 					Drinking: sql.NullString{
@@ -281,17 +272,15 @@ func Test_postBasicInfoHandler(t *testing.T) {
 					Code:       "23503",
 					Constraint: "basic_info_drinking",
 				}
-				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(int64(0), &pqErr)
+				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).
+					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "drinking value is not valid enums"))
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "please refer to the documentation",
-				"errors": map[string]any{
-					"drinking": "not valid enums",
-				},
+				"message": "drinking value is not valid enums",
 			},
 		},
 		{
@@ -302,9 +291,9 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"smoking":"Sukakkulah",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfo := &entity.BasicInfo{
+				basicInfo := entity.BasicInfo{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Gender: "Male",
 					Smoking: sql.NullString{
@@ -317,17 +306,15 @@ func Test_postBasicInfoHandler(t *testing.T) {
 					Code:       "23503",
 					Constraint: "basic_info_smoking",
 				}
-				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(int64(0), &pqErr)
+				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).
+					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "smoking value is not valid enums"))
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "please refer to the documentation",
-				"errors": map[string]any{
-					"smoking": "not valid enums",
-				},
+				"message": "smoking value is not valid enums",
 			},
 		},
 		{
@@ -338,9 +325,9 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"relationshipPref":"Sukakkulah",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfo := &entity.BasicInfo{
+				basicInfo := entity.BasicInfo{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Gender: "Male",
 					RelationshipPref: sql.NullString{
@@ -353,17 +340,15 @@ func Test_postBasicInfoHandler(t *testing.T) {
 					Code:       "23503",
 					Constraint: "basic_info_relationship_pref",
 				}
-				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(int64(0), &pqErr)
+				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).
+					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "relationshipPref value is not valid enums"))
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "please refer to the documentation",
-				"errors": map[string]any{
-					"relationshipPref": "not valid enums",
-				},
+				"message": "relationshipPref value is not valid enums",
 			},
 		},
 		{
@@ -373,9 +358,9 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"gender":"Male",
 				"lookingFor":"Non-Binary"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfo := &entity.BasicInfo{
+				basicInfo := entity.BasicInfo{
 					UserId:     "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Gender:     "Male",
 					LookingFor: "Non-Binary",
@@ -384,17 +369,16 @@ func Test_postBasicInfoHandler(t *testing.T) {
 					Code:       "23503",
 					Constraint: "basic_info_looking_for",
 				}
-				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(int64(0), &pqErr)
+				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).
+					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "lookingFor value is not valid enums"))
+
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "please refer to the documentation",
-				"errors": map[string]any{
-					"lookingFor": "not valid enums",
-				},
+				"message": "lookingFor value is not valid enums",
 			},
 		},
 		{
@@ -405,9 +389,9 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"lookingFor":"Non-Binary",
 				"zodiac":"Propagandalf"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfo := &entity.BasicInfo{
+				basicInfo := entity.BasicInfo{
 					UserId:     "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Gender:     "Male",
 					LookingFor: "Non-Binary",
@@ -420,17 +404,15 @@ func Test_postBasicInfoHandler(t *testing.T) {
 					Code:       "23503",
 					Constraint: "basic_info_zodiac",
 				}
-				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(int64(0), &pqErr)
+				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).
+					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "zodiac value is not valid enums"))
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "please refer to the documentation",
-				"errors": map[string]any{
-					"zodiac": "not valid enums",
-				},
+				"message": "zodiac value is not valid enums",
 			},
 		},
 		{
@@ -440,9 +422,9 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"gender":"Non-Binary",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfo := &entity.BasicInfo{
+				basicInfo := entity.BasicInfo{
 					UserId:     "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Gender:     "Non-Binary",
 					LookingFor: "Female",
@@ -451,17 +433,15 @@ func Test_postBasicInfoHandler(t *testing.T) {
 					Code:       "23503",
 					Constraint: "basic_info_user_id",
 				}
-				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(int64(0), &pqErr)
+				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).
+					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "userId is invalid"))
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "please refer to the documentation",
-				"errors": map[string]any{
-					"user_id": "not found",
-				},
+				"message": "userId is invalid",
 			},
 		},
 		{
@@ -480,7 +460,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 				"kids":125,
 				"work":"MaleSDfhSOIFHoshdfasofhhaosdfhaojghaosjgbasodgjbasjgbasdgbas;gbasjdgasdgbaasdfasdfasdfasdfasdfasdfasfasdfasf"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Any()).Times(0)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
@@ -537,16 +517,16 @@ func Test_getBasicInfoHandler(t *testing.T) {
 	tests := []struct {
 		name      string
 		id        string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) basicinfo
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *BasicInfo
 		wantCode  int
 		wantResp  map[string]any
 	}{
 		{
 			name: "Valid Getter",
 			id:   validBasicInfo.UserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfo := &entity.BasicInfo{
+				basicInfo := entity.BasicInfo{
 					UserId:     validBasicInfo.UserId,
 					Gender:     validBasicInfo.Gender,
 					LookingFor: validBasicInfo.LookingFor,
@@ -566,9 +546,9 @@ func Test_getBasicInfoHandler(t *testing.T) {
 		{
 			name: "invalid Id",
 			id:   validBasicInfo.UserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq(validBasicInfo.UserId)).Times(1).Return(nil, sql.ErrNoRows)
+				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq(validBasicInfo.UserId)).Times(1).Return(entity.BasicInfo{}, common.ErrResourceNotFound)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
@@ -581,9 +561,9 @@ func Test_getBasicInfoHandler(t *testing.T) {
 		{
 			name: "Accessing Too Long ",
 			id:   validBasicInfo.UserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq(validBasicInfo.UserId)).Times(1).Return(nil, context.Canceled)
+				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq(validBasicInfo.UserId)).Times(1).Return(entity.BasicInfo{}, common.ErrTooLongAccessingDB)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
@@ -621,7 +601,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 		name      string
 		id        string
 		reqBody   string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) basicinfo
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *BasicInfo
 		wantCode  int
 		wantResp  map[string]any
 	}{
@@ -641,11 +621,11 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 			"kids": 0,
 			"Work":"Software Engineer"
 			}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfo := createValidBasicInfo()
-				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(&basicInfo, nil)
-				basicInfoRepo.EXPECT().UpdateBasicInfo(gomock.Eq(&basicInfo)).Times(1).Return(int64(1), nil)
+				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(basicInfo, nil)
+				basicInfoRepo.EXPECT().UpdateBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(nil)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
@@ -658,9 +638,9 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 		{
 			name: "Accessing Too Long",
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(nil, context.Canceled)
+				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(domain.BasicInfo{}, common.ErrTooLongAccessingDB)
 				basicInfoRepo.EXPECT().UpdateBasicInfo(gomock.Any()).Times(0)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
@@ -678,10 +658,10 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"gender":0,
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicinfo := createValidBasicInfo()
-				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(&basicinfo, nil)
+				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(basicinfo, nil)
 				basicInfoRepo.EXPECT().UpdateBasicInfo(gomock.Any()).Times(0)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
@@ -708,10 +688,10 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"kids":125,
 				"work":"MaleSDfhSOIFHoshdfasofhhaosdfhaojghaosjgbasodgjbasjgbasdgbas;gbasjdgasdgbaasdfasdfasdfasdfasdfasdfasfasdfasf"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicinfo := createValidBasicInfo()
-				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(&basicinfo, nil)
+				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(basicinfo, nil)
 				basicInfoRepo.EXPECT().UpdateBasicInfo(gomock.Any()).Times(0)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
@@ -742,7 +722,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"gender":"Non-Binary",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				validbasicInfo := createValidBasicInfo()
 				basicinfo := createValidBasicInfo()
@@ -753,8 +733,8 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 					Code:       "23503",
 					Constraint: "basic_info_gender",
 				}
-				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(&validbasicInfo, nil)
-				basicInfoRepo.EXPECT().UpdateBasicInfo(gomock.Eq(&basicinfo)).Times(1).Return(int64(0), &pqErr)
+				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(validbasicInfo, nil)
+				basicInfoRepo.EXPECT().UpdateBasicInfo(gomock.Eq(&basicinfo)).Times(1).Return(&pqErr)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
@@ -775,7 +755,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"educationLevel":"Bachelor",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				validBasicInfo := createValidBasicInfo()
 				basicInfo := createValidBasicInfo()
@@ -812,7 +792,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"drinking":"Sukakkulah",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				validBasicInfo := createValidBasicInfo()
 				basicInfo := createValidBasicInfo()
@@ -849,7 +829,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"smoking":"Sukakkulah",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				validBasicInfo := createValidBasicInfo()
 				basicInfo := createValidBasicInfo()
@@ -886,7 +866,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"relationshipPref":"Sukakkulah",
 				"lookingFor":"Female"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				validBasicInfo := createValidBasicInfo()
 				basicInfo := createValidBasicInfo()
@@ -923,7 +903,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"gender":"Male",
 				"lookingFor":"Non-Binary"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				validBasicInfo := createValidBasicInfo()
 				basicInfo := createValidBasicInfo()
@@ -956,7 +936,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 				"lookingFor":"Female",
 				"zodiac":"Propagandalf"
 				}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) basicinfo {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				validBasicInfo := createValidBasicInfo()
 				basicInfo := createValidBasicInfo()

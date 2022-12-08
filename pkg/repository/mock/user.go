@@ -9,7 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	domain "github.com/xyedo/blindate/pkg/domain"
-	entity "github.com/xyedo/blindate/pkg/entity"
+	entity "github.com/xyedo/blindate/pkg/domain/entity"
 )
 
 // MockUser is a mock of User interface.
@@ -51,10 +51,10 @@ func (mr *MockUserMockRecorder) CreateProfilePicture(arg0, arg1, arg2 interface{
 }
 
 // GetUserByEmail mocks base method.
-func (m *MockUser) GetUserByEmail(arg0 string) (*domain.User, error) {
+func (m *MockUser) GetUserByEmail(arg0 string) (domain.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserByEmail", arg0)
-	ret0, _ := ret[0].(*domain.User)
+	ret0, _ := ret[0].(domain.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -66,10 +66,10 @@ func (mr *MockUserMockRecorder) GetUserByEmail(arg0 interface{}) *gomock.Call {
 }
 
 // GetUserById mocks base method.
-func (m *MockUser) GetUserById(arg0 string) (*domain.User, error) {
+func (m *MockUser) GetUserById(arg0 string) (domain.User, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetUserById", arg0)
-	ret0, _ := ret[0].(*domain.User)
+	ret0, _ := ret[0].(domain.User)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -125,7 +125,7 @@ func (mr *MockUserMockRecorder) SelectProfilePicture(arg0, arg1 interface{}) *go
 }
 
 // UpdateUser mocks base method.
-func (m *MockUser) UpdateUser(arg0 *domain.User) error {
+func (m *MockUser) UpdateUser(arg0 domain.User) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateUser", arg0)
 	ret0, _ := ret[0].(error)

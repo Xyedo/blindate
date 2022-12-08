@@ -2,34 +2,38 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/domain/entity"
 )
 
 type User interface {
 	InsertUser(user *domain.User) error
-	GetUserByEmail(email string) (*domain.User, error)
-	GetUserById(id string) (*domain.User, error)
-	UpdateUser(user *domain.User) error
+	GetUserById(id string) (domain.User, error)
+	GetUserByEmail(email string) (domain.User, error)
+	UpdateUser(user domain.User) error
 	CreateProfilePicture(userId, pictureRef string, selected bool) (string, error)
 	SelectProfilePicture(userId string, params *entity.ProfilePicQuery) ([]domain.ProfilePicture, error)
 	ProfilePicSelectedToFalse(userId string) (int64, error)
 }
 
-func NewUser(db *sqlx.DB) *userCon {
-	return &userCon{
+func NewUser(db *sqlx.DB) *UserCon {
+	return &UserCon{
 		conn: db,
 	}
 }
 
-type userCon struct {
+type UserCon struct {
 	conn *sqlx.DB
 }
 
-func (u *userCon) InsertUser(user *domain.User) error {
+func (u *UserCon) InsertUser(user *domain.User) error {
 	query := `
 	INSERT INTO users(
 		full_name, 
@@ -48,13 +52,23 @@ func (u *userCon) InsertUser(user *domain.User) error {
 
 	err := u.conn.GetContext(ctx, &user.ID, query, args...)
 	if err != nil {
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) {
+			if pqErr.Code == "23505" {
+				return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "email already taken")
+			}
+			return pqErr
+		}
+		if errors.Is(err, context.Canceled) {
+			return common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
 		return err
 	}
 
 	return nil
 }
 
-func (u *userCon) UpdateUser(user *domain.User) error {
+func (u *UserCon) UpdateUser(user domain.User) error {
 	query := `
 		UPDATE users
 		SET 
@@ -70,15 +84,27 @@ func (u *userCon) UpdateUser(user *domain.User) error {
 	args := []any{user.FullName, user.Alias, user.Email, user.HashedPassword, user.Dob, user.Active, time.Now(), user.ID}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	var id string
-	err := u.conn.GetContext(ctx, &id, query, args...)
+	var retId string
+	err := u.conn.GetContext(ctx, &retId, query, args...)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return common.WrapError(err, common.ErrResourceNotFound)
+		}
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) {
+			if pqErr.Code == "23505" {
+				return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "email already taken")
+			}
+		}
 		return err
 	}
 	return nil
 }
 
-func (u *userCon) GetUserById(id string) (*domain.User, error) {
+func (u *UserCon) GetUserById(id string) (domain.User, error) {
 	query := `
 		SELECT 
 			id, alias, full_name, email, "password",active, dob, created_at, updated_at
@@ -91,12 +117,17 @@ func (u *userCon) GetUserById(id string) (*domain.User, error) {
 	var user domain.User
 	err := u.conn.GetContext(ctx, &user, query, id)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.User{}, common.WrapError(err, common.ErrResourceNotFound)
+		}
+		if errors.Is(err, context.Canceled) {
+			return domain.User{}, common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
+		return domain.User{}, err
 	}
-	return &user, nil
+	return user, nil
 }
-
-func (u *userCon) GetUserByEmail(email string) (*domain.User, error) {
+func (u *UserCon) GetUserByEmail(email string) (domain.User, error) {
 	query := `
 		SELECT 
 			id, email, "password"
@@ -108,12 +139,18 @@ func (u *userCon) GetUserByEmail(email string) (*domain.User, error) {
 	var user domain.User
 	err := u.conn.GetContext(ctx, &user, query, email)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, sql.ErrNoRows) {
+			return domain.User{}, common.WrapError(err, common.ErrResourceNotFound)
+		}
+		if errors.Is(err, context.Canceled) {
+			return domain.User{}, common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
+		return domain.User{}, err
 	}
-	return &user, nil
+	return user, nil
 }
 
-func (u *userCon) CreateProfilePicture(userId, pictureRef string, selected bool) (string, error) {
+func (u *UserCon) CreateProfilePicture(userId, pictureRef string, selected bool) (string, error) {
 	query := `
 	INSERT INTO profile_picture(user_id,selected,picture_ref)
 	VALUES($1,$2,$3) RETURNING id`
@@ -123,11 +160,21 @@ func (u *userCon) CreateProfilePicture(userId, pictureRef string, selected bool)
 	var id string
 	err := u.conn.GetContext(ctx, &id, query, userId, selected, pictureRef)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return "", common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) {
+			if pqErr.Code == "23503" {
+				return "", common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "profile picture not found")
+			}
+			return "", pqErr
+		}
 		return "", err
 	}
 	return id, nil
 }
-func (u *userCon) SelectProfilePicture(userId string, params *entity.ProfilePicQuery) ([]domain.ProfilePicture, error) {
+func (u *UserCon) SelectProfilePicture(userId string, params *entity.ProfilePicQuery) ([]domain.ProfilePicture, error) {
 	query := `
 	SELECT 
 		id,
@@ -151,12 +198,18 @@ func (u *userCon) SelectProfilePicture(userId string, params *entity.ProfilePicQ
 	var profilePics []domain.ProfilePicture
 	err := u.conn.SelectContext(ctx, &profilePics, query, args...)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, common.WrapError(err, common.ErrResourceNotFound)
+		}
+		if errors.Is(err, context.Canceled) {
+			return nil, common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
 		return nil, err
 	}
 	return profilePics, nil
 }
 
-func (u *userCon) ProfilePicSelectedToFalse(userId string) (int64, error) {
+func (u *UserCon) ProfilePicSelectedToFalse(userId string) (int64, error) {
 	query := `
 	UPDATE profile_picture SET
 		selected = false
@@ -165,6 +218,9 @@ func (u *userCon) ProfilePicSelectedToFalse(userId string) (int64, error) {
 	defer cancel()
 	res, err := u.conn.ExecContext(ctx, query, userId)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return 0, common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
 		return 0, err
 	}
 	row, err := res.RowsAffected()

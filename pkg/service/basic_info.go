@@ -1,94 +1,88 @@
 package service
 
 import (
-	"context"
 	"database/sql"
-	"errors"
-	"fmt"
-	"net/http"
-	"strings"
 
-	"github.com/lib/pq"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/domain/entity"
 	"github.com/xyedo/blindate/pkg/repository"
 )
 
-var (
-	ErrRefUserIdField           = domain.WrapWithNewError(fmt.Errorf("%w::user_id", domain.ErrRefNotFound23503), http.StatusNotFound, "provided userId is not match with our resource")
-	ErrRefGenderField           = fmt.Errorf("%w::gender", domain.ErrRefNotFound23503)
-	ErrRefEducationLevelField   = fmt.Errorf("%w::education", domain.ErrRefNotFound23503)
-	ErrRefDrinkingField         = fmt.Errorf("%w::drinking", domain.ErrRefNotFound23503)
-	ErrRefSmokingField          = fmt.Errorf("%w::smoking", domain.ErrRefNotFound23503)
-	ErrRefRelationshipPrefField = fmt.Errorf("%w::relationship_pref", domain.ErrRefNotFound23503)
-	ErrRefLookingForField       = fmt.Errorf("%w::looking_for", domain.ErrRefNotFound23503)
-	ErrRefZodiacField           = fmt.Errorf("%w::zodiac", domain.ErrRefNotFound23503)
-)
-
-func NewBasicInfo(bInfoRepo repository.BasicInfo) basicInfo {
-	return basicInfo{
-		BasicInfoRepo: bInfoRepo,
+func NewBasicInfo(bInfoRepo repository.BasicInfo) *BasicInfo {
+	return &BasicInfo{
+		basicInfoRepo: bInfoRepo,
 	}
 }
 
-type basicInfo struct {
-	BasicInfoRepo repository.BasicInfo
+type BasicInfo struct {
+	basicInfoRepo repository.BasicInfo
 }
 
-func (b basicInfo) CreateBasicInfo(bInfo *domain.BasicInfo) error {
-	rows, err := b.BasicInfoRepo.InsertBasicInfo(b.domainToEntity(bInfo))
+func (b *BasicInfo) CreateBasicInfo(bInfo domain.BasicInfo) error {
+	err := b.basicInfoRepo.InsertBasicInfo(b.domainToEntity(bInfo))
 	if err != nil {
-		if errors.Is(err, context.Canceled) {
-			return domain.WrapError(err, domain.ErrTooLongAccessingDB)
-		}
-		if err := parsingPostgreError(err); err != nil {
-			return err
-		}
 		return err
-	}
-	if rows == 0 {
-		panic("rows affected should not be zero")
 	}
 	return nil
 }
 
-func (b basicInfo) GetBasicInfoByUserId(id string) (*domain.BasicInfo, error) {
-	basicInfo, err := b.BasicInfoRepo.GetBasicInfoByUserId(id)
+func (b *BasicInfo) GetBasicInfoByUserId(id string) (domain.BasicInfo, error) {
+	basicInfo, err := b.basicInfoRepo.GetBasicInfoByUserId(id)
 	if err != nil {
-		if errors.Is(err, context.Canceled) {
-			return nil, domain.WrapError(err, domain.ErrTooLongAccessingDB)
-		}
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domain.WrapError(err, domain.ErrResourceNotFound)
-		}
-		return nil, err
-
+		return domain.BasicInfo{}, err
 	}
+
 	return b.entityToDomain(basicInfo), nil
 }
 
-func (b basicInfo) UpdateBasicInfo(bInfo *domain.BasicInfo) error {
-	rows, err := b.BasicInfoRepo.UpdateBasicInfo(b.domainToEntity(bInfo))
+func (b *BasicInfo) UpdateBasicInfo(userId string, newBasicInfo domain.UpdateBasicInfo) error {
+	basicInfoDomain, err := b.GetBasicInfoByUserId(userId)
 	if err != nil {
-		if errors.Is(err, context.Canceled) {
-			return domain.WrapError(err, domain.ErrTooLongAccessingDB)
-		}
-		if errors.Is(err, sql.ErrNoRows) {
-			return domain.WrapError(err, domain.ErrResourceNotFound)
-		}
-		if err := parsingPostgreError(err); err != nil {
-			return err
-		}
 		return err
 	}
-	if rows == 0 {
-		panic(err)
+	if newBasicInfo.Gender != nil {
+		basicInfoDomain.Gender = *newBasicInfo.Gender
+	}
+	if newBasicInfo.FromLoc != nil {
+		basicInfoDomain.FromLoc = newBasicInfo.FromLoc
+	}
+	if newBasicInfo.Height != nil {
+		basicInfoDomain.Height = newBasicInfo.Height
+	}
+	if newBasicInfo.EducationLevel != nil {
+		basicInfoDomain.EducationLevel = newBasicInfo.EducationLevel
+	}
+	if newBasicInfo.Drinking != nil {
+		basicInfoDomain.Drinking = newBasicInfo.Drinking
+	}
+	if newBasicInfo.Smoking != nil {
+		basicInfoDomain.Smoking = newBasicInfo.Smoking
+	}
+	if newBasicInfo.RelationshipPref != nil {
+		basicInfoDomain.RelationshipPref = newBasicInfo.RelationshipPref
+	}
+	if newBasicInfo.LookingFor != nil {
+		basicInfoDomain.LookingFor = *newBasicInfo.LookingFor
+	}
+	if newBasicInfo.Zodiac != nil {
+		basicInfoDomain.Zodiac = newBasicInfo.Zodiac
+	}
+	if newBasicInfo.Kids != nil {
+		basicInfoDomain.Kids = newBasicInfo.Kids
+	}
+	if newBasicInfo.Work != nil {
+		basicInfoDomain.Work = newBasicInfo.Work
+	}
+
+	err = b.basicInfoRepo.UpdateBasicInfo(b.domainToEntity(basicInfoDomain))
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
-func (basicInfo) entityToDomain(basicInfo *entity.BasicInfo) *domain.BasicInfo {
-	return &domain.BasicInfo{
+func (BasicInfo) entityToDomain(basicInfo entity.BasicInfo) domain.BasicInfo {
+	return domain.BasicInfo{
 		UserId:           basicInfo.UserId,
 		Gender:           basicInfo.Gender,
 		FromLoc:          newString(basicInfo.FromLoc),
@@ -105,8 +99,8 @@ func (basicInfo) entityToDomain(basicInfo *entity.BasicInfo) *domain.BasicInfo {
 		UpdatedAt:        basicInfo.UpdatedAt,
 	}
 }
-func (basicInfo) domainToEntity(basicInfo *domain.BasicInfo) *entity.BasicInfo {
-	return &entity.BasicInfo{
+func (BasicInfo) domainToEntity(basicInfo domain.BasicInfo) entity.BasicInfo {
+	return entity.BasicInfo{
 		UserId:           basicInfo.UserId,
 		Gender:           basicInfo.Gender,
 		FromLoc:          newNullString(basicInfo.FromLoc),
@@ -156,35 +150,4 @@ func newInt(v sql.NullInt16) *int {
 	}
 	val := int(v.Int16)
 	return &val
-}
-
-func parsingPostgreError(err error) error {
-	var pqErr *pq.Error
-	if errors.As(err, &pqErr) {
-		if pqErr.Code == "23503" {
-			switch {
-			case strings.Contains(pqErr.Constraint, "user_id"):
-				return ErrRefUserIdField
-			case strings.Contains(pqErr.Constraint, "gender"):
-				return ErrRefGenderField
-			case strings.Contains(pqErr.Constraint, "education_level"):
-				return ErrRefEducationLevelField
-			case strings.Contains(pqErr.Constraint, "drinking"):
-				return ErrRefDrinkingField
-			case strings.Contains(pqErr.Constraint, "smoking"):
-				return ErrRefSmokingField
-			case strings.Contains(pqErr.Constraint, "relationship_pref"):
-				return ErrRefRelationshipPrefField
-			case strings.Contains(pqErr.Constraint, "looking_for"):
-				return ErrRefLookingForField
-			case strings.Contains(pqErr.Constraint, "zodiac"):
-				return ErrRefZodiacField
-			}
-		}
-		if pqErr.Code == "23505" {
-			return domain.ErrUniqueConstraint23505
-		}
-		return pqErr
-	}
-	return nil
 }

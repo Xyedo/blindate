@@ -7,9 +7,9 @@ import (
 )
 
 type authSvc interface {
-	AddRefreshToken(token string) error
-	VerifyRefreshToken(token string) error
-	DeleteRefreshToken(token string) error
+	Login(email, password string) (string, string, error)
+	RevalidateRefreshToken(refreshToken string) (string, error)
+	Logout(refreshToken string) error
 }
 type jwtSvc interface {
 	GenerateAccessToken(id string) (string, error)
@@ -18,21 +18,17 @@ type jwtSvc interface {
 	ValidateAccessToken(token string) (string, error)
 }
 
-func NewAuth(authService authSvc, userService userSvc, token jwtSvc) auth {
-	return auth{
+func NewAuth(authService authSvc) *Auth {
+	return &Auth{
 		authService: authService,
-		userService: userService,
-		tokenizer:   token,
 	}
 }
 
-type auth struct {
+type Auth struct {
 	authService authSvc
-	userService userSvc
-	tokenizer   jwtSvc
 }
 
-func (a auth) postAuthHandler(c *gin.Context) {
+func (a *Auth) postAuthHandler(c *gin.Context) {
 	var input struct {
 		Email    string `json:"email" binding:"required,email"`
 		Password string `json:"password" binding:"required,min=8"`
@@ -49,22 +45,7 @@ func (a auth) postAuthHandler(c *gin.Context) {
 		}
 		return
 	}
-	id, err := a.userService.VerifyCredential(input.Email, input.Password)
-	if err != nil {
-		jsonHandleError(c, err)
-		return
-	}
-	accessToken, err := a.tokenizer.GenerateAccessToken(id)
-	if err != nil {
-		errUnauthorizedResp(c, "fail to create token, please try again!")
-		return
-	}
-	refreshToken, err := a.tokenizer.GenerateRefreshToken(id)
-	if err != nil {
-		errUnauthorizedResp(c, "fail to create token, please try again!")
-		return
-	}
-	err = a.authService.AddRefreshToken(refreshToken)
+	accessToken, refreshToken, err := a.authService.Login(input.Email, input.Password)
 	if err != nil {
 		jsonHandleError(c, err)
 		return
@@ -79,25 +60,15 @@ func (a auth) postAuthHandler(c *gin.Context) {
 	})
 }
 
-func (a auth) putAuthHandler(c *gin.Context) {
+func (a *Auth) putAuthHandler(c *gin.Context) {
 	refreshTokenCookie, err := c.Cookie("refreshToken")
 	if err != nil {
 		errForbiddenResp(c, "Cookie not found in your browser, must be login")
 		return
 	}
-	err = a.authService.VerifyRefreshToken(refreshTokenCookie)
+	accessToken, err := a.authService.RevalidateRefreshToken(refreshTokenCookie)
 	if err != nil {
 		jsonHandleError(c, err)
-		return
-	}
-	id, err := a.tokenizer.ValidateRefreshToken(refreshTokenCookie)
-	if err != nil {
-		jsonHandleError(c, err)
-		return
-	}
-	accessToken, err := a.tokenizer.GenerateAccessToken(id)
-	if err != nil {
-		errUnauthorizedResp(c, "fail to create token, please try again!")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -108,18 +79,13 @@ func (a auth) putAuthHandler(c *gin.Context) {
 	})
 
 }
-func (a auth) deleteAuthHandler(c *gin.Context) {
+func (a *Auth) deleteAuthHandler(c *gin.Context) {
 	refreshTokenCookie, err := c.Cookie("refreshToken")
 	if err != nil {
 		errForbiddenResp(c, "Cookie not found in your browser, must be login")
 		return
 	}
-	err = a.authService.VerifyRefreshToken(refreshTokenCookie)
-	if err != nil {
-		jsonHandleError(c, err)
-		return
-	}
-	err = a.authService.DeleteRefreshToken(refreshTokenCookie)
+	err = a.authService.Logout(refreshTokenCookie)
 	if err != nil {
 		jsonHandleError(c, err)
 		return

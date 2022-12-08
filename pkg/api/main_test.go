@@ -9,7 +9,7 @@ import (
 
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
-	registerValidDObValidator()
 	registerTagName()
+	registerValidDObValidator()
 	os.Exit(m.Run())
 }

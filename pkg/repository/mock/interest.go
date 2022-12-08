@@ -35,12 +35,11 @@ func (m *MockInterest) EXPECT() *MockInterestMockRecorder {
 }
 
 // DeleteInterestHobbies mocks base method.
-func (m *MockInterest) DeleteInterestHobbies(arg0 string, arg1 []string) (int64, error) {
+func (m *MockInterest) DeleteInterestHobbies(arg0 string, arg1 []string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteInterestHobbies", arg0, arg1)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // DeleteInterestHobbies indicates an expected call of DeleteInterestHobbies.
@@ -50,12 +49,11 @@ func (mr *MockInterestMockRecorder) DeleteInterestHobbies(arg0, arg1 interface{}
 }
 
 // DeleteInterestMovieSeries mocks base method.
-func (m *MockInterest) DeleteInterestMovieSeries(arg0 string, arg1 []string) (int64, error) {
+func (m *MockInterest) DeleteInterestMovieSeries(arg0 string, arg1 []string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteInterestMovieSeries", arg0, arg1)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // DeleteInterestMovieSeries indicates an expected call of DeleteInterestMovieSeries.
@@ -65,12 +63,11 @@ func (mr *MockInterestMockRecorder) DeleteInterestMovieSeries(arg0, arg1 interfa
 }
 
 // DeleteInterestSports mocks base method.
-func (m *MockInterest) DeleteInterestSports(arg0 string, arg1 []string) (int64, error) {
+func (m *MockInterest) DeleteInterestSports(arg0 string, arg1 []string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteInterestSports", arg0, arg1)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // DeleteInterestSports indicates an expected call of DeleteInterestSports.
@@ -80,12 +77,11 @@ func (mr *MockInterestMockRecorder) DeleteInterestSports(arg0, arg1 interface{})
 }
 
 // DeleteInterestTraveling mocks base method.
-func (m *MockInterest) DeleteInterestTraveling(arg0 string, arg1 []string) (int64, error) {
+func (m *MockInterest) DeleteInterestTraveling(arg0 string, arg1 []string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteInterestTraveling", arg0, arg1)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // DeleteInterestTraveling indicates an expected call of DeleteInterestTraveling.
@@ -95,10 +91,10 @@ func (mr *MockInterestMockRecorder) DeleteInterestTraveling(arg0, arg1 interface
 }
 
 // GetInterest mocks base method.
-func (m *MockInterest) GetInterest(arg0 string) (*domain.Interest, error) {
+func (m *MockInterest) GetInterest(arg0 string) (domain.Interest, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetInterest", arg0)
-	ret0, _ := ret[0].(*domain.Interest)
+	ret0, _ := ret[0].(domain.Interest)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -194,10 +190,10 @@ func (mr *MockInterestMockRecorder) InsertNewStats(arg0 interface{}) *gomock.Cal
 }
 
 // SelectInterestBio mocks base method.
-func (m *MockInterest) SelectInterestBio(arg0 string) (*domain.Bio, error) {
+func (m *MockInterest) SelectInterestBio(arg0 string) (domain.Bio, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SelectInterestBio", arg0)
-	ret0, _ := ret[0].(*domain.Bio)
+	ret0, _ := ret[0].(domain.Bio)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -209,7 +205,7 @@ func (mr *MockInterestMockRecorder) SelectInterestBio(arg0 interface{}) *gomock.
 }
 
 // UpdateInterestBio mocks base method.
-func (m *MockInterest) UpdateInterestBio(arg0 *domain.Bio) error {
+func (m *MockInterest) UpdateInterestBio(arg0 domain.Bio) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateInterestBio", arg0)
 	ret0, _ := ret[0].(error)
@@ -223,12 +219,11 @@ func (mr *MockInterestMockRecorder) UpdateInterestBio(arg0 interface{}) *gomock.
 }
 
 // UpdateInterestHobbies mocks base method.
-func (m *MockInterest) UpdateInterestHobbies(arg0 string, arg1 []domain.Hobbie) (int64, error) {
+func (m *MockInterest) UpdateInterestHobbies(arg0 string, arg1 []domain.Hobbie) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateInterestHobbies", arg0, arg1)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // UpdateInterestHobbies indicates an expected call of UpdateInterestHobbies.
@@ -238,12 +233,11 @@ func (mr *MockInterestMockRecorder) UpdateInterestHobbies(arg0, arg1 interface{}
 }
 
 // UpdateInterestMovieSeries mocks base method.
-func (m *MockInterest) UpdateInterestMovieSeries(arg0 string, arg1 []domain.MovieSerie) (int64, error) {
+func (m *MockInterest) UpdateInterestMovieSeries(arg0 string, arg1 []domain.MovieSerie) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateInterestMovieSeries", arg0, arg1)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // UpdateInterestMovieSeries indicates an expected call of UpdateInterestMovieSeries.
@@ -253,12 +247,11 @@ func (mr *MockInterestMockRecorder) UpdateInterestMovieSeries(arg0, arg1 interfa
 }
 
 // UpdateInterestSport mocks base method.
-func (m *MockInterest) UpdateInterestSport(arg0 string, arg1 []domain.Sport) (int64, error) {
+func (m *MockInterest) UpdateInterestSport(arg0 string, arg1 []domain.Sport) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateInterestSport", arg0, arg1)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // UpdateInterestSport indicates an expected call of UpdateInterestSport.
@@ -268,12 +261,11 @@ func (mr *MockInterestMockRecorder) UpdateInterestSport(arg0, arg1 interface{}) 
 }
 
 // UpdateInterestTraveling mocks base method.
-func (m *MockInterest) UpdateInterestTraveling(arg0 string, arg1 []domain.Travel) (int64, error) {
+func (m *MockInterest) UpdateInterestTraveling(arg0 string, arg1 []domain.Travel) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateInterestTraveling", arg0, arg1)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // UpdateInterestTraveling indicates an expected call of UpdateInterestTraveling.

@@ -1,32 +1,27 @@
 package service
 
 import (
-	"context"
-	"database/sql"
 	"errors"
 	"net/http"
 	"path/filepath"
 
-	"github.com/lib/pq"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// var ErrMaxProfilePicture =
-var ErrMaxProfilePicture = domain.WrapWithNewError(errors.New("excedeed profile picture constraint"), http.StatusUnprocessableEntity, "maximal profile pics is 5")
-
-func NewUser(userRepo repository.User) user {
-	return user{
+func NewUser(userRepo repository.User) *User {
+	return &User{
 		userRepository: userRepo,
 	}
 }
 
-type user struct {
+type User struct {
 	userRepository repository.User
 }
 
-func (u user) CreateUser(newUser *domain.User) error {
+func (u *User) CreateUser(newUser *domain.User) error {
 	hashedPass, err := hashAndSalt(newUser.Password)
 	if err != nil {
 		return err
@@ -36,134 +31,94 @@ func (u user) CreateUser(newUser *domain.User) error {
 
 	err = u.userRepository.InsertUser(newUser)
 	if err != nil {
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) {
-			if pqErr.Code == "23505" {
-				return domain.WrapErrorWithMsg(err, domain.ErrUniqueConstraint23505, "email already taken")
-			}
-			return pqErr
-		}
-		if errors.Is(err, context.Canceled) {
-			return domain.WrapError(err, domain.ErrTooLongAccessingDB)
-		}
 		return err
 	}
 
 	return nil
 }
-func (u user) GetUserById(id string) (*domain.User, error) {
+func (u *User) GetUserById(id string) (domain.User, error) {
 	user, err := u.userRepository.GetUserById(id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domain.WrapError(err, domain.ErrResourceNotFound)
-		}
-		if errors.Is(err, context.Canceled) {
-			return nil, domain.WrapError(err, domain.ErrTooLongAccessingDB)
-		}
-		return nil, err
+		return domain.User{}, err
 	}
-
 	return user, nil
 }
-func (u user) GetUserIdWithProfilePics(id string) (*domain.User, error) {
-	user, err := u.GetUserById(id)
+func (u *User) GetUserIdWithProfilePics(id string) (domain.User, error) {
+	user, err := u.userRepository.GetUserById(id)
 	if err != nil {
-		return nil, err
+		return domain.User{}, err
 	}
 
 	profPics, err := u.userRepository.SelectProfilePicture(id, nil)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domain.WrapError(err, domain.ErrResourceNotFound)
-		}
-		if errors.Is(err, context.Canceled) {
-			return nil, domain.WrapError(err, domain.ErrTooLongAccessingDB)
-		}
-		return nil, err
+		return domain.User{}, err
 	}
 	user.ProfilePic = profPics
 	return user, nil
 }
-func (u user) VerifyCredential(email, password string) (string, error) {
-	user, err := u.userRepository.GetUserByEmail(email)
-	if err != nil {
-		if errors.Is(err, context.Canceled) {
-			return "", domain.WrapError(err, domain.ErrTooLongAccessingDB)
-		}
-		if errors.Is(err, sql.ErrNoRows) {
-			return "", domain.WrapError(err, domain.ErrNotMatchCredential)
-		}
-		return "", err
-	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
+func (u *User) UpdateUser(userId string, updateUser domain.UpdateUser) error {
+	olduser, err := u.userRepository.GetUserById(userId)
 	if err != nil {
-		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return "", domain.WrapError(err, domain.ErrNotMatchCredential)
-		}
-		return "", err
+		return err
 	}
-	return user.ID, nil
+	if updateUser.NewPassword != nil && updateUser.OldPassword != nil {
+		err = bcrypt.CompareHashAndPassword([]byte(olduser.HashedPassword), []byte(*updateUser.OldPassword))
+		if err != nil {
+			if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+				return common.WrapError(err, common.ErrNotMatchCredential)
+			}
+			return err
+		}
 
-}
-func (u user) UpdateUser(user *domain.User) error {
-	if user.Password != "" {
-		hashedPass, err := hashAndSalt(user.Password)
+		olduser.Password = *updateUser.NewPassword
+		hashedPass, err := hashAndSalt(olduser.Password)
 		if err != nil {
 			return err
 		}
-		user.HashedPassword = hashedPass
-		user.Password = ""
+		olduser.HashedPassword = hashedPass
+		olduser.Password = ""
 	}
-	err := u.userRepository.UpdateUser(user)
+
+	if updateUser.FullName != nil {
+		olduser.FullName = *updateUser.FullName
+	}
+
+	if updateUser.Alias != nil {
+		olduser.Alias = *updateUser.Alias
+	}
+
+	if updateUser.Email != nil {
+		olduser.Active = false
+		olduser.Email = *updateUser.Email
+	}
+	if updateUser.Dob != nil {
+		olduser.Dob = *updateUser.Dob
+	}
+	err = u.userRepository.UpdateUser(olduser)
 	if err != nil {
-		if errors.Is(err, context.Canceled) {
-			return domain.WrapError(err, domain.ErrTooLongAccessingDB)
-		}
-		if errors.Is(err, sql.ErrNoRows) {
-			return domain.WrapError(err, domain.ErrResourceNotFound)
-		}
 		return err
 	}
 	return nil
 }
 
-func (u user) CreateNewProfilePic(profPicParam domain.ProfilePicture) (string, error) {
+func (u *User) CreateNewProfilePic(profPicParam domain.ProfilePicture) (string, error) {
 	profPics, err := u.userRepository.SelectProfilePicture(profPicParam.UserId, nil)
 	if err != nil {
-		if errors.Is(err, context.Canceled) {
-			return "", domain.WrapError(err, domain.ErrTooLongAccessingDB)
-		}
-		if errors.Is(err, sql.ErrNoRows) {
-			return "", domain.WrapErrorWithMsg(err, domain.ErrRefNotFound23503, "profile picture not found")
-		}
 		return "", err
 	}
 	if len(profPics) >= 5 {
-		return "", ErrMaxProfilePicture
+		return "", common.WrapWithNewError(common.ErrMaxProfilePicture, http.StatusUnprocessableEntity, "maximal profile pics is 5")
 	}
 	if profPicParam.Selected {
 		_, err := u.userRepository.ProfilePicSelectedToFalse(profPicParam.UserId)
 		if err != nil {
-			if errors.Is(err, context.Canceled) {
-				return "", domain.WrapError(err, domain.ErrTooLongAccessingDB)
-			}
 			return "", err
 		}
 	}
 	profPicParam.PictureLink = filepath.Base(profPicParam.PictureLink)
 	id, err := u.userRepository.CreateProfilePicture(profPicParam.UserId, profPicParam.PictureLink, profPicParam.Selected)
 	if err != nil {
-		if errors.Is(err, context.Canceled) {
-			return "", domain.WrapError(err, domain.ErrTooLongAccessingDB)
-		}
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) {
-			if pqErr.Code == "23503" {
-				return "", domain.WrapErrorWithMsg(err, domain.ErrRefNotFound23503, "profile picture not found")
-			}
-			return "", pqErr
-		}
 		return "", err
 	}
 	return id, nil

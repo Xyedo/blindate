@@ -1,42 +1,34 @@
 package service
 
 import (
-	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 
-	"github.com/lib/pq"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/repository"
 )
 
 var (
-	ErrRefMatchId         = fmt.Errorf("%w:invalid matchId", domain.ErrRefNotFound23503)
+	ErrRefMatchId         = fmt.Errorf("%w:invalid matchId", common.ErrRefNotFound23503)
 	ErrInvalidMatchStatus = errors.New("not yet accepted/revealed in matchId")
 )
 
-func NewConversation(convRepo repository.Conversation, matchRepo repository.Match) *conversation {
-	return &conversation{
+func NewConversation(convRepo repository.Conversation, matchRepo repository.Match) *Conversation {
+	return &Conversation{
 		convRepo:  convRepo,
 		matchRepo: matchRepo,
 	}
 }
 
-type conversation struct {
+type Conversation struct {
 	convRepo  repository.Conversation
 	matchRepo repository.Match
 }
 
-func (c *conversation) CreateConversation(matchId string) (string, error) {
+func (c *Conversation) CreateConversation(matchId string) (string, error) {
 	matchEntity, err := c.matchRepo.GetMatchById(matchId)
 	if err != nil {
-		if errors.Is(err, context.Canceled) {
-			return "", domain.ErrTooLongAccessingDB
-		}
-		if errors.Is(err, sql.ErrNoRows) {
-			return "", ErrRefMatchId
-		}
 		return "", err
 	}
 	if matchEntity.RequestStatus != string(domain.Accepted) {
@@ -44,34 +36,15 @@ func (c *conversation) CreateConversation(matchId string) (string, error) {
 	}
 	id, err := c.convRepo.InsertConversation(matchId)
 	if err != nil {
-		if errors.Is(err, context.Canceled) {
-			return "", domain.ErrTooLongAccessingDB
-		}
-		var pqErr *pq.Error
-		if errors.As(err, &pqErr) {
-			if pqErr.Code == "23503" {
-				return "", domain.ErrRefNotFound23503
-			}
-			if pqErr.Code == "23505" {
-				return "", domain.ErrUniqueConstraint23505
-			}
-			return "", pqErr
-		}
 		return "", err
 	}
 	return id, nil
 }
 
-func (c *conversation) FindConversationById(matchId string) (*domain.Conversation, error) {
+func (c *Conversation) FindConversationById(matchId string) (domain.Conversation, error) {
 	conv, err := c.convRepo.SelectConversationById(matchId)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domain.ErrResourceNotFound
-		}
-		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccessingDB
-		}
-		return nil, err
+		return domain.Conversation{}, err
 	}
 
 	if conv.RevealStatus != string(domain.Accepted) {
@@ -84,15 +57,9 @@ func (c *conversation) FindConversationById(matchId string) (*domain.Conversatio
 	return conv, nil
 }
 
-func (c *conversation) GetConversationByUserId(userId string) ([]domain.Conversation, error) {
+func (c *Conversation) GetConversationByUserId(userId string) ([]domain.Conversation, error) {
 	convs, err := c.convRepo.SelectConversationByUserId(userId, nil)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, domain.ErrResourceNotFound
-		}
-		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccessingDB
-		}
 		return nil, err
 	}
 	for i := range convs {
@@ -105,43 +72,25 @@ func (c *conversation) GetConversationByUserId(userId string) ([]domain.Conversa
 	}
 	return convs, nil
 }
-func (c *conversation) DeleteConversationById(convoId string) error {
+func (c *Conversation) DeleteConversationById(convoId string) error {
 	err := c.convRepo.DeleteConversationById(convoId)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return domain.ErrResourceNotFound
-		}
-		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccessingDB
-		}
 		return err
 	}
 	return nil
 }
 
-func (c *conversation) UpdateConvRow(convoId string) error {
+func (c *Conversation) UpdateConvRow(convoId string) error {
 	err := c.convRepo.UpdateChatRow(convoId)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return domain.ErrResourceNotFound
-		}
-		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccessingDB
-		}
 		return err
 	}
 	return nil
 }
 
-func (c *conversation) UpdateConvDay(convoId string) error {
+func (c *Conversation) UpdateConvDay(convoId string) error {
 	err := c.convRepo.UpdateDayPass(convoId)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return domain.ErrResourceNotFound
-		}
-		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccessingDB
-		}
 		return err
 	}
 	return nil

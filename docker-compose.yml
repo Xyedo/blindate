@@ -1,7 +1,7 @@
 version: '3.8'
 
 volumes:
-  pg-data:
+  pg-dev-data:
   
 services:
   api:
@@ -12,10 +12,10 @@ services:
       - "8080:8080"
     restart: on-failure
     depends_on:
-      - pg
+      - pg-dev
     env_file:
-      - ./.env
-  pg:
+      - ./.env.dev
+  pg-dev:
     build:
       context: .
       dockerfile: Dockerfile-pg
@@ -23,18 +23,19 @@ services:
       - "5433:5432"
     restart: on-failure
     environment:
-      - POSTGRES_USER=blindate
-      - POSTGRES_PASSWORD=pa55word
-      - POSTGRES_DB=blindate
+      - POSTGRES_USER=${PG_USER}
+      - POSTGRES_PASSWORD=${PG_PASSWORD}
+      - POSTGRES_DB=${PG_DB}
     volumes:
-      - pg-data:/var/lib/postgresql/data
+      - pg-dev-data:/var/lib/postgresql/data
 
   migrate:
     image: migrate/migrate
+    restart: on-failure
     depends_on:
       - api
     links:
-      - pg
+      - pg-dev
     volumes:
       - ./pkg/repository/migrations:/migrations
-    command: ["-path", "/migrations", "-database" , "postgres://blindate:pa55word@pg/blindate?sslmode=disable", "up"]
+    command: ["-path", "/migrations", "-database" , "${POSTGRE_DB_DSN}", "up"]

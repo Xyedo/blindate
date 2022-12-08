@@ -1,15 +1,14 @@
-package repository
+package repository_test
 
 import (
-	"database/sql"
-	"strings"
 	"testing"
 
-	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/domain/entity"
+	"github.com/xyedo/blindate/pkg/repository"
 	"github.com/xyedo/blindate/pkg/util"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -20,18 +19,16 @@ func Test_InsertUser(t *testing.T) {
 	})
 	t.Run("Duplicate Email", func(t *testing.T) {
 		user := createNewAccount(t)
-		repo := NewUser(testQuery)
+		repo := repository.NewUser(testQuery)
 		err := repo.InsertUser(user)
-		var pqErr *pq.Error
-		assert.Error(t, err)
-		assert.ErrorAs(t, err, &pqErr)
-		assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
-		assert.True(t, strings.Contains(pqErr.Constraint, "users_email"))
+		require.Error(t, err)
+		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
+
 	})
 
 }
 func Test_UpdateUser(t *testing.T) {
-	repo := NewUser(testQuery)
+	repo := repository.NewUser(testQuery)
 
 	t.Run("Not Found UserId", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -39,21 +36,30 @@ func Test_UpdateUser(t *testing.T) {
 		user.FullName = util.RandomString(12)
 		user.Email = util.RandomEmail(12)
 		user.Active = true
-		err := repo.UpdateUser(user)
-		assert.ErrorIs(t, err, sql.ErrNoRows)
+		err := repo.UpdateUser(*user)
+		assert.ErrorIs(t, err, common.ErrResourceNotFound)
 	})
 	t.Run("Success Updating", func(t *testing.T) {
 		user := createNewAccount(t)
 		user.FullName = util.RandomString(12)
 		user.Email = util.RandomEmail(12)
 		user.Active = true
-		err := repo.UpdateUser(user)
+		err := repo.UpdateUser(*user)
 		assert.NoError(t, err)
+	})
+	t.Run("duplicate email", func(t *testing.T) {
+		user1 := createNewAccount(t)
+		user2 := createNewAccount(t)
+
+		user2.Email = user1.Email
+		err := repo.UpdateUser(*user2)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
 	})
 }
 
 func Test_GetUserById(t *testing.T) {
-	repo := NewUser(testQuery)
+	repo := repository.NewUser(testQuery)
 	t.Run("Valid UserId", func(t *testing.T) {
 		expectedUser := createNewAccount(t)
 		user, err := repo.GetUserById(expectedUser.ID)
@@ -67,13 +73,15 @@ func Test_GetUserById(t *testing.T) {
 		assert.Equal(t, expectedUser.Dob.Day(), user.Dob.Day())
 	})
 	t.Run("Invalid Id", func(t *testing.T) {
-		_, err := repo.GetUserById("e590666c-3ea8-4fda-958c-c2dc6c2599b5")
-		assert.ErrorIs(t, err, sql.ErrNoRows)
+		user, err := repo.GetUserById("e590666c-3ea8-4fda-958c-c2dc6c2599b5")
+		require.Error(t, err)
+		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.Zero(t, user)
 	})
 
 }
 func Test_GetUserByEmail(t *testing.T) {
-	repo := NewUser(testQuery)
+	repo := repository.NewUser(testQuery)
 	t.Run("Valid UserId", func(t *testing.T) {
 		expectedUser := createNewAccount(t)
 		user, err := repo.GetUserByEmail(expectedUser.Email)
@@ -83,14 +91,15 @@ func Test_GetUserByEmail(t *testing.T) {
 		assert.Equal(t, expectedUser.HashedPassword, user.HashedPassword)
 	})
 	t.Run("Invalid Id", func(t *testing.T) {
-		_, err := repo.GetUserByEmail(util.RandomEmail(12))
-		assert.ErrorIs(t, err, sql.ErrNoRows)
+		user, err := repo.GetUserByEmail(util.RandomEmail(12))
+		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.Zero(t, user)
+
 	})
 
 }
-
 func Test_CreateProfilePicture(t *testing.T) {
-	repo := NewUser(testQuery)
+	repo := repository.NewUser(testQuery)
 	t.Run("create valid pp", func(t *testing.T) {
 		usr := createNewAccount(t)
 		id, err := repo.CreateProfilePicture(usr.ID, util.RandomUUID()+".png", true)
@@ -115,16 +124,13 @@ func Test_CreateProfilePicture(t *testing.T) {
 		id, err := repo.CreateProfilePicture(util.RandomUUID(), util.RandomUUID()+".png", false)
 		require.Error(t, err)
 		assert.Empty(t, id)
-		var pqErr *pq.Error
-		require.ErrorAs(t, err, &pqErr)
-		assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
-		assert.Contains(t, pqErr.Constraint, "user_id")
+		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
 	})
 
 }
 
 func Test_SelectProfilePic(t *testing.T) {
-	repo := NewUser(testQuery)
+	repo := repository.NewUser(testQuery)
 	setupFunc := func(t *testing.T) string {
 		usr := createNewAccount(t)
 		for i := 0; i < 3; i++ {
@@ -167,7 +173,7 @@ func Test_SelectProfilePic(t *testing.T) {
 }
 
 func Test_ProfilePicSelectedToFalse(t *testing.T) {
-	repo := NewUser(testQuery)
+	repo := repository.NewUser(testQuery)
 	usr := createNewAccount(t)
 	for i := 0; i < 3; i++ {
 		id, err := repo.CreateProfilePicture(usr.ID, util.RandomUUID()+".png", true)
@@ -195,7 +201,7 @@ func Test_ProfilePicSelectedToFalse(t *testing.T) {
 }
 
 func createNewAccount(t *testing.T) *domain.User {
-	repo := NewUser(testQuery)
+	repo := repository.NewUser(testQuery)
 	hashed, err := bcrypt.GenerateFromPassword([]byte(util.RandomString(12)), 12)
 	assert.NoError(t, err)
 	user := &domain.User{
