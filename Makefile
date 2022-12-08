@@ -1,13 +1,12 @@
 
 MG_PATH=./pkg/repository/migrations
-DB_DSN=postgres://blindate:pa55word@localhost:5433/blindate?sslmode=disable
 REPO_PATH=github.com/xyedo/blindate/pkg/repository
 
 migrate-up: 
-	migrate -path $(MG_PATH) -database $(DB_DSN) up
+	migrate -path $(MG_PATH) -database $(dsn) up
 
 migrate-down:
-	migrate -path $(MG_PATH) -database $(DB_DSN) down
+	migrate -path $(MG_PATH) -database $(dsn) down
 
 migrate-create:
 	migrate create -dir $(MG_PATH) -seq -ext .sql $(name)
