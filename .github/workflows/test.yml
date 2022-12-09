@@ -45,3 +45,5 @@ jobs:
 
     - name: Test
       run: make test
+      env:
+        POSTGRE_DB_DSN_TEST: ${{ secrets.POSTGRE_DB_DSN_TEST }}

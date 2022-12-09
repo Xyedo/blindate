@@ -8,18 +8,12 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
 
 var testQuery *sqlx.DB
 
 func TestMain(m *testing.M) {
-	err := godotenv.Load("../../.env.dev")
-	if err != nil {
-		log.Fatalln(err)
-		return
-	}
 	conn, err := sqlx.Open("postgres", os.Getenv("POSTGRE_DB_DSN_TEST"))
 
 	if err != nil {
