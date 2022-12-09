@@ -78,6 +78,9 @@ func Test_SelectMatchReqToUserId(t *testing.T) {
 				ExpectedfirstFirstUserId = fromUsr.ID
 			}
 			bio := createNewInterestBio(t, fromUsr.ID)
+			intr := repository.NewInterest(testQuery)
+			err := intr.InsertNewStats(bio.Id)
+			require.NoError(t, err)
 			createNewInterestHobbie(t, bio.Id)
 			createNewInterestMovieSeries(t, bio.Id)
 			createNewInterestSport(t, bio.Id)
