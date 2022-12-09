@@ -54,18 +54,18 @@ func (i *Interest) PutBio(bio domain.Bio) error {
 	return nil
 }
 
-func (i *Interest) CreateNewHobbies(interestId string, hobbies []string) error {
-	hobbiesEntity := make([]domain.Hobbie, 0, len(hobbies))
+func (i *Interest) CreateNewHobbies(interestId string, hobbies []string) ([]domain.Hobbie, error) {
+	hobbiesDTO := make([]domain.Hobbie, 0, len(hobbies))
 	for _, hobbie := range hobbies {
-		hobbiesEntity = append(hobbiesEntity, domain.Hobbie{
+		hobbiesDTO = append(hobbiesDTO, domain.Hobbie{
 			Hobbie: hobbie,
 		})
 	}
-	err := i.interestRepo.InsertInterestHobbies(interestId, hobbiesEntity)
+	err := i.interestRepo.InsertInterestHobbies(interestId, hobbiesDTO)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return hobbiesDTO, nil
 }
 
 func (i *Interest) PutHobbies(interestId string, hobbies []domain.Hobbie) error {
@@ -77,31 +77,31 @@ func (i *Interest) PutHobbies(interestId string, hobbies []domain.Hobbie) error 
 	return nil
 }
 
-func (i *Interest) DeleteHobbies(interestId string, ids []string) error {
-	err := i.interestRepo.DeleteInterestHobbies(interestId, ids)
+func (i *Interest) DeleteHobbies(interestId string, ids []string) ([]string, error) {
+	deletedIds, err := i.interestRepo.DeleteInterestHobbies(interestId, ids)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return deletedIds, nil
 }
 
-func (i *Interest) CreateNewMovieSeries(interestId string, movieSeries []string) error {
-	movieSeriesEntity := make([]domain.MovieSerie, 0, len(movieSeries))
+func (i *Interest) CreateNewMovieSeries(interestId string, movieSeries []string) ([]domain.MovieSerie, error) {
+	movieSeriesDTO := make([]domain.MovieSerie, 0, len(movieSeries))
 	for _, movieSerie := range movieSeries {
-		movieSeriesEntity = append(movieSeriesEntity, domain.MovieSerie{
+		movieSeriesDTO = append(movieSeriesDTO, domain.MovieSerie{
 			MovieSerie: movieSerie,
 		})
 	}
-	err := i.interestRepo.InsertInterestMovieSeries(interestId, movieSeriesEntity)
+	err := i.interestRepo.InsertInterestMovieSeries(interestId, movieSeriesDTO)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return movieSeriesDTO, nil
 }
-func (i *Interest) PutMovieSeries(interestId string, movieSeries []domain.MovieSerie) error {
 
+func (i *Interest) PutMovieSeries(interestId string, movieSeries []domain.MovieSerie) error {
 	err := i.interestRepo.UpdateInterestMovieSeries(interestId, movieSeries)
 	if err != nil {
 		return err
@@ -109,26 +109,26 @@ func (i *Interest) PutMovieSeries(interestId string, movieSeries []domain.MovieS
 	return nil
 }
 
-func (i *Interest) DeleteMovieSeries(interestId string, ids []string) error {
-	err := i.interestRepo.DeleteInterestMovieSeries(interestId, ids)
+func (i *Interest) DeleteMovieSeries(interestId string, ids []string) ([]string, error) {
+	deletedIds, err := i.interestRepo.DeleteInterestMovieSeries(interestId, ids)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return deletedIds, nil
 }
 
-func (i *Interest) CreateNewTraveling(interestId string, travels []string) error {
-	travelsEntity := make([]domain.Travel, 0, len(travels))
+func (i *Interest) CreateNewTraveling(interestId string, travels []string) ([]domain.Travel, error) {
+	travelsDTO := make([]domain.Travel, 0, len(travels))
 	for _, travel := range travels {
-		travelsEntity = append(travelsEntity, domain.Travel{
+		travelsDTO = append(travelsDTO, domain.Travel{
 			Travel: travel,
 		})
 	}
-	err := i.interestRepo.InsertInterestTraveling(interestId, travelsEntity)
+	err := i.interestRepo.InsertInterestTraveling(interestId, travelsDTO)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return travelsDTO, nil
 }
 func (i *Interest) PutTraveling(interestId string, travels []domain.Travel) error {
 	err := i.interestRepo.UpdateInterestTraveling(interestId, travels)
@@ -138,25 +138,25 @@ func (i *Interest) PutTraveling(interestId string, travels []domain.Travel) erro
 	return nil
 }
 
-func (i *Interest) DeleteTravels(interestId string, ids []string) error {
-	err := i.interestRepo.DeleteInterestTraveling(interestId, ids)
+func (i *Interest) DeleteTravels(interestId string, ids []string) ([]string, error) {
+	deletedIds, err := i.interestRepo.DeleteInterestTraveling(interestId, ids)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return deletedIds, nil
 }
-func (i *Interest) CreateNewSports(interestId string, sports []string) error {
-	sportEntity := make([]domain.Sport, 0, len(sports))
+func (i *Interest) CreateNewSports(interestId string, sports []string) ([]domain.Sport, error) {
+	sportDTO := make([]domain.Sport, 0, len(sports))
 	for _, sport := range sports {
-		sportEntity = append(sportEntity, domain.Sport{
+		sportDTO = append(sportDTO, domain.Sport{
 			Sport: sport,
 		})
 	}
-	err := i.interestRepo.InsertInterestSports(interestId, sportEntity)
+	err := i.interestRepo.InsertInterestSports(interestId, sportDTO)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return sportDTO, nil
 }
 func (i *Interest) PutSports(interestId string, sports []domain.Sport) error {
 	err := i.interestRepo.UpdateInterestSport(interestId, sports)
@@ -167,10 +167,10 @@ func (i *Interest) PutSports(interestId string, sports []domain.Sport) error {
 	return nil
 }
 
-func (i *Interest) DeleteSports(interestId string, ids []string) error {
-	err := i.interestRepo.DeleteInterestSports(interestId, ids)
+func (i *Interest) DeleteSports(interestId string, ids []string) ([]string, error) {
+	deletedIds, err := i.interestRepo.DeleteInterestSports(interestId, ids)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return deletedIds, nil
 }

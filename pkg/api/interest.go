@@ -15,21 +15,21 @@ type interestSvc interface {
 	GetBio(userId string) (domain.Bio, error)
 	PutBio(bio domain.Bio) error
 
-	CreateNewHobbies(interestId string, hobbies []string) error
+	CreateNewHobbies(interestId string, hobbies []string) ([]domain.Hobbie, error)
 	PutHobbies(interestId string, hobbies []domain.Hobbie) error
-	DeleteHobbies(interestId string, ids []string) error
+	DeleteHobbies(interestId string, ids []string) ([]string, error)
 
-	CreateNewMovieSeries(interestId string, movieSeries []string) error
+	CreateNewMovieSeries(interestId string, movieSeries []string) ([]domain.MovieSerie, error)
 	PutMovieSeries(interestId string, movieSeries []domain.MovieSerie) error
-	DeleteMovieSeries(interestId string, ids []string) error
+	DeleteMovieSeries(interestId string, ids []string) ([]string, error)
 
-	CreateNewTraveling(interestId string, travels []string) error
+	CreateNewTraveling(interestId string, travels []string) ([]domain.Travel, error)
 	PutTraveling(interestId string, travels []domain.Travel) error
-	DeleteTravels(interestId string, ids []string) error
+	DeleteTravels(interestId string, ids []string) ([]string, error)
 
-	CreateNewSports(interestId string, sports []string) error
+	CreateNewSports(interestId string, sports []string) ([]domain.Sport, error)
 	PutSports(interestId string, sports []domain.Sport) error
-	DeleteSports(interestId string, ids []string) error
+	DeleteSports(interestId string, ids []string) ([]string, error)
 }
 
 func NewInterest(interestSvc interestSvc) *Interest {
@@ -94,16 +94,10 @@ func (i *Interest) postInterestBioHandler(c *gin.Context) {
 
 }
 func (i *Interest) putInterestBioHandler(c *gin.Context) {
-	userId := c.GetString("userId")
-	bio, err := i.interestSvc.GetBio(userId)
-	if err != nil {
-		jsonHandleError(c, err)
-		return
-	}
 	var input struct {
 		Bio *string `json:"bio" binding:"required,max=300"`
 	}
-	err = c.ShouldBindJSON(&input)
+	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"bio": "required, maximal character length is less than 300",
@@ -112,6 +106,12 @@ func (i *Interest) putInterestBioHandler(c *gin.Context) {
 			errServerResp(c, err)
 			return
 		}
+		return
+	}
+	userId := c.GetString("userId")
+	bio, err := i.interestSvc.GetBio(userId)
+	if err != nil {
+		jsonHandleError(c, err)
 		return
 	}
 	changedBio := strings.TrimSpace(*input.Bio)
@@ -153,7 +153,7 @@ func (i *Interest) postInterestHobbiesHandler(c *gin.Context) {
 		return
 	}
 
-	err = i.interestSvc.CreateNewHobbies(interestId, input.Hobbies)
+	hobbiesDTO, err := i.interestSvc.CreateNewHobbies(interestId, input.Hobbies)
 	if err != nil {
 		jsonHandleError(c, err)
 		return
@@ -161,7 +161,7 @@ func (i *Interest) postInterestHobbiesHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
 		"data": gin.H{
-			"hobbies": input.Hobbies,
+			"hobbies": hobbiesDTO,
 		},
 	})
 
@@ -214,15 +214,17 @@ func (i *Interest) deleteInterestHobbiesHandler(c *gin.Context) {
 		return
 	}
 	interestId := c.GetString("interestId")
-	err = i.interestSvc.DeleteHobbies(interestId, input.Ids)
+	deletedIds, err := i.interestSvc.DeleteHobbies(interestId, input.Ids)
 	if err != nil {
 		jsonHandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusNoContent, gin.H{
-		"status":  "success",
-		"message": "ids is successfully deleted",
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data": gin.H{
+			"deletedIds": deletedIds,
+		},
 	})
 
 }
@@ -243,7 +245,7 @@ func (i *Interest) postInterestMovieSeriesHandler(c *gin.Context) {
 		}
 		return
 	}
-	err = i.interestSvc.CreateNewMovieSeries(interestId, input.MovieSeries)
+	movieSeriesDTO, err := i.interestSvc.CreateNewMovieSeries(interestId, input.MovieSeries)
 	if err != nil {
 		jsonHandleError(c, err)
 		return
@@ -251,7 +253,7 @@ func (i *Interest) postInterestMovieSeriesHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
 		"data": gin.H{
-			"movieSeries": input.MovieSeries,
+			"movieSeries": movieSeriesDTO,
 		},
 	})
 }
@@ -302,15 +304,17 @@ func (i *Interest) deleteInterestMovieSeriesHandler(c *gin.Context) {
 		}
 		return
 	}
-	err = i.interestSvc.DeleteMovieSeries(interestId, input.Ids)
+	deletedIds, err := i.interestSvc.DeleteMovieSeries(interestId, input.Ids)
 	if err != nil {
 		jsonHandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusNoContent, gin.H{
-		"status":  "success",
-		"message": "movieSeries is successfully deleted",
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data": gin.H{
+			"deletedIds": deletedIds,
+		},
 	})
 
 }
@@ -332,7 +336,7 @@ func (i *Interest) postInterestTravelingHandler(c *gin.Context) {
 		return
 	}
 
-	err = i.interestSvc.CreateNewTraveling(interestId, input.Travels)
+	travelsDTO, err := i.interestSvc.CreateNewTraveling(interestId, input.Travels)
 	if err != nil {
 		jsonHandleError(c, err)
 		return
@@ -340,7 +344,7 @@ func (i *Interest) postInterestTravelingHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
 		"data": gin.H{
-			"travels": input.Travels,
+			"travels": travelsDTO,
 		},
 	})
 }
@@ -391,15 +395,17 @@ func (i *Interest) deleteInterestTravelingHandler(c *gin.Context) {
 		}
 		return
 	}
-	err = i.interestSvc.DeleteTravels(interestId, input.Ids)
+	deletedIds, err := i.interestSvc.DeleteTravels(interestId, input.Ids)
 	if err != nil {
 		jsonHandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusNoContent, gin.H{
-		"status":  "success",
-		"message": "travels is successfully deleted",
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data": gin.H{
+			"deletedIds": deletedIds,
+		},
 	})
 
 }
@@ -421,7 +427,7 @@ func (i *Interest) postInterestSportHandler(c *gin.Context) {
 		return
 	}
 
-	err = i.interestSvc.CreateNewSports(interestId, input.Sports)
+	sportsDTO, err := i.interestSvc.CreateNewSports(interestId, input.Sports)
 	if err != nil {
 		jsonHandleError(c, err)
 		return
@@ -429,7 +435,7 @@ func (i *Interest) postInterestSportHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
 		"data": gin.H{
-			"sports": input.Sports,
+			"sports": sportsDTO,
 		},
 	})
 }
@@ -479,14 +485,16 @@ func (i *Interest) deleteInterestSportHandler(c *gin.Context) {
 		}
 		return
 	}
-	err = i.interestSvc.DeleteSports(interestId, input.Ids)
+	deletedIds, err := i.interestSvc.DeleteSports(interestId, input.Ids)
 	if err != nil {
 		jsonHandleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusNoContent, gin.H{
-		"status":  "success",
-		"message": "sports is successfully deleted",
+	c.JSON(http.StatusOK, gin.H{
+		"status": "success",
+		"data": gin.H{
+			"deletedIds": deletedIds,
+		},
 	})
 }

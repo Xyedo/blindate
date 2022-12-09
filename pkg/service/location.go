@@ -59,7 +59,7 @@ func (l *Location) GetLocation(id string) (domain.Location, error) {
 	if err != nil {
 		return domain.Location{}, err
 	}
-	latlng := strings.TrimPrefix(location.Geog, "Point(")
+	latlng := strings.TrimPrefix(location.Geog, "POINT(")
 	latlng = strings.TrimSuffix(latlng, ")")
 	res := strings.Fields(latlng)
 
@@ -71,5 +71,5 @@ func (l *Location) GetLocation(id string) (domain.Location, error) {
 }
 
 func latLngToGeog(lat, lng string) string {
-	return fmt.Sprintf("Point(%s %s)", lat, lng)
+	return fmt.Sprintf("POINT(%s %s)", lat, lng)
 }

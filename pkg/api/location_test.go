@@ -14,6 +14,7 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain/entity"
 	mockrepo "github.com/xyedo/blindate/pkg/repository/mock"
 	"github.com/xyedo/blindate/pkg/service"
@@ -38,11 +39,11 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
-				location := &entity.Location{
+				location := entity.Location{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
-					Geog:   "Point(80.23231 170.12112)",
+					Geog:   "POINT(80.23231 170.12112)",
 				}
-				locationRepo.EXPECT().InsertNewLocation(gomock.Eq(location)).Times(1).Return(int64(1), nil)
+				locationRepo.EXPECT().InsertNewLocation(gomock.Eq(&location)).Times(1).Return(nil)
 				locationSvc := service.NewLocation(locationRepo)
 				return NewLocation(locationSvc)
 			},
@@ -63,19 +64,20 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := &entity.Location{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68618",
-					Geog:   "Point(80.23231 170.12112)",
+					Geog:   "POINT(80.23231 170.12112)",
 				}
 				pqErr := pq.Error{
 					Code: "23503",
 				}
-				locationRepo.EXPECT().InsertNewLocation(gomock.Eq(location)).Times(1).Return(int64(0), &pqErr)
+				locationRepo.EXPECT().InsertNewLocation(gomock.Eq(location)).Times(1).
+					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "invalid userId"))
 				locationSvc := service.NewLocation(locationRepo)
 				return NewLocation(locationSvc)
 			},
-			wantCode: http.StatusNotFound,
+			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "provided userId is not match with our resource",
+				"message": "invalid userId",
 			},
 		},
 		{
@@ -89,19 +91,20 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := &entity.Location{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68618",
-					Geog:   "Point(80.23231 170.12112)",
+					Geog:   "POINT(80.23231 170.12112)",
 				}
 				pqErr := pq.Error{
 					Code: "23505",
 				}
-				locationRepo.EXPECT().InsertNewLocation(gomock.Eq(location)).Times(1).Return(int64(0), &pqErr)
+				locationRepo.EXPECT().InsertNewLocation(gomock.Eq(location)).Times(1).
+					Return(common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "location already created"))
 				locationSvc := service.NewLocation(locationRepo)
 				return NewLocation(locationSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "already created",
+				"message": "location already created",
 			},
 		},
 		{
@@ -171,7 +174,7 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 
 func Test_getLocationByUserIdHandler(t *testing.T) {
 	validLoc := createNewLocation(t)
-	geog := strings.TrimPrefix(validLoc.Geog, "Point(")
+	geog := strings.TrimPrefix(validLoc.Geog, "POINT(")
 	geog = strings.TrimSuffix(geog, ")")
 	latlng := strings.Fields(geog)
 	tests := []struct {
@@ -210,7 +213,8 @@ func Test_getLocationByUserIdHandler(t *testing.T) {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := createNewLocation(t)
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
-				locationRepo.EXPECT().GetLocationByUserId(gomock.Eq(location.UserId)).Times(1).Return(nil, sql.ErrNoRows)
+				locationRepo.EXPECT().GetLocationByUserId(gomock.Eq(location.UserId)).Times(1).
+					Return(entity.Location{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
 				locationSvc := service.NewLocation(locationRepo)
 				return NewLocation(locationSvc)
 			},
@@ -263,8 +267,8 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 				location := createNewLocation(t)
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
 				locationRepo.EXPECT().GetLocationByUserId(gomock.Eq(location.UserId)).Times(1).Return(location, nil)
-				location.Geog = fmt.Sprintf("Point(%0.4f %0.4f)", 70.1891, 80.1291)
-				locationRepo.EXPECT().UpdateLocation(gomock.Eq(location)).Times(1).Return(int64(1), nil)
+				location.Geog = fmt.Sprintf("POINT(%0.4f %0.4f)", 70.1891, 80.1291)
+				locationRepo.EXPECT().UpdateLocation(gomock.Eq(&location)).Times(1).Return(nil)
 				locationSvc := service.NewLocation(locationRepo)
 				return NewLocation(locationSvc)
 			},
@@ -282,11 +286,14 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
-				location := createNewLocation(t)
+				location := entity.Location{
+					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc6861",
+					Geog:   "POINT(20.1818 85.1291)",
+				}
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
 				locationRepo.EXPECT().GetLocationByUserId(gomock.Eq(location.UserId)).Times(1).Return(location, nil)
-				location.Geog = fmt.Sprintf("Point(%0.4f %0.4f)", 70.1891, 80.1291)
-				locationRepo.EXPECT().UpdateLocation(gomock.Eq(location)).Times(1).Return(int64(1), nil)
+				location.Geog = fmt.Sprintf("POINT(%0.4f %0.4f)", 20.1818, 80.1291)
+				locationRepo.EXPECT().UpdateLocation(gomock.Eq(&location)).Times(1).Return(nil)
 				locationSvc := service.NewLocation(locationRepo)
 				return NewLocation(locationSvc)
 			},
@@ -304,11 +311,17 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
-				location := createNewLocation(t)
-				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
-				locationRepo.EXPECT().GetLocationByUserId(gomock.Eq(location.UserId)).Times(1).Return(location, nil)
-				location.Geog = fmt.Sprintf("Point(%0.4f %0.4f)", 70.1891, 80.1291)
-				locationRepo.EXPECT().UpdateLocation(gomock.Eq(location)).Times(1).Return(int64(1), nil)
+				oldlocation := entity.Location{
+					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68618",
+					Geog:   "POINT(20.1818 80.1291)",
+				}
+				locationRepo.EXPECT().GetLocationByUserId(gomock.Eq(oldlocation.UserId)).Times(1).Return(oldlocation, nil)
+				newLocation := entity.Location{
+					UserId: oldlocation.UserId,
+					Geog:   "POINT(70.1891 80.1291)",
+				}
+				oldlocation.Geog = fmt.Sprintf("POINT(%0.4f %0.4f)", 70.1891, 80.1291)
+				locationRepo.EXPECT().UpdateLocation(gomock.Eq(&newLocation)).Times(1).Return(nil)
 				locationSvc := service.NewLocation(locationRepo)
 				return NewLocation(locationSvc)
 			},
@@ -398,7 +411,8 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
 				location := createNewLocation(t)
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
-				locationRepo.EXPECT().GetLocationByUserId(gomock.Eq(location.UserId)).Times(1).Return(nil, sql.ErrNoRows)
+				locationRepo.EXPECT().GetLocationByUserId(gomock.Eq(location.UserId)).Times(1).
+					Return(entity.Location{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
 				locationSvc := service.NewLocation(locationRepo)
 				return NewLocation(locationSvc)
 			},
@@ -438,8 +452,8 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 	}
 }
 
-func createNewLocation(t *testing.T) *entity.Location {
-	return &entity.Location{
+func createNewLocation(t *testing.T) entity.Location {
+	return entity.Location{
 		UserId: util.RandomUUID(),
 		Geog:   util.RandomPoint(5),
 	}

@@ -25,31 +25,19 @@ type BasicInfo struct {
 
 func (b *BasicInfo) postBasicInfoHandler(c *gin.Context) {
 	userId := c.GetString("userId")
-	var input struct {
-		Gender           string  `json:"gender" binding:"required,max=25"`
-		FromLoc          *string `json:"fromLoc" binding:"omitempty,max=25"`
-		Height           *int    `json:"height" binding:"omitempty,min=0,max=300"`
-		EducationLevel   *string `json:"educationLevel" binding:"omitempty,max=49"`
-		Drinking         *string `json:"drinking" binding:"omitempty,max=49"`
-		Smoking          *string `json:"smoking" binding:"omitempty,max=49"`
-		RelationshipPref *string `json:"relationshipPref" binding:"omitempty,max=49"`
-		LookingFor       string  `json:"lookingFor" binding:"required,max=25"`
-		Zodiac           *string `json:"zodiac" binding:"omitempty,max=50"`
-		Kids             *int    `json:"kids" binding:"omitempty,min=0,max=100"`
-		Work             *string `json:"work" binding:"omitempty,max=50"`
-	}
+	var input domain.BasicInfo
 	if err := c.ShouldBindJSON(&input); err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"gender":           "required and must have an gender enums",
+			"gender":           "required and the value must one of the gender enums",
 			"fromLoc":          "maximal character is 100",
 			"height":           "must have valid height in cm",
-			"educationLevel":   "maximal character is 50",
-			"drinking":         "maximal character is 50",
-			"smoking":          "maximal character is 50",
-			"relationshipPref": "maximal character is 50",
-			"lookingFor":       "required and must have an gender enums",
-			"zodiac":           "must have zodiac enums",
-			"kids":             "minimum is 0 and maximal number is 100",
+			"educationLevel":   "must one of the educationLevel enums",
+			"drinking":         "must one of the drinking enums",
+			"smoking":          "must one of the smoking enums",
+			"relationshipPref": "must one of the relationshipPref enums",
+			"lookingFor":       "required and the value must one of the lookingFor enums",
+			"zodiac":           "must one of the zodiac enums",
+			"kids":             "minimum is 0 and maximal number is 30",
 			"work":             "maximal character is 50",
 		})
 		if errjson != nil {
@@ -105,16 +93,16 @@ func (b *BasicInfo) patchBasicInfoHandler(c *gin.Context) {
 	err := c.ShouldBindJSON(&inputBasicInfo)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
-			"gender":           "maximal character is 25",
+			"gender":           "must one of the gender enums",
 			"fromLoc":          "maximal character is 100",
 			"height":           "must have valid height in cm",
-			"educationLevel":   "maximal character is 50",
-			"drinking":         "maximal character is 50",
-			"smoking":          "maximal character is 50",
-			"relationshipPref": "maximal character is 50",
-			"lookingFor":       "maximal character is 25",
-			"zodiac":           "maximal character is 50",
-			"kids":             "minimum is 0 and maximal number is 100",
+			"educationLevel":   "must one of the educationLevel enums",
+			"drinking":         "must one of the drinking enums",
+			"smoking":          "must one of the smoking enums",
+			"relationshipPref": "must one of the relationshipPref enums",
+			"lookingFor":       "must one of the lookingFor enums",
+			"zodiac":           "must one of the zodiac enums",
+			"kids":             "minimum is 0 and maximal number is 30",
 			"work":             "maximal character is 50",
 		})
 		if errjson != nil {

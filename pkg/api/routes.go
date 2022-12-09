@@ -42,6 +42,7 @@ func Routes(route Route) http.Handler {
 	}
 
 	registerValidDObValidator()
+	registerValidEducationLevelFieldValidator()
 	ru := route.User
 	v1.POST("/users", ru.postUserHandler)
 	auth := v1.Group("/users/:userId", validateUser(route.Tokenizer))

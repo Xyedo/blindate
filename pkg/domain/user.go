@@ -39,31 +39,31 @@ type Bio struct {
 // BasicInfo one to one with user
 type BasicInfo struct {
 	UserId           string    `json:"userId"`
-	Gender           string    `json:"gender"`
-	FromLoc          *string   `json:"fromLoc"`
-	Height           *int      `json:"height"`
-	EducationLevel   *string   `json:"educationLevel"`
-	Drinking         *string   `json:"drinking"`
-	Smoking          *string   `json:"smoking"`
-	RelationshipPref *string   `json:"relationshipPref"`
-	LookingFor       string    `json:"lookingFor"`
-	Zodiac           *string   `json:"zodiac"`
-	Kids             *int      `json:"kids"`
-	Work             *string   `json:"work"`
+	Gender           string    `json:"gender" binding:"required,oneof=Female Male Other"`
+	FromLoc          *string   `json:"fromLoc" binding:"omitempty,max=99"`
+	Height           *int      `json:"height" binding:"omitempty,min=0,max=400"`
+	EducationLevel   *string   `json:"educationLevel" binding:"omitempty,valideducationlevel"`
+	Drinking         *string   `json:"drinking" binding:"omitempty,oneof=Never Ocassionally 'Once a week' 'More than 2/3 times a week' 'Every day'"`
+	Smoking          *string   `json:"smoking" binding:"omitempty,oneof=Never Ocassionally 'Once a week' 'More than 2/3 times a week' 'Every day'"`
+	RelationshipPref *string   `json:"relationshipPref" binding:"omitempty,oneof='One night Stand' 'Having fun' Serious"`
+	LookingFor       string    `json:"lookingFor" binding:"required,oneof=Female Male Other"`
+	Zodiac           *string   `json:"zodiac" binding:"omitempty,oneof=Aries Taurus Gemini Cancer Leo Virgo Libra Scorpio Sagittarius Capricorn Aquarius Pisces"`
+	Kids             *int      `json:"kids" binding:"omitempty,min=0,max=30"`
+	Work             *string   `json:"work" binding:"omitempty,max=50"`
 	CreatedAt        time.Time `json:"createdAt"`
 	UpdatedAt        time.Time `json:"updatedAt"`
 }
 type UpdateBasicInfo struct {
-	Gender           *string `json:"gender" binding:"omitempty,max=25"`
-	FromLoc          *string `json:"fromLoc" binding:"omitempty,max=25"`
-	Height           *int    `json:"height" binding:"omitempty,min=0,max=300"`
-	EducationLevel   *string `json:"educationLevel" binding:"omitempty,max=49"`
-	Drinking         *string `json:"drinking" binding:"omitempty,max=49"`
-	Smoking          *string `json:"smoking" binding:"omitempty,max=49"`
-	RelationshipPref *string `json:"relationshipPref" binding:"omitempty,max=49"`
-	LookingFor       *string `json:"lookingFor"  binding:"omitempty,max=25"`
-	Zodiac           *string `json:"zodiac" binding:"omitempty,max=50"`
-	Kids             *int    `json:"kids" binding:"omitempty,max=100"`
+	Gender           *string `json:"gender" binding:"omitempty,oneof=Female Male Other"`
+	FromLoc          *string `json:"fromLoc" binding:"omitempty,max=99"`
+	Height           *int    `json:"height" binding:"omitempty,min=0,max=400"`
+	EducationLevel   *string `json:"educationLevel" binding:"omitempty,valideducationlevel"`
+	Drinking         *string `json:"drinking" binding:"omitempty,oneof=Never Ocassionally 'Once a week' 'More than 2/3 times a week' 'Every day'"`
+	Smoking          *string `json:"smoking" binding:"omitempty,oneof=Never Ocassionally 'Once a week' 'More than 2/3 times a week' 'Every day'"`
+	RelationshipPref *string `json:"relationshipPref" binding:"omitempty,oneof='One night Stand' 'Having fun' Serious"`
+	LookingFor       *string `json:"lookingFor"  binding:"omitempty,oneof=Female Male Other"`
+	Zodiac           *string `json:"zodiac" binding:"omitempty,oneof=Aries Taurus Gemini Cancer Leo Virgo Libra Scorpio Sagittarius Capricorn Aquarius Pisces"`
+	Kids             *int    `json:"kids" binding:"omitempty,min=0,max=30"`
 	Work             *string `json:"work" binding:"omitempty,max=50"`
 }
 

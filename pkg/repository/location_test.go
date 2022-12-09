@@ -62,8 +62,9 @@ func Test_GetLocationByUserId(t *testing.T) {
 	user := createNewAccount(t)
 	expected := createNewLocation(t, user.ID)
 	t.Run("valid Getter", func(t *testing.T) {
-		_, err := repo.GetLocationByUserId(expected.UserId)
-		assert.NoError(t, err)
+		check, err := repo.GetLocationByUserId(expected.UserId)
+		require.NoError(t, err)
+		log.Println(check)
 	})
 
 	t.Run("Invalid User_id", func(t *testing.T) {

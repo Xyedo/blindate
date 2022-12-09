@@ -79,6 +79,8 @@ func Test_InsertHobbies(t *testing.T) {
 	t.Run("Valid InterestId", func(t *testing.T) {
 		user := createNewAccount(t)
 		bio := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(bio.Id)
+		require.NoError(t, err)
 		createNewInterestHobbie(t, bio.Id)
 
 	})
@@ -89,6 +91,7 @@ func Test_InsertHobbies(t *testing.T) {
 				Hobbie: util.RandomString(12),
 			})
 		}
+
 		err := repo.InsertInterestHobbies(util.RandomUUID(), hobbies)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
@@ -96,8 +99,10 @@ func Test_InsertHobbies(t *testing.T) {
 	t.Run("Invalid Unique", func(t *testing.T) {
 		user := createNewAccount(t)
 		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
 		hobbie := createNewInterestHobbie(t, intr.Id)
-		err := repo.InsertInterestHobbies(intr.Id, hobbie)
+		err = repo.InsertInterestHobbies(intr.Id, hobbie)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
 	})
@@ -122,6 +127,8 @@ func Test_UpdateHobbies(t *testing.T) {
 	t.Run("Valid Update", func(t *testing.T) {
 		user := createNewAccount(t)
 		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
 		hobbies := createNewInterestHobbie(t, intr.Id)
 		for i := range hobbies {
 			hobbies[i].Hobbie = util.RandomString(7)
@@ -131,7 +138,7 @@ func Test_UpdateHobbies(t *testing.T) {
 				Hobbie: util.RandomString(15),
 			})
 		}
-		err := repo.UpdateInterestHobbies(intr.Id, hobbies)
+		err = repo.UpdateInterestHobbies(intr.Id, hobbies)
 		assert.NoError(t, err)
 	})
 	t.Run("Valid Update but over than 10", func(t *testing.T) {
@@ -158,14 +165,16 @@ func Test_DeleteHobbies(t *testing.T) {
 	t.Run("Valid Update", func(t *testing.T) {
 		user := createNewAccount(t)
 		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
 		hobbies := createNewInterestHobbie(t, intr.Id)
 		ids := make([]string, 0, len(hobbies))
 		for _, hobie := range hobbies {
 			ids = append(ids, hobie.Id)
 		}
-		err := repo.DeleteInterestHobbies(intr.Id, ids)
+		deletedIds, err := repo.DeleteInterestHobbies(intr.Id, ids)
 		require.NoError(t, err)
-
+		require.True(t, len(ids) == len(deletedIds))
 	})
 }
 func Test_InsertMovieSeries(t *testing.T) {
@@ -173,6 +182,8 @@ func Test_InsertMovieSeries(t *testing.T) {
 	t.Run("Valid InterestId", func(t *testing.T) {
 		user := createNewAccount(t)
 		bio := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(bio.Id)
+		require.NoError(t, err)
 		createNewInterestMovieSeries(t, bio.Id)
 
 	})
@@ -190,8 +201,10 @@ func Test_InsertMovieSeries(t *testing.T) {
 	t.Run("Invalid Unique", func(t *testing.T) {
 		user := createNewAccount(t)
 		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
 		movieSeries := createNewInterestMovieSeries(t, intr.Id)
-		err := repo.InsertInterestMovieSeries(intr.Id, movieSeries)
+		err = repo.InsertInterestMovieSeries(intr.Id, movieSeries)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
 	})
@@ -216,6 +229,8 @@ func Test_UpdateMovieSeries(t *testing.T) {
 	t.Run("Valid Update", func(t *testing.T) {
 		user := createNewAccount(t)
 		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
 		movieSeries := createNewInterestMovieSeries(t, intr.Id)
 		for i := range movieSeries {
 			movieSeries[i].MovieSerie = util.RandomString(19)
@@ -225,7 +240,7 @@ func Test_UpdateMovieSeries(t *testing.T) {
 				MovieSerie: util.RandomString(15),
 			})
 		}
-		err := repo.UpdateInterestMovieSeries(intr.Id, movieSeries)
+		err = repo.UpdateInterestMovieSeries(intr.Id, movieSeries)
 		require.NoError(t, err)
 	})
 	t.Run("Valid Update but over than 10", func(t *testing.T) {
@@ -252,13 +267,16 @@ func Test_DeleteMovieSeries(t *testing.T) {
 	t.Run("Valid Update", func(t *testing.T) {
 		user := createNewAccount(t)
 		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
 		movieSeries := createNewInterestMovieSeries(t, intr.Id)
 		ids := make([]string, 0, len(movieSeries))
 		for _, hobie := range movieSeries {
 			ids = append(ids, hobie.Id)
 		}
-		err := repo.DeleteInterestMovieSeries(intr.Id, ids)
+		deletedIds, err := repo.DeleteInterestMovieSeries(intr.Id, ids)
 		require.NoError(t, err)
+		require.True(t, len(ids) == len(deletedIds))
 	})
 }
 
@@ -267,6 +285,8 @@ func Test_InsertTraveling(t *testing.T) {
 	t.Run("Valid InterestId", func(t *testing.T) {
 		user := createNewAccount(t)
 		bio := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(bio.Id)
+		require.NoError(t, err)
 		createNewInterestTraveling(t, bio.Id)
 
 	})
@@ -284,8 +304,10 @@ func Test_InsertTraveling(t *testing.T) {
 	t.Run("Invalid Unique", func(t *testing.T) {
 		user := createNewAccount(t)
 		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
 		travels := createNewInterestTraveling(t, intr.Id)
-		err := repo.InsertInterestTraveling(intr.Id, travels)
+		err = repo.InsertInterestTraveling(intr.Id, travels)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
 	})
@@ -310,6 +332,8 @@ func Test_UpdateTraveling(t *testing.T) {
 	t.Run("Valid Update", func(t *testing.T) {
 		user := createNewAccount(t)
 		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
 		travels := createNewInterestTraveling(t, intr.Id)
 		for i := range travels {
 			travels[i].Travel = util.RandomString(19)
@@ -319,7 +343,7 @@ func Test_UpdateTraveling(t *testing.T) {
 				Travel: util.RandomString(15),
 			})
 		}
-		err := repo.UpdateInterestTraveling(intr.Id, travels)
+		err = repo.UpdateInterestTraveling(intr.Id, travels)
 		assert.NoError(t, err)
 	})
 	t.Run("Valid Update but over than 10", func(t *testing.T) {
@@ -346,13 +370,16 @@ func Test_DeleteTraveling(t *testing.T) {
 	t.Run("Valid Update", func(t *testing.T) {
 		user := createNewAccount(t)
 		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
 		travels := createNewInterestTraveling(t, intr.Id)
 		ids := make([]string, 0, len(travels))
 		for _, hobie := range travels {
 			ids = append(ids, hobie.Id)
 		}
-		err := repo.DeleteInterestTraveling(intr.Id, ids)
-		assert.NoError(t, err)
+		deletedIds, err := repo.DeleteInterestTraveling(intr.Id, ids)
+		require.NoError(t, err)
+		assert.True(t, len(deletedIds) == len(ids))
 	})
 }
 func Test_InsertSports(t *testing.T) {
@@ -360,6 +387,8 @@ func Test_InsertSports(t *testing.T) {
 	t.Run("Valid InterestId", func(t *testing.T) {
 		user := createNewAccount(t)
 		bio := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(bio.Id)
+		require.NoError(t, err)
 		createNewInterestSport(t, bio.Id)
 
 	})
@@ -377,8 +406,10 @@ func Test_InsertSports(t *testing.T) {
 	t.Run("Invalid Unique", func(t *testing.T) {
 		user := createNewAccount(t)
 		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
 		sports := createNewInterestSport(t, intr.Id)
-		err := repo.InsertInterestSports(intr.Id, sports)
+		err = repo.InsertInterestSports(intr.Id, sports)
 		require.Error(t, err)
 		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
 	})
@@ -403,6 +434,8 @@ func Test_UpdateSports(t *testing.T) {
 	t.Run("Valid Update", func(t *testing.T) {
 		user := createNewAccount(t)
 		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
 		sports := createNewInterestSport(t, intr.Id)
 		for i := range sports {
 			sports[i].Sport = util.RandomString(19)
@@ -412,7 +445,7 @@ func Test_UpdateSports(t *testing.T) {
 				Sport: util.RandomString(15),
 			})
 		}
-		err := repo.UpdateInterestSport(intr.Id, sports)
+		err = repo.UpdateInterestSport(intr.Id, sports)
 		require.NoError(t, err)
 	})
 	t.Run("Valid Update but over than 10", func(t *testing.T) {
@@ -439,13 +472,16 @@ func Test_DeleteSports(t *testing.T) {
 	t.Run("Valid Update", func(t *testing.T) {
 		user := createNewAccount(t)
 		intr := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(intr.Id)
+		require.NoError(t, err)
 		sports := createNewInterestSport(t, intr.Id)
 		ids := make([]string, 0, len(sports))
 		for _, hobie := range sports {
 			ids = append(ids, hobie.Id)
 		}
-		err := repo.DeleteInterestSports(intr.Id, ids)
-		assert.NoError(t, err)
+		deletedIds, err := repo.DeleteInterestSports(intr.Id, ids)
+		require.NoError(t, err)
+		assert.True(t, len(deletedIds) == len(ids))
 	})
 }
 
@@ -454,6 +490,8 @@ func Test_GetInterest(t *testing.T) {
 	t.Run("Valid Id AND Using All", func(t *testing.T) {
 		user := createNewAccount(t)
 		bio := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(bio.Id)
+		require.NoError(t, err)
 		hobbies := createNewInterestHobbie(t, bio.Id)
 		movieSeries := createNewInterestMovieSeries(t, bio.Id)
 		travels := createNewInterestTraveling(t, bio.Id)
@@ -489,6 +527,8 @@ func Test_GetInterest(t *testing.T) {
 	t.Run("Valid Id But Partial hobbies", func(t *testing.T) {
 		user := createNewAccount(t)
 		bio := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(bio.Id)
+		require.NoError(t, err)
 		hobbies := createNewInterestHobbie(t, bio.Id)
 		res, err := repo.GetInterest(bio.UserId)
 		require.NoError(t, err)
@@ -508,6 +548,8 @@ func Test_GetInterest(t *testing.T) {
 	t.Run("Valid Id But Partial MovieSeries", func(t *testing.T) {
 		user := createNewAccount(t)
 		bio := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(bio.Id)
+		require.NoError(t, err)
 		movieSeries := createNewInterestMovieSeries(t, bio.Id)
 		res, err := repo.GetInterest(bio.UserId)
 		require.NoError(t, err)
@@ -527,6 +569,8 @@ func Test_GetInterest(t *testing.T) {
 	t.Run("Valid Id But Partial travels", func(t *testing.T) {
 		user := createNewAccount(t)
 		bio := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(bio.Id)
+		require.NoError(t, err)
 		travels := createNewInterestTraveling(t, bio.Id)
 		res, err := repo.GetInterest(bio.UserId)
 		require.NoError(t, err)
@@ -546,6 +590,8 @@ func Test_GetInterest(t *testing.T) {
 	t.Run("Valid Id But Partial sports", func(t *testing.T) {
 		user := createNewAccount(t)
 		bio := createNewInterestBio(t, user.ID)
+		err := repo.InsertNewStats(bio.Id)
+		require.NoError(t, err)
 		sports := createNewInterestSport(t, bio.Id)
 		res, err := repo.GetInterest(bio.UserId)
 		require.NoError(t, err)
@@ -592,7 +638,7 @@ func createNewInterestHobbie(t *testing.T, interestId string) []domain.Hobbie {
 	}
 
 	err := repo.InsertInterestHobbies(interestId, hobbies)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotZero(t, hobbies[0].Id)
 	return hobbies
 }
@@ -604,7 +650,6 @@ func createNewInterestMovieSeries(t *testing.T, interestId string) []domain.Movi
 			MovieSerie: util.RandomString(12),
 		})
 	}
-
 	err := repo.InsertInterestMovieSeries(interestId, moviesSeries)
 	assert.NoError(t, err)
 	return moviesSeries
@@ -617,7 +662,6 @@ func createNewInterestTraveling(t *testing.T, interestId string) []domain.Travel
 			Travel: util.RandomString(12),
 		})
 	}
-
 	err := repo.InsertInterestTraveling(interestId, travels)
 	assert.NoError(t, err)
 	return travels

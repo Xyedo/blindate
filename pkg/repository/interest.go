@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -28,19 +27,19 @@ type Interest interface {
 
 	InsertInterestHobbies(interestId string, hobbies []domain.Hobbie) error
 	UpdateInterestHobbies(interestId string, hobbies []domain.Hobbie) error
-	DeleteInterestHobbies(interestId string, ids []string) error
+	DeleteInterestHobbies(interestId string, ids []string) ([]string, error)
 
 	InsertInterestMovieSeries(interestId string, movieSeries []domain.MovieSerie) error
 	UpdateInterestMovieSeries(interestId string, movieSeries []domain.MovieSerie) error
-	DeleteInterestMovieSeries(interestId string, ids []string) error
+	DeleteInterestMovieSeries(interestId string, ids []string) ([]string, error)
 
 	InsertInterestTraveling(interestId string, travels []domain.Travel) error
 	UpdateInterestTraveling(interestId string, travels []domain.Travel) error
-	DeleteInterestTraveling(interestId string, ids []string) error
+	DeleteInterestTraveling(interestId string, ids []string) ([]string, error)
 
 	InsertInterestSports(interestId string, sports []domain.Sport) error
 	UpdateInterestSport(interestId string, sports []domain.Sport) error
-	DeleteInterestSports(interestId string, ids []string) error
+	DeleteInterestSports(interestId string, ids []string) ([]string, error)
 }
 
 func NewInterest(db *sqlx.DB) *IntrConn {
@@ -180,11 +179,13 @@ const (
 	statsHobbiesPlusQ = `
 	UPDATE interest_statistics SET
 		hobbie_count = hobbie_count + $1
-		WHERE interest_id = $2`
+	WHERE interest_id = $2
+	RETURNING interest_id`
 	statsHobbiesMinusQ = `
 	UPDATE interest_statistics SET
 		hobbie_count = hobbie_count - $1
-		WHERE interest_id = $2`
+	WHERE interest_id = $2
+	RETURNING interest_id`
 )
 
 func (i *IntrConn) InsertInterestHobbies(interestId string, hobbies []domain.Hobbie) error {
@@ -192,46 +193,30 @@ func (i *IntrConn) InsertInterestHobbies(interestId string, hobbies []domain.Hob
 	args := make([]any, 0, len(hobbies))
 	args = append(args, interestId)
 
-	for i, val := range hobbies {
-		stmt += fmt.Sprintf("($%d, $%d),", 1, i+2)
-		args = append(args, val.Hobbie)
+	for i := range hobbies {
+		p1 := i * 2
+		stmt += fmt.Sprintf("($%d, $%d::uuid, $%d),", 1, p1+2, p1+3)
+		newUid := util.RandomUUID()
+		args = append(args, newUid, hobbies[i].Hobbie)
+		hobbies[i].Id = newUid
 	}
 	stmt = stmt[:len(stmt)-1]
 	query := fmt.Sprintf(`
 	INSERT INTO hobbies 
-		(interest_id, hobbie)
+		(interest_id, id, hobbie)
 	VALUES %s RETURNING id`, stmt)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	err := i.execTx(ctx, func(q *sqlx.DB) error {
-		rows, err := q.QueryxContext(ctx, query, args...)
+		var retIds []string
+		err := q.SelectContext(ctx, &retIds, query, args...)
 		if err != nil {
 			return err
 		}
-		defer func(rows *sqlx.Rows) {
-			err := rows.Close()
-			if err != nil {
-				log.Panic(err)
-			}
-		}(rows)
-
-		iter := 0
-		for rows.Next() {
-			if err := rows.Scan(&hobbies[iter].Id); err != nil {
-				return err
-			}
-			if err != nil {
-				return err
-			}
-
-			iter++
-		}
-		if err := rows.Err(); err != nil {
-			return err
-		}
-		_, err = q.ExecContext(ctx, statsHobbiesPlusQ, len(hobbies), interestId)
+		var retInterestId string
+		err = q.GetContext(ctx, &retInterestId, statsHobbiesPlusQ, len(retIds), interestId)
 		if err != nil {
 			return err
 		}
@@ -248,14 +233,14 @@ func (i *IntrConn) UpdateInterestHobbies(interestId string, hobbies []domain.Hob
 	args = append(args, interestId)
 	stmnt := ``
 	var newHobbies int
-	for i, val := range hobbies {
+	for i := range hobbies {
 		p1 := i * 2
 		stmnt += fmt.Sprintf("(uuid($%d::TEXT), uuid($%d::TEXT), $%d),", 1, p1+2, p1+3)
-		if val.Id == "" {
+		if hobbies[i].Id == "" {
 			newHobbies++
-			val.Id = util.RandomUUID()
+			hobbies[i].Id = util.RandomUUID()
 		}
-		args = append(args, val.Id, val.Hobbie)
+		args = append(args, hobbies[i].Id, hobbies[i].Hobbie)
 	}
 	stmnt = stmnt[:len(stmnt)-1]
 
@@ -309,7 +294,7 @@ func (i *IntrConn) UpdateInterestHobbies(interestId string, hobbies []domain.Hob
 	return nil
 }
 
-func (i *IntrConn) DeleteInterestHobbies(interestId string, ids []string) error {
+func (i *IntrConn) DeleteInterestHobbies(interestId string, ids []string) ([]string, error) {
 	query := `
 	DELETE FROM hobbies
 	WHERE id IN (`
@@ -318,24 +303,19 @@ func (i *IntrConn) DeleteInterestHobbies(interestId string, ids []string) error 
 		query += fmt.Sprintf("$%d,", i+1)
 		args = append(args, id)
 	}
-	query = query[:len(query)-1] + ")"
+	query = query[:len(query)-1] + ") RETURNING id"
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
+	var retIds []string
 	err := i.execTx(ctx, func(q *sqlx.DB) error {
-		res, err := q.ExecContext(ctx, query, args...)
+
+		err := q.SelectContext(ctx, &retIds, query, args...)
 		if err != nil {
 			return err
 		}
-		row, err := res.RowsAffected()
-		if err != nil {
-			return err
-		}
-		if int(row) == 0 {
-			return common.WrapWithNewError(fmt.Errorf("no rows affected by delete"), http.StatusUnprocessableEntity, "invalid Id in one of hobbies")
-		}
-		_, err = q.ExecContext(ctx, statsHobbiesMinusQ, len(ids), interestId)
+		var retInterestId string
+		err = q.GetContext(ctx, &retInterestId, statsHobbiesMinusQ, len(retIds), interestId)
 		if err != nil {
 			return err
 		}
@@ -343,71 +323,56 @@ func (i *IntrConn) DeleteInterestHobbies(interestId string, ids []string) error 
 	})
 
 	if err != nil {
-		return i.parsingError(err)
+		return nil, i.parsingError(err)
 	}
-	return nil
+	return retIds, nil
 }
 
 const (
 	statsMovieSeriesPlusQ = `
 	UPDATE interest_statistics SET
 		movie_serie_count = movie_serie_count + $1
-		WHERE interest_id = $2`
+	WHERE interest_id = $2
+	RETURNING interest_id`
 	statsMovieSeriesMinusQ = `
 	UPDATE interest_statistics SET
 		movie_serie_count = movie_serie_count - $1
-		WHERE interest_id = $2`
+	WHERE interest_id = $2
+	RETURNING interest_id`
 )
 
 func (i *IntrConn) InsertInterestMovieSeries(interestId string, movieSeries []domain.MovieSerie) error {
 	stmt := ``
 	args := make([]any, 0, len(movieSeries))
 	args = append(args, interestId)
-	for i, val := range movieSeries {
-		stmt += fmt.Sprintf("($%d, $%d),", 1, i+2)
-		args = append(args, val.MovieSerie)
+	for i := range movieSeries {
+		p1 := i * 2
+		stmt += fmt.Sprintf("($%d, $%d::uuid, $%d),", 1, p1+2, p1+3)
+		newUid := util.RandomUUID()
+		args = append(args, newUid, movieSeries[i].MovieSerie)
+		movieSeries[i].Id = newUid
 	}
 	stmt = stmt[:len(stmt)-1]
 
 	query := fmt.Sprintf(`
 	INSERT INTO movie_series 
-		(interest_id, movie_serie)
+		(interest_id, id, movie_serie)
 	VALUES %s RETURNING id`, stmt)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	err := i.execTx(ctx, func(q *sqlx.DB) error {
-		rows, err := q.QueryxContext(ctx, query, args...)
+		var retIds []string
+		err := q.SelectContext(ctx, &retIds, query, args...)
 		if err != nil {
 			return err
 		}
-		defer func(rows *sqlx.Rows) {
-			err := rows.Close()
-			if err != nil {
-				log.Panic(err)
-			}
-		}(rows)
-
-		iter := 0
-		for rows.Next() {
-			if err := rows.Scan(&movieSeries[iter].Id); err != nil {
-				return err
-			}
-			if err != nil {
-				return err
-			}
-
-			iter++
-		}
-		if err := rows.Err(); err != nil {
-			return err
-		}
-		_, err = q.ExecContext(ctx, statsMovieSeriesPlusQ, len(movieSeries)-1, interestId)
+		var retInterestId string
+		err = q.GetContext(ctx, &retInterestId, statsMovieSeriesPlusQ, len(retIds), interestId)
 		if err != nil {
 			return err
 		}
-
 		return nil
 	})
 	if err != nil {
@@ -421,14 +386,14 @@ func (i *IntrConn) UpdateInterestMovieSeries(interestId string, movieSeries []do
 	args = append(args, interestId)
 	stmnt := ``
 	var newMovies int
-	for i, val := range movieSeries {
+	for i := range movieSeries {
 		p1 := i * 2
 		stmnt += fmt.Sprintf("(uuid($%d::TEXT), uuid($%d::TEXT), $%d),", 1, p1+2, p1+3)
-		if val.Id == "" {
+		if movieSeries[i].Id == "" {
 			newMovies++
-			val.Id = util.RandomUUID()
+			movieSeries[i].Id = util.RandomUUID()
 		}
-		args = append(args, val.Id, val.MovieSerie)
+		args = append(args, movieSeries[i].Id, movieSeries[i].MovieSerie)
 	}
 	stmnt = stmnt[:len(stmnt)-1]
 
@@ -479,7 +444,7 @@ func (i *IntrConn) UpdateInterestMovieSeries(interestId string, movieSeries []do
 	}
 	return nil
 }
-func (i *IntrConn) DeleteInterestMovieSeries(interestId string, ids []string) error {
+func (i *IntrConn) DeleteInterestMovieSeries(interestId string, ids []string) ([]string, error) {
 	query := `
 	DELETE FROM movie_series
 	WHERE id IN (`
@@ -488,23 +453,18 @@ func (i *IntrConn) DeleteInterestMovieSeries(interestId string, ids []string) er
 		query += fmt.Sprintf("$%d,", i+1)
 		args = append(args, id)
 	}
-	query = query[:len(query)-1] + ")"
+	query = query[:len(query)-1] + ") RETURNING id"
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+	var retIds []string
 	err := i.execTx(ctx, func(q *sqlx.DB) error {
-		res, err := q.ExecContext(ctx, query, args...)
+		err := q.SelectContext(ctx, &retIds, query, args...)
 		if err != nil {
 			return err
 		}
-		row, err := res.RowsAffected()
-		if err != nil {
-			return err
-		}
-		if int(row) == 0 {
-			return common.WrapWithNewError(fmt.Errorf("no rows affected by delete"), http.StatusUnprocessableEntity, "invalid Id in one of movieSeries")
-		}
-		_, err = q.ExecContext(ctx, statsMovieSeriesMinusQ, len(ids)-1, interestId)
+		var retInterestId string
+		err = q.GetContext(ctx, &retInterestId, statsMovieSeriesMinusQ, len(retIds), interestId)
 		if err != nil {
 			return err
 		}
@@ -512,65 +472,51 @@ func (i *IntrConn) DeleteInterestMovieSeries(interestId string, ids []string) er
 	})
 
 	if err != nil {
-		return i.parsingError(err)
+		return nil, i.parsingError(err)
 	}
-	return nil
+	return retIds, nil
 }
 
 const (
 	statsTravelingPlusQ = `
 	UPDATE interest_statistics SET
 		traveling_count = traveling_count + $1
-		WHERE interest_id = $2`
+		WHERE interest_id = $2
+	RETURNING interest_id`
 	statsTravelingMinusQ = `
 	UPDATE interest_statistics SET
 		traveling_count = traveling_count - $1
-		WHERE interest_id = $2`
+		WHERE interest_id = $2
+	RETURNING interest_id`
 )
 
 func (i *IntrConn) InsertInterestTraveling(interestId string, travels []domain.Travel) error {
 	stmt := ``
 	args := make([]any, 0, len(travels))
 	args = append(args, interestId)
-	for i, val := range travels {
-		stmt += fmt.Sprintf("($%d, $%d),", 1, i+2)
-		args = append(args, val.Travel)
+	for i := range travels {
+		p1 := i * 2
+		stmt += fmt.Sprintf("($%d, $%d::uuid, $%d),", 1, p1+2, p1+3)
+		newUid := util.RandomUUID()
+		args = append(args, newUid, travels[i].Travel)
+		travels[i].Id = newUid
 	}
 	stmt = stmt[:len(stmt)-1]
 	query := fmt.Sprintf(`
 	INSERT INTO traveling 
-		(interest_id, travel)
+		(interest_id, id, travel)
 	VALUES %s RETURNING id`, stmt)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	err := i.execTx(ctx, func(q *sqlx.DB) error {
-		rows, err := q.QueryxContext(ctx, query, args...)
+		var retIds []string
+		err := q.SelectContext(ctx, &retIds, query, args...)
 		if err != nil {
 			return err
 		}
-		defer func(rows *sqlx.Rows) {
-			err := rows.Close()
-			if err != nil {
-				log.Panic(err)
-			}
-		}(rows)
-
-		iter := 0
-		for rows.Next() {
-			if err := rows.Scan(&travels[iter].Id); err != nil {
-				return err
-			}
-			if err != nil {
-				return err
-			}
-
-			iter++
-		}
-		if err := rows.Err(); err != nil {
-			return err
-		}
-		_, err = q.ExecContext(ctx, statsTravelingPlusQ, len(travels), interestId)
+		var retInterestId string
+		err = q.GetContext(ctx, &retInterestId, statsTravelingPlusQ, len(retIds), interestId)
 		if err != nil {
 			return err
 		}
@@ -588,14 +534,14 @@ func (i *IntrConn) UpdateInterestTraveling(interestId string, travels []domain.T
 	args = append(args, interestId)
 	stmnt := ``
 	var newTravel int
-	for i, val := range travels {
+	for i := range travels {
 		p1 := i * 2
 		stmnt += fmt.Sprintf("(uuid($%d::TEXT), uuid($%d::TEXT), $%d),", 1, p1+2, p1+3)
-		if val.Id == "" {
+		if travels[i].Id == "" {
 			newTravel++
-			val.Id = util.RandomUUID()
+			travels[i].Id = util.RandomUUID()
 		}
-		args = append(args, val.Id, val.Travel)
+		args = append(args, travels[i].Id, travels[i].Travel)
 	}
 	stmnt = stmnt[:len(stmnt)-1]
 
@@ -647,7 +593,7 @@ func (i *IntrConn) UpdateInterestTraveling(interestId string, travels []domain.T
 
 	return nil
 }
-func (i *IntrConn) DeleteInterestTraveling(interestId string, ids []string) error {
+func (i *IntrConn) DeleteInterestTraveling(interestId string, ids []string) ([]string, error) {
 	query := `
 	DELETE FROM traveling
 	WHERE id IN (`
@@ -656,24 +602,19 @@ func (i *IntrConn) DeleteInterestTraveling(interestId string, ids []string) erro
 		query += fmt.Sprintf("$%d,", i+1)
 		args = append(args, id)
 	}
-	query = query[:len(query)-1] + ")"
+	query = query[:len(query)-1] + ") RETURNING id"
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	var retIds []string
 	err := i.execTx(ctx, func(q *sqlx.DB) error {
-		res, err := q.ExecContext(ctx, query, args...)
+		err := q.SelectContext(ctx, &retIds, query, args...)
 		if err != nil {
 			return err
 		}
-		row, err := res.RowsAffected()
-		if err != nil {
-			return err
-		}
-		if int(row) == 0 {
-			return common.WrapWithNewError(fmt.Errorf("no rows affected by delete"), http.StatusUnprocessableEntity, "invalid Id in one of travels")
-		}
-		_, err = q.ExecContext(ctx, statsTravelingMinusQ, len(ids)-1, interestId)
+		var retInterestId string
+		err = q.GetContext(ctx, &retInterestId, statsTravelingMinusQ, len(retIds), interestId)
 		if err != nil {
 			return err
 		}
@@ -681,67 +622,53 @@ func (i *IntrConn) DeleteInterestTraveling(interestId string, ids []string) erro
 	})
 
 	if err != nil {
-		return i.parsingError(err)
+		return nil, i.parsingError(err)
 	}
-	return nil
+	return retIds, nil
 }
 
 const (
 	statsSportsPlusQ = `
 	UPDATE interest_statistics SET
 		sport_count = sport_count + $1
-		WHERE interest_id = $2`
+		WHERE interest_id = $2
+	RETURNING interest_id`
 	statsSportsMinusQ = `
 	UPDATE interest_statistics SET
 		sport_count = sport_count - $1
-		WHERE interest_id = $2`
+		WHERE interest_id = $2
+	RETURNING interest_id`
 )
 
 func (i *IntrConn) InsertInterestSports(interestId string, sports []domain.Sport) error {
 	stmt := ``
 	args := make([]any, 0, len(sports))
 	args = append(args, interestId)
-	for i, val := range sports {
-		stmt += fmt.Sprintf("($%d, $%d),", 1, i+2)
-		args = append(args, val.Sport)
+	for i := range sports {
+		p1 := i * 2
+		stmt += fmt.Sprintf("($%d, $%d::uuid, $%d),", 1, p1+2, p1+3)
+		newUid := util.RandomUUID()
+		args = append(args, newUid, sports[i].Sport)
+		sports[i].Id = newUid
 	}
 	stmt = stmt[:len(stmt)-1]
 
 	query := fmt.Sprintf(`
 	INSERT INTO sports 
-		(interest_id, sport)
+		(interest_id, id, sport)
 	VALUES %s RETURNING id`, stmt)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	err := i.execTx(ctx, func(q *sqlx.DB) error {
-		rows, err := q.QueryxContext(ctx, query, args...)
+		var retIds []string
+		err := q.SelectContext(ctx, &retIds, query, args...)
 		if err != nil {
 			return err
 		}
-		defer func(rows *sqlx.Rows) {
-			err := rows.Close()
-			if err != nil {
-				log.Panic(err)
-			}
-		}(rows)
-
-		iter := 0
-		for rows.Next() {
-			if err := rows.Scan(&sports[iter].Id); err != nil {
-				return err
-			}
-			if err != nil {
-				return err
-			}
-
-			iter++
-		}
-		if err := rows.Err(); err != nil {
-			return err
-		}
-		_, err = q.ExecContext(ctx, statsSportsPlusQ, len(sports), interestId)
+		var retInterestId string
+		err = q.GetContext(ctx, &retInterestId, statsSportsPlusQ, len(retIds), interestId)
 		if err != nil {
 			return err
 		}
@@ -758,14 +685,14 @@ func (i *IntrConn) UpdateInterestSport(interestId string, sports []domain.Sport)
 	args = append(args, interestId)
 	stmnt := ``
 	var newSport int
-	for i, val := range sports {
+	for i := range sports {
 		p1 := i * 2
 		stmnt += fmt.Sprintf("(uuid($%d::TEXT), uuid($%d::TEXT), $%d),", 1, p1+2, p1+3)
-		if val.Id == "" {
+		if sports[i].Id == "" {
 			newSport++
-			val.Id = util.RandomUUID()
+			sports[i].Id = util.RandomUUID()
 		}
-		args = append(args, val.Id, val.Sport)
+		args = append(args, sports[i].Id, sports[i].Sport)
 	}
 	stmnt = stmnt[:len(stmnt)-1]
 
@@ -820,7 +747,7 @@ func (i *IntrConn) UpdateInterestSport(interestId string, sports []domain.Sport)
 	return nil
 }
 
-func (i *IntrConn) DeleteInterestSports(interestId string, ids []string) error {
+func (i *IntrConn) DeleteInterestSports(interestId string, ids []string) ([]string, error) {
 	query := `
 	DELETE FROM sports
 	WHERE id IN (`
@@ -829,23 +756,19 @@ func (i *IntrConn) DeleteInterestSports(interestId string, ids []string) error {
 		query += fmt.Sprintf("$%d,", i+1)
 		args = append(args, id)
 	}
-	query = query[:len(query)-1] + ")"
+	query = query[:len(query)-1] + ") RETURNING id"
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
+	var retIds []string
 	err := i.execTx(ctx, func(q *sqlx.DB) error {
-		res, err := q.ExecContext(ctx, query, args...)
+		err := q.SelectContext(ctx, &retIds, query, args...)
 		if err != nil {
 			return err
 		}
-		row, err := res.RowsAffected()
-		if err != nil {
-			return err
-		}
-		if int(row) == 0 {
-			return common.WrapWithNewError(fmt.Errorf("no rows affected by delete"), http.StatusUnprocessableEntity, "invalid Id in one of sports")
-		}
-		_, err = q.ExecContext(ctx, statsSportsMinusQ, len(ids)-1, interestId)
+		var retInterestId string
+		err = q.GetContext(ctx, &retInterestId, statsSportsMinusQ, len(retIds), interestId)
 		if err != nil {
 			return err
 		}
@@ -853,9 +776,9 @@ func (i *IntrConn) DeleteInterestSports(interestId string, ids []string) error {
 	})
 
 	if err != nil {
-		return i.parsingError(err)
+		return nil, i.parsingError(err)
 	}
-	return nil
+	return retIds, nil
 }
 func (*IntrConn) parsingError(err error) error {
 	var pqErr *pq.Error
@@ -890,7 +813,7 @@ func (*IntrConn) parsingError(err error) error {
 				return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "every sports must be unique")
 			}
 			if strings.Contains(pqErr.Constraint, "user_id") {
-				return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "unique constraint on interest")
+				return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "interest already created")
 			}
 
 		case "23514":

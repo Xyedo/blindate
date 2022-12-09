@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/xyedo/blindate/pkg/common"
 	mockrepo "github.com/xyedo/blindate/pkg/repository/mock"
 	"github.com/xyedo/blindate/pkg/service"
 	"github.com/xyedo/blindate/pkg/util"
@@ -44,7 +45,7 @@ func Test_postAuthHandler(t *testing.T) {
 				validUser.HashedPassword = string(hashed)
 
 				userRepo.EXPECT().GetUserByEmail(gomock.Eq("uncleBob23@cool.com")).Times(1).Return(validUser, nil)
-				authRepo.EXPECT().AddRefreshToken(gomock.Any()).Times(1).Return(int64(1), nil)
+				authRepo.EXPECT().AddRefreshToken(gomock.Any()).Times(1).Return(nil)
 
 				authSvc := service.NewAuth(authRepo, userRepo, jwt)
 				return NewAuth(authSvc)
@@ -208,7 +209,8 @@ func Test_putAuthHandler(t *testing.T) {
 				id := util.RandomUUID()
 				token, err := jwt.GenerateRefreshToken(id)
 				assert.NoError(t, err)
-				authRepo.EXPECT().VerifyRefreshToken(gomock.Eq(token)).Times(1).Return(sql.ErrNoRows)
+				authRepo.EXPECT().VerifyRefreshToken(gomock.Eq(token)).Times(1).
+					Return(common.WrapError(sql.ErrNoRows, common.ErrNotMatchCredential))
 
 				authSvc := service.NewAuth(authRepo, userRepo, jwt)
 				return NewAuth(authSvc), token
@@ -271,7 +273,7 @@ func Test_deleteAuthHandler(t *testing.T) {
 				token, err := jwt.GenerateRefreshToken(id)
 				assert.NoError(t, err)
 				authRepo.EXPECT().VerifyRefreshToken(gomock.Eq(token)).Times(1).Return(nil)
-				authRepo.EXPECT().DeleteRefreshToken(gomock.Eq(token)).Times(1).Return(int64(1), nil)
+				authRepo.EXPECT().DeleteRefreshToken(gomock.Eq(token)).Times(1).Return(nil)
 				authSvc := service.NewAuth(authRepo, userRepo, jwt)
 				return NewAuth(authSvc), token
 			},
@@ -294,7 +296,8 @@ func Test_deleteAuthHandler(t *testing.T) {
 				id := util.RandomUUID()
 				token, err := jwt.GenerateRefreshToken(id)
 				assert.NoError(t, err)
-				authRepo.EXPECT().VerifyRefreshToken(gomock.Eq(token)).Times(1).Return(sql.ErrNoRows)
+				authRepo.EXPECT().VerifyRefreshToken(gomock.Eq(token)).Times(1).
+					Return(common.WrapError(sql.ErrNoRows, common.ErrNotMatchCredential))
 				authRepo.EXPECT().DeleteRefreshToken(gomock.Any()).Times(0)
 				authSvc := service.NewAuth(authRepo, userRepo, jwt)
 				return NewAuth(authSvc), token

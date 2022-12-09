@@ -35,11 +35,12 @@ func (m *MockInterest) EXPECT() *MockInterestMockRecorder {
 }
 
 // DeleteInterestHobbies mocks base method.
-func (m *MockInterest) DeleteInterestHobbies(arg0 string, arg1 []string) error {
+func (m *MockInterest) DeleteInterestHobbies(arg0 string, arg1 []string) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteInterestHobbies", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // DeleteInterestHobbies indicates an expected call of DeleteInterestHobbies.
@@ -49,11 +50,12 @@ func (mr *MockInterestMockRecorder) DeleteInterestHobbies(arg0, arg1 interface{}
 }
 
 // DeleteInterestMovieSeries mocks base method.
-func (m *MockInterest) DeleteInterestMovieSeries(arg0 string, arg1 []string) error {
+func (m *MockInterest) DeleteInterestMovieSeries(arg0 string, arg1 []string) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteInterestMovieSeries", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // DeleteInterestMovieSeries indicates an expected call of DeleteInterestMovieSeries.
@@ -63,11 +65,12 @@ func (mr *MockInterestMockRecorder) DeleteInterestMovieSeries(arg0, arg1 interfa
 }
 
 // DeleteInterestSports mocks base method.
-func (m *MockInterest) DeleteInterestSports(arg0 string, arg1 []string) error {
+func (m *MockInterest) DeleteInterestSports(arg0 string, arg1 []string) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteInterestSports", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // DeleteInterestSports indicates an expected call of DeleteInterestSports.
@@ -77,11 +80,12 @@ func (mr *MockInterestMockRecorder) DeleteInterestSports(arg0, arg1 interface{})
 }
 
 // DeleteInterestTraveling mocks base method.
-func (m *MockInterest) DeleteInterestTraveling(arg0 string, arg1 []string) error {
+func (m *MockInterest) DeleteInterestTraveling(arg0 string, arg1 []string) ([]string, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteInterestTraveling", arg0, arg1)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // DeleteInterestTraveling indicates an expected call of DeleteInterestTraveling.
