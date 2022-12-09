@@ -8,7 +8,7 @@ import (
 	reflect "reflect"
 
 	gomock "github.com/golang/mock/gomock"
-	entity "github.com/xyedo/blindate/pkg/entity"
+	entity "github.com/xyedo/blindate/pkg/domain/entity"
 )
 
 // MockChat is a mock of Chat interface.

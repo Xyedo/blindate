@@ -35,7 +35,7 @@ func (m *MockOnline) EXPECT() *MockOnlineMockRecorder {
 }
 
 // InsertNewOnline mocks base method.
-func (m *MockOnline) InsertNewOnline(arg0 *domain.Online) error {
+func (m *MockOnline) InsertNewOnline(arg0 domain.Online) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InsertNewOnline", arg0)
 	ret0, _ := ret[0].(error)
@@ -49,10 +49,10 @@ func (mr *MockOnlineMockRecorder) InsertNewOnline(arg0 interface{}) *gomock.Call
 }
 
 // SelectOnline mocks base method.
-func (m *MockOnline) SelectOnline(arg0 string) (*domain.Online, error) {
+func (m *MockOnline) SelectOnline(arg0 string) (domain.Online, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SelectOnline", arg0)
-	ret0, _ := ret[0].(*domain.Online)
+	ret0, _ := ret[0].(domain.Online)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

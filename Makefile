@@ -1,6 +1,5 @@
 
 MG_PATH=./pkg/repository/migrations
-DB_DSN=postgres://blindate:pa55word@localhost:5433/blindate?sslmode=disable
 REPO_PATH=github.com/xyedo/blindate/pkg/repository
 
 migrate-up: 
@@ -13,18 +12,16 @@ migrate-create:
 	migrate create -dir $(MG_PATH) -seq -ext .sql $(name)
 
 build-up:
-	docker compose up -d --build
-up:
-	docker compose up -d
+	docker compose --env-file ./.env.dev up -d --build 
 
 down: 
-	docker compose down
+	docker compose --env-file ./.env.dev down 
 
 mock-repo:
 	mockgen -destination pkg/repository/mock/$(mock_name) -package mockrepo $(REPO_PATH) $(interface) 
 
 test :
-	go test ./...
+	go test ./... 
 
 test-repo:
 	go test -timeout 2m github.com/xyedo/blindate/pkg/repository

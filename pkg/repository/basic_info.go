@@ -2,29 +2,35 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/lib/pq"
+	"github.com/xyedo/blindate/pkg/common"
+	"github.com/xyedo/blindate/pkg/domain/entity"
 )
 
 type BasicInfo interface {
-	InsertBasicInfo(basicinfo *entity.BasicInfo) (int64, error)
-	GetBasicInfoByUserId(id string) (*entity.BasicInfo, error)
-	UpdateBasicInfo(bInfo *entity.BasicInfo) (int64, error)
+	InsertBasicInfo(basicinfo entity.BasicInfo) error
+	GetBasicInfoByUserId(id string) (entity.BasicInfo, error)
+	UpdateBasicInfo(bInfo entity.BasicInfo) error
 }
 
-func NewBasicInfo(db *sqlx.DB) *basicInfo {
-	return &basicInfo{
+func NewBasicInfo(db *sqlx.DB) *BInfoConn {
+	return &BInfoConn{
 		conn: db,
 	}
 }
 
-type basicInfo struct {
+type BInfoConn struct {
 	conn *sqlx.DB
 }
 
-func (b *basicInfo) InsertBasicInfo(basicinfo *entity.BasicInfo) (int64, error) {
+func (b *BInfoConn) InsertBasicInfo(basicinfo entity.BasicInfo) error {
 	query := `
 	INSERT INTO basic_info(
 		user_id, 
@@ -41,7 +47,8 @@ func (b *basicInfo) InsertBasicInfo(basicinfo *entity.BasicInfo) (int64, error) 
 		work, 
 		created_at, 
 		updated_at)
-	VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13)`
+	VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13)
+	RETURNING user_id`
 	args := []any{
 		basicinfo.UserId,
 		basicinfo.Gender,
@@ -59,19 +66,24 @@ func (b *basicInfo) InsertBasicInfo(basicinfo *entity.BasicInfo) (int64, error) 
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
-	rows, err := b.conn.ExecContext(ctx, query, args...)
+	var retUserId string
+	err := b.conn.GetContext(ctx, &retUserId, query, args...)
 	if err != nil {
-		return 0, err
+		if errors.Is(err, context.Canceled) {
+			return common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return common.WrapError(err, common.ErrResourceNotFound)
+		}
+		if err := b.parsingPostgreError(err); err != nil {
+			return err
+		}
+		return err
 	}
-	affected, err := rows.RowsAffected()
-	if err != nil {
-		return 0, err
-	}
-	return affected, nil
+	return nil
 }
 
-func (b *basicInfo) GetBasicInfoByUserId(userId string) (*entity.BasicInfo, error) {
+func (b *BInfoConn) GetBasicInfoByUserId(userId string) (entity.BasicInfo, error) {
 	query := `
 		SELECT
 			user_id, 
@@ -96,12 +108,18 @@ func (b *basicInfo) GetBasicInfoByUserId(userId string) (*entity.BasicInfo, erro
 	var basicinfo entity.BasicInfo
 	err := b.conn.GetContext(ctx, &basicinfo, query, userId)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, context.Canceled) {
+			return entity.BasicInfo{}, common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.BasicInfo{}, common.WrapError(err, common.ErrResourceNotFound)
+		}
+		return entity.BasicInfo{}, err
 	}
-	return &basicinfo, nil
+	return basicinfo, nil
 }
 
-func (b *basicInfo) UpdateBasicInfo(bInfo *entity.BasicInfo) (int64, error) {
+func (b *BInfoConn) UpdateBasicInfo(bInfo entity.BasicInfo) error {
 	query := `
 	UPDATE basic_info SET
 		gender =$1, 
@@ -116,7 +134,8 @@ func (b *basicInfo) UpdateBasicInfo(bInfo *entity.BasicInfo) (int64, error) {
 		kids=$10, 
 		work=$11, 
 		updated_at=$12
-	WHERE user_id = $13`
+	WHERE user_id = $13
+	RETURNING user_id`
 
 	args := []any{
 		bInfo.Gender,
@@ -137,14 +156,52 @@ func (b *basicInfo) UpdateBasicInfo(bInfo *entity.BasicInfo) (int64, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	res, err := b.conn.ExecContext(ctx, query, args...)
+	var retUserId string
+	err := b.conn.GetContext(ctx, &retUserId, query, args...)
 	if err != nil {
-		return 0, err
+		if errors.Is(err, context.Canceled) {
+			return common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return common.WrapError(err, common.ErrResourceNotFound)
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return common.WrapError(err, common.ErrResourceNotFound)
+		}
+		if err := b.parsingPostgreError(err); err != nil {
+			return err
+		}
+		return err
 	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return 0, err
+	return nil
+}
+func (*BInfoConn) parsingPostgreError(err error) error {
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		if pqErr.Code == "23503" {
+			switch {
+			case strings.Contains(pqErr.Constraint, "user_id"):
+				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "userId is invalid")
+			case strings.Contains(pqErr.Constraint, "gender"):
+				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "gender value is not valid enums")
+			case strings.Contains(pqErr.Constraint, "education_level"):
+				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "educationLevel value is not valid enums")
+			case strings.Contains(pqErr.Constraint, "drinking"):
+				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "drinking value is not valid enums")
+			case strings.Contains(pqErr.Constraint, "smoking"):
+				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "smoking value is not valid enums")
+			case strings.Contains(pqErr.Constraint, "relationship_pref"):
+				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "relationshipPref value is not valid enums")
+			case strings.Contains(pqErr.Constraint, "looking_for"):
+				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "lookingFor value is not valid enums")
+			case strings.Contains(pqErr.Constraint, "zodiac"):
+				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "zodiac value is not valid enums")
+			}
+		}
+		if pqErr.Code == "23505" {
+			return common.WrapError(err, common.ErrUniqueConstraint23505)
+		}
+		return pqErr
 	}
-	return rows, nil
-
+	return nil
 }

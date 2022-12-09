@@ -9,7 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	domain "github.com/xyedo/blindate/pkg/domain"
-	entity "github.com/xyedo/blindate/pkg/entity"
+	entity "github.com/xyedo/blindate/pkg/domain/entity"
 )
 
 // MockMatch is a mock of Match interface.
@@ -36,10 +36,10 @@ func (m *MockMatch) EXPECT() *MockMatchMockRecorder {
 }
 
 // GetMatchById mocks base method.
-func (m *MockMatch) GetMatchById(arg0 string) (*entity.Match, error) {
+func (m *MockMatch) GetMatchById(arg0 string) (entity.Match, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetMatchById", arg0)
-	ret0, _ := ret[0].(*entity.Match)
+	ret0, _ := ret[0].(entity.Match)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -51,18 +51,18 @@ func (mr *MockMatchMockRecorder) GetMatchById(arg0 interface{}) *gomock.Call {
 }
 
 // InsertNewMatch mocks base method.
-func (m *MockMatch) InsertNewMatch(arg0, arg1 string) (string, error) {
+func (m *MockMatch) InsertNewMatch(arg0, arg1 string, arg2 domain.MatchStatus) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InsertNewMatch", arg0, arg1)
+	ret := m.ctrl.Call(m, "InsertNewMatch", arg0, arg1, arg2)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // InsertNewMatch indicates an expected call of InsertNewMatch.
-func (mr *MockMatchMockRecorder) InsertNewMatch(arg0, arg1 interface{}) *gomock.Call {
+func (mr *MockMatchMockRecorder) InsertNewMatch(arg0, arg1, arg2 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertNewMatch", reflect.TypeOf((*MockMatch)(nil).InsertNewMatch), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InsertNewMatch", reflect.TypeOf((*MockMatch)(nil).InsertNewMatch), arg0, arg1, arg2)
 }
 
 // SelectMatchReqToUserId mocks base method.

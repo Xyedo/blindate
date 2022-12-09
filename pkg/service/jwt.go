@@ -6,11 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/xyedo/blindate/pkg/domain"
-)
-
-var (
-	ErrTokenExpired = domain.WrapWithNewError(errors.New("jwt: token expired"), http.StatusUnauthorized, "token is expired, please login!")
+	"github.com/xyedo/blindate/pkg/common"
 )
 
 type customClaims struct {
@@ -18,8 +14,8 @@ type customClaims struct {
 	jwt.RegisteredClaims
 }
 
-func NewJwt(accessSecret, refreshSecret, accessExpires, refreshExpires string) *jwtSvc {
-	return &jwtSvc{
+func NewJwt(accessSecret, refreshSecret, accessExpires, refreshExpires string) *Jwt {
+	return &Jwt{
 		accessSecret:   accessSecret,
 		refreshSecret:  refreshSecret,
 		accessExpires:  accessExpires,
@@ -27,27 +23,27 @@ func NewJwt(accessSecret, refreshSecret, accessExpires, refreshExpires string) *
 	}
 }
 
-type jwtSvc struct {
+type Jwt struct {
 	accessSecret   string
 	refreshSecret  string
 	accessExpires  string
 	refreshExpires string
 }
 
-func (j *jwtSvc) GenerateAccessToken(id string) (string, error) {
+func (j *Jwt) GenerateAccessToken(id string) (string, error) {
 	return generateToken(id, j.accessSecret, j.accessExpires)
 }
 
-func (j *jwtSvc) GenerateRefreshToken(id string) (string, error) {
+func (j *Jwt) GenerateRefreshToken(id string) (string, error) {
 	return generateToken(id, j.refreshSecret, j.refreshExpires)
 }
 
-func (j *jwtSvc) ValidateRefreshToken(token string) (string, error) {
+func (j *Jwt) ValidateRefreshToken(token string) (string, error) {
 	return validateToken(token, j.refreshSecret)
 
 }
 
-func (j *jwtSvc) ValidateAccessToken(token string) (string, error) {
+func (j *Jwt) ValidateAccessToken(token string) (string, error) {
 	return validateToken(token, j.accessSecret)
 }
 
@@ -68,7 +64,7 @@ func generateToken(id, secret string, expires string) (string, error) {
 func validateToken(token, secret string) (string, error) {
 	decodedToken, err := jwt.ParseWithClaims(token, &customClaims{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, domain.ErrNotMatchCredential
+			return nil, common.ErrNotMatchCredential
 		}
 		return []byte(secret), nil
 	})
@@ -76,14 +72,14 @@ func validateToken(token, secret string) (string, error) {
 		var jwtErr *jwt.ValidationError
 		if errors.As(err, &jwtErr) {
 			if jwtErr.Errors == jwt.ValidationErrorExpired {
-				return "", ErrTokenExpired
+				return "", common.WrapWithNewError(err, http.StatusUnauthorized, "token is expired, please login!")
 			}
 		}
-		return "", domain.ErrNotMatchCredential
+		return "", common.WrapError(err, common.ErrNotMatchCredential)
 	}
 	claims, ok := decodedToken.Claims.(*customClaims)
 	if !ok || !decodedToken.Valid {
-		return "", domain.ErrNotMatchCredential
+		return "", common.ErrNotMatchCredential
 	}
 
 	return claims.CredentialId, nil

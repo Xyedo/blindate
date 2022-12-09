@@ -23,6 +23,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
 	mockrepo "github.com/xyedo/blindate/pkg/repository/mock"
 	"github.com/xyedo/blindate/pkg/service"
@@ -41,7 +42,7 @@ func Test_PostUserHandler(t *testing.T) {
 	tests := []struct {
 		name       string
 		body       map[string]any
-		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *user
+		setupFunc  func(t *testing.T, ctrl *gomock.Controller) *User
 		wantCode   int
 		wantHeader map[string]string
 		wantResp   map[string]any
@@ -55,7 +56,7 @@ func Test_PostUserHandler(t *testing.T) {
 				"password": validPassword,
 				"dob":      validDOB,
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 
 				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).Return(nil)
@@ -83,7 +84,7 @@ func Test_PostUserHandler(t *testing.T) {
 				"password": validPassword,
 				"dob":      validDOB,
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
@@ -107,7 +108,7 @@ func Test_PostUserHandler(t *testing.T) {
 				"password": validPassword,
 				"dob":      validDOB,
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
@@ -131,7 +132,7 @@ func Test_PostUserHandler(t *testing.T) {
 				"password": 124541,
 				"dob":      validDOB,
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
@@ -155,7 +156,7 @@ func Test_PostUserHandler(t *testing.T) {
 				"password": "pass",
 				"dob":      validDOB,
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
@@ -184,7 +185,7 @@ func Test_PostUserHandler(t *testing.T) {
 				"passasdword": "012",
 				"dobasd":      validDOB,
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
@@ -206,7 +207,7 @@ func Test_PostUserHandler(t *testing.T) {
 				"dob":      validDOB,
 				"foo":      "bar",
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 
 				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).Return(nil)
@@ -228,13 +229,14 @@ func Test_PostUserHandler(t *testing.T) {
 				"password": validPassword,
 				"dob":      validDOB,
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				pqErr := pq.Error{
 					Code:       "23505",
 					Constraint: "users_email_unique",
 				}
-				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).Return(&pqErr)
+				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).
+					Return(common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "email already taken"))
 				userService := service.NewUser(userRepo)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				return NewUser(userService, attachSvc)
@@ -247,7 +249,7 @@ func Test_PostUserHandler(t *testing.T) {
 		{
 			name: "No Body",
 			body: nil,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
@@ -269,7 +271,7 @@ func Test_PostUserHandler(t *testing.T) {
 				"password": validPassword,
 				"dob":      time.Now().AddDate(0, 1, 0),
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
@@ -290,7 +292,7 @@ func Test_PostUserHandler(t *testing.T) {
 				"password": validPassword,
 				"dob":      time.Date(1900, time.January, 0, 0, 0, 0, 0, time.UTC),
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().InsertUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
@@ -311,10 +313,11 @@ func Test_PostUserHandler(t *testing.T) {
 				"password": validPassword,
 				"dob":      validDOB,
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 
-				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).Return(context.Canceled)
+				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).
+					Return(common.WrapError(context.Canceled, common.ErrTooLongAccessingDB))
 				userService := service.NewUser(userRepo)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				return NewUser(userService, attachSvc)
@@ -354,14 +357,14 @@ func Test_GetUserByIdHandler(t *testing.T) {
 	tests := []struct {
 		name      string
 		id        string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) (userSvc, service.Attachment, *domain.User)
-		respFunc  func(t *testing.T, user *domain.User, resp *httptest.ResponseRecorder)
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) (userSvc, service.Attachment, domain.User)
+		respFunc  func(t *testing.T, user domain.User, resp *httptest.ResponseRecorder)
 	}{
 
 		{
 			name: "Valid Submission",
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (userSvc, service.Attachment, *domain.User) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (userSvc, service.Attachment, domain.User) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				users := createNewUser(t)
 				userRepo.EXPECT().GetUserById(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(users, nil)
@@ -370,7 +373,7 @@ func Test_GetUserByIdHandler(t *testing.T) {
 				userService := service.NewUser(userRepo)
 				return userService, attachSvc, users
 			},
-			respFunc: func(t *testing.T, user *domain.User, resp *httptest.ResponseRecorder) {
+			respFunc: func(t *testing.T, user domain.User, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, resp.Code)
 				assert.Contains(t, resp.Header().Get("Content-Type"), "application/json")
 
@@ -387,15 +390,16 @@ func Test_GetUserByIdHandler(t *testing.T) {
 		{
 			name: "Valid URL Params but User Not Found",
 			id:   "d3aa0883-4a29-4a39-8f0e-2413c169bd9d",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (userSvc, service.Attachment, *domain.User) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (userSvc, service.Attachment, domain.User) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				users := createNewUser(t)
-				userRepo.EXPECT().GetUserById("d3aa0883-4a29-4a39-8f0e-2413c169bd9d").Times(1).Return(nil, sql.ErrNoRows)
+				userRepo.EXPECT().GetUserById("d3aa0883-4a29-4a39-8f0e-2413c169bd9d").Times(1).
+					Return(domain.User{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				userService := service.NewUser(userRepo)
 				return userService, attachSvc, users
 			},
-			respFunc: func(t *testing.T, user *domain.User, resp *httptest.ResponseRecorder) {
+			respFunc: func(t *testing.T, user domain.User, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusNotFound, resp.Code)
 				assert.Contains(t, resp.Header().Get("Content-Type"), "application/json")
 
@@ -432,7 +436,7 @@ func Test_PatchUserById(t *testing.T) {
 		name      string
 		id        string
 		reqBody   string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *user
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *User
 		wantCode  int
 		wantResp  map[string]any
 	}{
@@ -440,7 +444,7 @@ func Test_PatchUserById(t *testing.T) {
 			name:    "Valid Submission On FullName",
 			id:      "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 			reqBody: `{"fullName":"Bob Martin"}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				user := createNewUser(t)
 				userRepo.EXPECT().GetUserById(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(user, nil)
@@ -460,7 +464,7 @@ func Test_PatchUserById(t *testing.T) {
 			name:    "Valid Submission On Email",
 			id:      "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 			reqBody: `{"email":"bob@martin.com"}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				user := createNewUser(t)
 				userRepo.EXPECT().GetUserById(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(user, nil)
@@ -481,14 +485,13 @@ func Test_PatchUserById(t *testing.T) {
 			id:       "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 			reqBody:  `{"oldPassword":"pa55word","newPassword":"newPa55word"}`,
 			wantCode: http.StatusOK,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				user := createNewUser(t)
 				hashed, err := bcrypt.GenerateFromPassword([]byte("pa55word"), 12)
 				assert.NoError(t, err)
 				user.HashedPassword = string(hashed)
 				userRepo.EXPECT().GetUserById(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(user, nil)
-				userRepo.EXPECT().GetUserByEmail(gomock.Eq(user.Email)).Times(1).Return(user, nil)
 				user.Password = "newPa55word"
 				userRepo.EXPECT().UpdateUser(gomock.Not(nil)).Times(1).Return(nil)
 				userService := service.NewUser(userRepo)
@@ -505,11 +508,10 @@ func Test_PatchUserById(t *testing.T) {
 			id:       "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 			reqBody:  `{"oldPassword":"pa55word","newPassword":"newPa55word"}`,
 			wantCode: http.StatusUnauthorized,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				user := createNewUser(t)
 				userRepo.EXPECT().GetUserById(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(user, nil)
-				userRepo.EXPECT().GetUserByEmail(gomock.Eq(user.Email)).Times(1).Return(user, nil)
 				userRepo.EXPECT().UpdateUser(gomock.Not(nil)).Times(0)
 				userService := service.NewUser(userRepo)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
@@ -524,11 +526,9 @@ func Test_PatchUserById(t *testing.T) {
 			name:    "Invalid Submission On NewPassword",
 			id:      "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 			reqBody: `{"newPassword":"newPa55word"}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
-				user := createNewUser(t)
-				userRepo.EXPECT().GetUserById(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(user, nil)
-				userRepo.EXPECT().GetUserByEmail(gomock.Any()).Times(0)
+				userRepo.EXPECT().GetUserById(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(0)
 				userRepo.EXPECT().UpdateUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
@@ -548,10 +548,9 @@ func Test_PatchUserById(t *testing.T) {
 			id:       "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 			reqBody:  `{"oldPassword":"pa55word"}`,
 			wantCode: http.StatusUnprocessableEntity,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
-				user := createNewUser(t)
-				userRepo.EXPECT().GetUserById(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(user, nil)
+				userRepo.EXPECT().GetUserById(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(0)
 				userRepo.EXPECT().GetUserByEmail(gomock.Any()).Times(0)
 				userRepo.EXPECT().UpdateUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
@@ -570,9 +569,10 @@ func Test_PatchUserById(t *testing.T) {
 			name:    "Valid URL Params but User Not Found",
 			id:      "d3aa0883-4a29-4a39-8f0e-2413c169bd9d",
 			reqBody: `{"fullName":"Bob Martin"}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
-				userRepo.EXPECT().GetUserById(gomock.Eq("d3aa0883-4a29-4a39-8f0e-2413c169bd9d")).Times(1).Return(nil, sql.ErrNoRows)
+				userRepo.EXPECT().GetUserById(gomock.Eq("d3aa0883-4a29-4a39-8f0e-2413c169bd9d")).Times(1).
+					Return(domain.User{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
 				userRepo.EXPECT().UpdateUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
@@ -588,10 +588,9 @@ func Test_PatchUserById(t *testing.T) {
 			name:    "Invalid Body",
 			id:      "d3aa0883-4a29-4a39-8f0e-2413c169bd9d",
 			reqBody: `{"1", 1, 102}`,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *user {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
-				user := createNewUser(t)
-				userRepo.EXPECT().GetUserById(gomock.Eq("d3aa0883-4a29-4a39-8f0e-2413c169bd9d")).Times(1).Return(user, nil)
+				userRepo.EXPECT().GetUserById(gomock.Eq("d3aa0883-4a29-4a39-8f0e-2413c169bd9d")).Times(0)
 				userRepo.EXPECT().UpdateUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
@@ -658,7 +657,7 @@ func Test_PutUserImageProfile(t *testing.T) {
 		id        string
 		params    map[string]string
 		writoMime func(writer *multipart.Writer)
-		stubFunc  func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *user
+		stubFunc  func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *User
 		wantCode  int
 		wantResp  map[string]any
 	}{
@@ -669,14 +668,12 @@ func Test_PutUserImageProfile(t *testing.T) {
 				"selected": "true",
 			},
 			writoMime: writeToPng,
-			stubFunc: func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *user {
+			stubFunc: func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				validKey := "profile-picture/" + util.RandomUUID() + ".png"
 				user := createNewUser(t)
 				user.ID = validUserId
-				userRepo.EXPECT().GetUserById(validUserId).Return(user, nil).Times(1)
-
 				attachSvc.EXPECT().UploadBlob(uploadValid(), gomock.Any()).Return(validKey, nil).Times(1)
 
 				profPic := make([]domain.ProfilePicture, 0, 4)
@@ -713,14 +710,12 @@ func Test_PutUserImageProfile(t *testing.T) {
 			name:      "valid but unselected",
 			id:        validUserId,
 			writoMime: writeToPng,
-			stubFunc: func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *user {
+			stubFunc: func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				validKey := "profile-picture/" + util.RandomUUID() + ".png"
 				user := createNewUser(t)
 				user.ID = validUserId
-				userRepo.EXPECT().GetUserById(validUserId).Return(user, nil).Times(1)
-
 				attachSvc.EXPECT().UploadBlob(uploadValid(), gomock.Any()).Return(validKey, nil).Times(1)
 
 				profPic := make([]domain.ProfilePicture, 0, 4)
@@ -768,14 +763,12 @@ func Test_PutUserImageProfile(t *testing.T) {
 				_, err = io.Copy(part, read)
 				require.NoError(t, err)
 			},
-			stubFunc: func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *user {
+			stubFunc: func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				validKey := "profile-picture/" + util.RandomUUID() + ".png"
 				user := createNewUser(t)
 				user.ID = validUserId
-				userRepo.EXPECT().GetUserById(validUserId).Return(user, nil).Times(1)
-
 				attachSvc.EXPECT().UploadBlob(gomock.Any(), gomock.Any()).Times(0)
 
 				userRepo.EXPECT().SelectProfilePicture(gomock.Any(), gomock.Any()).Times(0)
@@ -812,14 +805,12 @@ func Test_PutUserImageProfile(t *testing.T) {
 				_, err = io.Copy(part, read)
 				require.NoError(t, err)
 			},
-			stubFunc: func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *user {
+			stubFunc: func(t *testing.T, ctrl *gomock.Controller, pr *io.PipeReader) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				validKey := "profile-picture/" + util.RandomUUID() + ".png"
 				user := createNewUser(t)
 				user.ID = validUserId
-				userRepo.EXPECT().GetUserById(validUserId).Return(user, nil).Times(1)
-
 				attachSvc.EXPECT().UploadBlob(gomock.Any(), gomock.Any()).Times(0)
 
 				userRepo.EXPECT().SelectProfilePicture(gomock.Any(), gomock.Any()).Times(0)
@@ -885,8 +876,6 @@ func Test_PutUserImageProfile(t *testing.T) {
 		validKey := "profile-picture/" + util.RandomUUID() + ".png"
 		user := createNewUser(t)
 		user.ID = validUserId
-		userRepo.EXPECT().GetUserById(validUserId).Return(user, nil).Times(1)
-
 		attachSvc.EXPECT().UploadBlob(gomock.Any(), gomock.Any()).Times(0)
 
 		userRepo.EXPECT().SelectProfilePicture(gomock.Any(), gomock.Any()).Times(0)
@@ -915,11 +904,11 @@ func Test_PutUserImageProfile(t *testing.T) {
 	})
 }
 
-func createNewUser(t *testing.T) *domain.User {
+func createNewUser(t *testing.T) domain.User {
 	pass := util.RandomString(10)
 	hashed, err := bcrypt.GenerateFromPassword([]byte(pass), 12)
 	assert.NoError(t, err)
-	return &domain.User{
+	return domain.User{
 		ID:             util.RandomUUID(),
 		FullName:       util.RandomString(12),
 		Email:          util.RandomEmail(12),

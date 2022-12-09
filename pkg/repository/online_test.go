@@ -1,71 +1,63 @@
-package repository
+package repository_test
 
 import (
-	"database/sql"
 	"testing"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
+	"github.com/xyedo/blindate/pkg/repository"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
 func Test_InsertNewOnline(t *testing.T) {
-	repo := NewOnline(testQuery)
+	repo := repository.NewOnline(testQuery)
 	t.Run("Valid And Unique", func(t *testing.T) {
 		user := createNewAccount(t)
 		online := createNewOnline(t, user.ID)
 		err := repo.InsertNewOnline(online)
-		assert.Error(t, err)
-		var pqErr *pq.Error
-		if assert.ErrorAs(t, err, &pqErr) {
-			assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
-			assert.Contains(t, pqErr.Constraint, "onlines_pkey")
-		}
+		require.Error(t, err)
+		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
+
 	})
 	t.Run("Invalid user_id", func(t *testing.T) {
-		online := &domain.Online{
+		online := domain.Online{
 			UserId:     util.RandomUUID(),
 			LastOnline: time.Now(),
 			IsOnline:   false,
 		}
 		err := repo.InsertNewOnline(online)
-		assert.Error(t, err)
-		var pqErr *pq.Error
-		if assert.ErrorAs(t, err, &pqErr) {
-			assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
-			assert.Contains(t, pqErr.Constraint, "user_id")
-		}
+		require.Error(t, err)
+		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
 	})
 
 }
 
 func Test_SelectOnline(t *testing.T) {
-	repo := NewOnline(testQuery)
-	user := createNewAccount(t)
-	exp := createNewOnline(t, user.ID)
-	res, err := repo.SelectOnline(user.ID)
-	assert.NoError(t, err)
-	assert.Equal(t, exp.IsOnline, res.IsOnline)
-	assert.Equal(t, exp.UserId, res.UserId)
-	assert.NotZero(t, res.LastOnline)
-}
+	repo := repository.NewOnline(testQuery)
+	t.Run("valid select", func(t *testing.T) {
 
-func createNewOnline(t *testing.T, userId string) *domain.Online {
-	repo := NewOnline(testQuery)
-	online := &domain.Online{
-		UserId:     userId,
-		LastOnline: time.Now(),
-		IsOnline:   false,
-	}
-	err := repo.InsertNewOnline(online)
-	assert.NoError(t, err)
-	return online
+		user := createNewAccount(t)
+		exp := createNewOnline(t, user.ID)
+		res, err := repo.SelectOnline(user.ID)
+		require.NoError(t, err)
+		assert.Equal(t, exp.IsOnline, res.IsOnline)
+		assert.Equal(t, exp.UserId, res.UserId)
+		assert.NotZero(t, res.LastOnline)
+	})
+	t.Run("invalid userId", func(t *testing.T) {
+		res, err := repo.SelectOnline(util.RandomUUID())
+		require.Error(t, err)
+		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		require.Zero(t, res)
+	})
+
 }
 
 func Test_UpdateOnline(t *testing.T) {
-	repo := NewOnline(testQuery)
+	repo := repository.NewOnline(testQuery)
 	t.Run("Valid Id", func(t *testing.T) {
 		t.Run("Online", func(t *testing.T) {
 			user := createNewAccount(t)
@@ -83,12 +75,23 @@ func Test_UpdateOnline(t *testing.T) {
 	t.Run("Invalid Id", func(t *testing.T) {
 		t.Run("Online", func(t *testing.T) {
 			err := repo.UpdateOnline(util.RandomUUID(), true)
-			assert.ErrorIs(t, err, sql.ErrNoRows)
+			require.ErrorIs(t, err, common.ErrResourceNotFound)
 		})
 		t.Run("Offline", func(t *testing.T) {
 			err := repo.UpdateOnline(util.RandomUUID(), false)
-			assert.ErrorIs(t, err, sql.ErrNoRows)
+			require.ErrorIs(t, err, common.ErrResourceNotFound)
 		})
 	})
 
+}
+func createNewOnline(t *testing.T, userId string) domain.Online {
+	repo := repository.NewOnline(testQuery)
+	online := domain.Online{
+		UserId:     userId,
+		LastOnline: time.Now(),
+		IsOnline:   false,
+	}
+	err := repo.InsertNewOnline(online)
+	assert.NoError(t, err)
+	return online
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
 	mockrepo "github.com/xyedo/blindate/pkg/repository/mock"
 	"github.com/xyedo/blindate/pkg/service"
@@ -22,11 +23,11 @@ import (
 )
 
 type onlineUserMatcher struct {
-	arg *domain.Online
+	arg domain.Online
 }
 
 func (e onlineUserMatcher) Matches(x any) bool {
-	arg, ok := x.(*domain.Online)
+	arg, ok := x.(domain.Online)
 	if !ok {
 		return false
 	}
@@ -37,7 +38,7 @@ func (e onlineUserMatcher) String() string {
 	return fmt.Sprintf("matches arg %v", e.arg)
 }
 
-func EqOnlineUser(arg *domain.Online) gomock.Matcher {
+func EqOnlineUser(arg domain.Online) gomock.Matcher {
 	return onlineUserMatcher{
 		arg: arg,
 	}
@@ -48,16 +49,16 @@ func Test_postUserOnlineHandler(t *testing.T) {
 	tests := []struct {
 		name      string
 		userId    string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *online
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *Online
 		wantCode  int
 		wantResp  map[string]any
 	}{
 		{
 			name:   "valid online post",
 			userId: validUserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
-				online := &domain.Online{
+				online := domain.Online{
 					UserId:     validUserId,
 					LastOnline: time.Now(),
 					IsOnline:   false,
@@ -75,9 +76,9 @@ func Test_postUserOnlineHandler(t *testing.T) {
 		{
 			name:   "userId not found",
 			userId: validUserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
-				online := &domain.Online{
+				online := domain.Online{
 					UserId:     validUserId,
 					LastOnline: time.Now(),
 					IsOnline:   false,
@@ -86,22 +87,23 @@ func Test_postUserOnlineHandler(t *testing.T) {
 					Code:       "23503",
 					Constraint: "user_id",
 				}
-				onlineRepo.EXPECT().InsertNewOnline(EqOnlineUser(online)).Times(1).Return(&pqErr)
+				onlineRepo.EXPECT().InsertNewOnline(EqOnlineUser(online)).Times(1).
+					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "invalid userId"))
 				onlineSvc := service.NewOnline(onlineRepo)
 				return NewOnline(onlineSvc)
 			},
-			wantCode: http.StatusNotFound,
+			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "provided userId is not match with our resource",
+				"message": "invalid userId",
 			},
 		},
 		{
 			name:   "duplicate userId",
 			userId: validUserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
-				online := &domain.Online{
+				online := domain.Online{
 					UserId:     validUserId,
 					LastOnline: time.Now(),
 					IsOnline:   false,
@@ -110,14 +112,15 @@ func Test_postUserOnlineHandler(t *testing.T) {
 					Code:       "23505",
 					Constraint: "user_id",
 				}
-				onlineRepo.EXPECT().InsertNewOnline(EqOnlineUser(online)).Times(1).Return(&pqErr)
+				onlineRepo.EXPECT().InsertNewOnline(EqOnlineUser(online)).Times(1).
+					Return(common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "online already created"))
 				onlineSvc := service.NewOnline(onlineRepo)
 				return NewOnline(onlineSvc)
 			},
 			wantCode: http.StatusUnprocessableEntity,
 			wantResp: map[string]any{
 				"status":  "fail",
-				"message": "already created",
+				"message": "online already created",
 			},
 		},
 	}
@@ -155,16 +158,16 @@ func Test_getUserOnlineHandler(t *testing.T) {
 	tests := []struct {
 		name      string
 		userId    string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *online
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *Online
 		wantCode  int
 		wantResp  map[string]any
 	}{
 		{
 			name:   "valid online get",
 			userId: validUserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
-				online := &domain.Online{
+				online := domain.Online{
 					UserId:     validUserId,
 					LastOnline: time.Now(),
 					IsOnline:   false,
@@ -178,9 +181,10 @@ func Test_getUserOnlineHandler(t *testing.T) {
 		{
 			name:   "userId not found",
 			userId: validUserId,
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
-				onlineRepo.EXPECT().SelectOnline(gomock.Eq(validUserId)).Times(1).Return(nil, sql.ErrNoRows)
+				onlineRepo.EXPECT().SelectOnline(gomock.Eq(validUserId)).Times(1).
+					Return(domain.Online{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
 				onlineSvc := service.NewOnline(onlineRepo)
 				return NewOnline(onlineSvc)
 			},
@@ -225,7 +229,7 @@ func Test_putsUserOnlineHandler(t *testing.T) {
 		name      string
 		userId    string
 		reqBody   map[string]bool
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) *online
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) *Online
 		wantCode  int
 		wantResp  map[string]any
 	}{
@@ -235,9 +239,10 @@ func Test_putsUserOnlineHandler(t *testing.T) {
 			reqBody: map[string]bool{
 				"online": true,
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
-				onlineRepo.EXPECT().UpdateOnline(gomock.Eq(validUserId), gomock.Eq(true)).Times(1).Return(nil)
+				onlineRepo.EXPECT().UpdateOnline(gomock.Eq(validUserId), gomock.Eq(true)).Times(1).
+					Return(nil)
 				onlineSvc := service.NewOnline(onlineRepo)
 				return NewOnline(onlineSvc)
 			},
@@ -253,9 +258,10 @@ func Test_putsUserOnlineHandler(t *testing.T) {
 			reqBody: map[string]bool{
 				"online": false,
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
-				onlineRepo.EXPECT().UpdateOnline(gomock.Eq(validUserId), gomock.Eq(false)).Times(1).Return(nil)
+				onlineRepo.EXPECT().UpdateOnline(gomock.Eq(validUserId), gomock.Eq(false)).Times(1).
+					Return(nil)
 				onlineSvc := service.NewOnline(onlineRepo)
 				return NewOnline(onlineSvc)
 			},
@@ -271,9 +277,10 @@ func Test_putsUserOnlineHandler(t *testing.T) {
 			reqBody: map[string]bool{
 				"online": true,
 			},
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *online {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
-				onlineRepo.EXPECT().UpdateOnline(gomock.Eq(validUserId), gomock.Eq(true)).Times(1).Return(sql.ErrNoRows)
+				onlineRepo.EXPECT().UpdateOnline(gomock.Eq(validUserId), gomock.Eq(true)).Times(1).
+					Return(common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
 				onlineSvc := service.NewOnline(onlineRepo)
 				return NewOnline(onlineSvc)
 			},

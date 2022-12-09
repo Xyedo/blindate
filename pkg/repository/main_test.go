@@ -1,9 +1,11 @@
-package repository
+package repository_test
 
 import (
+	"context"
 	"log"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -12,7 +14,7 @@ import (
 var testQuery *sqlx.DB
 
 func TestMain(m *testing.M) {
-	conn, err := sqlx.Open("postgres", "postgres://blindate:pa55word@localhost:5433/blindate?sslmode=disable")
+	conn, err := sqlx.Open("postgres", os.Getenv("POSTGRE_DB_DSN_TEST"))
 
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)
@@ -20,6 +22,10 @@ func TestMain(m *testing.M) {
 	}
 	testQuery = conn
 	c := m.Run()
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	testQuery.MustExecContext(ctx, `DELETE FROM users WHERE 1=1`)
+	testQuery.MustExecContext(ctx, `DELETE FROM authentications WHERE 1=1`)
 	os.Exit(c)
 
 }

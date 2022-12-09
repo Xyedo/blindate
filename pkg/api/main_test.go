@@ -9,7 +9,8 @@ import (
 
 func TestMain(m *testing.M) {
 	gin.SetMode(gin.TestMode)
-	registerValidDObValidator()
 	registerTagName()
+	registerValidDObValidator()
+	registerValidEducationLevelFieldValidator()
 	os.Exit(m.Run())
 }

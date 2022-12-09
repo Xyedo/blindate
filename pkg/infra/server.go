@@ -1,4 +1,4 @@
-package pkg
+package infra
 
 import (
 	"context"
@@ -9,13 +9,34 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/xyedo/blindate/pkg/api"
 )
 
-func NewServer(port int, h http.Handler) error {
+type Config struct {
+	Port       int
+	Env        string
+	BucketName string
+	DbConf     struct {
+		Dsn          string
+		MaxOpenConns int
+		MaxIdleConns int
+		MaxIdleTime  string
+	}
+	Token struct {
+		AccessSecret   string
+		RefreshSecret  string
+		AccessExpires  string
+		RefreshExpires string
+	}
+}
+
+func (cfg *Config) NewServer(route api.Route) error {
+	handler := api.Routes(route)
 	srv := &http.Server{
 
-		Addr:         fmt.Sprintf("0.0.0.0:%d", port),
-		Handler:      h,
+		Addr:         fmt.Sprintf("0.0.0.0:%d", cfg.Port),
+		Handler:      handler,
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 30 * time.Second,

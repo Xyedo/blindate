@@ -34,12 +34,11 @@ func (m *MockAuth) EXPECT() *MockAuthMockRecorder {
 }
 
 // AddRefreshToken mocks base method.
-func (m *MockAuth) AddRefreshToken(arg0 string) (int64, error) {
+func (m *MockAuth) AddRefreshToken(arg0 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddRefreshToken", arg0)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // AddRefreshToken indicates an expected call of AddRefreshToken.
@@ -49,12 +48,11 @@ func (mr *MockAuthMockRecorder) AddRefreshToken(arg0 interface{}) *gomock.Call {
 }
 
 // DeleteRefreshToken mocks base method.
-func (m *MockAuth) DeleteRefreshToken(arg0 string) (int64, error) {
+func (m *MockAuth) DeleteRefreshToken(arg0 string) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteRefreshToken", arg0)
-	ret0, _ := ret[0].(int64)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
+	ret0, _ := ret[0].(error)
+	return ret0
 }
 
 // DeleteRefreshToken indicates an expected call of DeleteRefreshToken.

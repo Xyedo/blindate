@@ -6,37 +6,38 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
 )
 
 // TODO: Create conversation_test.go
 type conversationSvc interface {
 	CreateConversation(matchId string) (string, error)
-	FindConversationById(convoId string) (*domain.Conversation, error)
+	FindConversationById(convoId string) (domain.Conversation, error)
 	GetConversationByUserId(userId string) ([]domain.Conversation, error)
 	DeleteConversationById(convoId string) error
 }
 
-func NewConvo(convSvc conversationSvc) *conversation {
-	return &conversation{
+func NewConvo(convSvc conversationSvc) *Conversation {
+	return &Conversation{
 		convSvc: convSvc,
 	}
 }
 
-type conversation struct {
+type Conversation struct {
 	convSvc conversationSvc
 }
 
-func (conv *conversation) postConversationHandler(c *gin.Context) {
+func (conv *Conversation) postConversationHandler(c *gin.Context) {
 	convoId := c.GetString("convId")
 	_, err := conv.convSvc.CreateConversation(convoId)
 	if err != nil {
 		switch {
 		case errors.Is(err, context.Canceled):
 			errResourceConflictResp(c)
-		case errors.Is(err, domain.ErrRefNotFound23503):
+		case errors.Is(err, common.ErrRefNotFound23503):
 			errNotFoundResp(c, "provided userId  doesnt exists")
-		case errors.Is(err, domain.ErrUniqueConstraint23505):
+		case errors.Is(err, common.ErrUniqueConstraint23505):
 			errUnprocessableEntityResp(c, "already having a conversation between both userId")
 		default:
 			errServerResp(c, err)
@@ -51,12 +52,12 @@ func (conv *conversation) postConversationHandler(c *gin.Context) {
 	})
 }
 
-func (conv *conversation) getConversationByUserId(c *gin.Context) {
+func (conv *Conversation) getConversationByUserId(c *gin.Context) {
 	userId := c.GetString("userId")
 	convs, err := conv.convSvc.GetConversationByUserId(userId)
 	if err != nil {
 		switch {
-		case errors.Is(err, domain.ErrResourceNotFound):
+		case errors.Is(err, common.ErrResourceNotFound):
 			errNotFoundResp(c, "conversation with this userId is not found")
 		case errors.Is(err, context.Canceled):
 			errResourceConflictResp(c)
@@ -72,12 +73,12 @@ func (conv *conversation) getConversationByUserId(c *gin.Context) {
 		},
 	})
 }
-func (conv *conversation) getConversationById(c *gin.Context) {
+func (conv *Conversation) getConversationById(c *gin.Context) {
 	convId := c.GetString("convId")
 	convRet, err := conv.convSvc.FindConversationById(convId)
 	if err != nil {
 		switch {
-		case errors.Is(err, domain.ErrResourceNotFound):
+		case errors.Is(err, common.ErrResourceNotFound):
 			errNotFoundResp(c, "conversation with this userId is not found")
 		case errors.Is(err, context.Canceled):
 			errResourceConflictResp(c)
@@ -93,14 +94,14 @@ func (conv *conversation) getConversationById(c *gin.Context) {
 		},
 	})
 }
-func (conv *conversation) deleteConversationById(c *gin.Context) {
+func (conv *Conversation) deleteConversationById(c *gin.Context) {
 	convId := c.GetString("convId")
 	if err := conv.convSvc.DeleteConversationById(convId); err != nil {
 		switch {
-		case errors.Is(err, domain.ErrResourceNotFound):
+		case errors.Is(err, common.ErrResourceNotFound):
 			errNotFoundResp(c, "conversationId is not found")
 
-		case errors.Is(err, domain.ErrTooLongAccessingDB):
+		case errors.Is(err, common.ErrTooLongAccessingDB):
 			errResourceConflictResp(c)
 		default:
 			errServerResp(c, err)

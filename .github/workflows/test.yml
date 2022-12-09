@@ -1,8 +1,6 @@
 name: Run unit tests
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
     branches: [ main ]
 
@@ -16,9 +14,9 @@ jobs:
       pg:
         image: postgis/postgis:14-3.3
         env:
-          POSTGRES_USER: blindate
-          POSTGRES_PASSWORD: pa55word
-          POSTGRES_DB: blindate
+          POSTGRES_USER: ${{ secrets.PG_DEV_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.PG_DEV_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.PG_DEV_DB }}
         ports:
           - 5433:5432
         options: >-
@@ -43,7 +41,9 @@ jobs:
         sudo mv migrate.linux-amd64 /usr/bin/migrate
         which migrate
     - name: Run migrations
-      run: make migrate-up
+      run: make migrate-up DB_DSN="${{ secrets.POSTGRE_DB_DSN_TEST }}"
 
     - name: Test
       run: make test
+      env:
+        POSTGRE_DB_DSN_TEST: ${{ secrets.POSTGRE_DB_DSN_TEST }}

@@ -1,4 +1,4 @@
-package repository
+package repository_test
 
 import (
 	"database/sql"
@@ -7,40 +7,36 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/domain/entity"
+	"github.com/xyedo/blindate/pkg/repository"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
 func Test_InsertNewMatch(t *testing.T) {
-	matchRepo := NewMatch(testQuery)
+	matchRepo := repository.NewMatch(testQuery)
 	t.Run("valid newMatch", func(t *testing.T) {
 		matchId := createNewMatch(t)
-		assert.NotEmpty(t, matchId)
+		require.NotEmpty(t, matchId)
 	})
 	t.Run("invalid newMatch requestFrom", func(t *testing.T) {
 		toUsr := createNewAccount(t)
 		_, err := matchRepo.InsertNewMatch(util.RandomUUID(), toUsr.ID, domain.Accepted)
 		require.Error(t, err)
-		var pqErr *pq.Error
-		require.ErrorAs(t, err, &pqErr)
-		assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
-		assert.Contains(t, pqErr.Constraint, "match_request_from_fkey")
+		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
 	})
 	t.Run("invalid newMatch requestTo", func(t *testing.T) {
 		fromUsr := createNewAccount(t)
 		_, err := matchRepo.InsertNewMatch(fromUsr.ID, util.RandomUUID(), domain.Declined)
 		require.Error(t, err)
-		var pqErr *pq.Error
-		require.ErrorAs(t, err, &pqErr)
-		assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
-		assert.Contains(t, pqErr.Constraint, "match_request_to_fkey")
+		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+
 	})
 	t.Run("double on requestFrom and requestTo", func(t *testing.T) {
-		matchRepo := NewMatch(testQuery)
+		matchRepo := repository.NewMatch(testQuery)
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
 
@@ -50,15 +46,29 @@ func Test_InsertNewMatch(t *testing.T) {
 		matchId, err = matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Accepted)
 		require.Error(t, err)
 		assert.Empty(t, matchId)
-		var pqErr *pq.Error
-		require.ErrorAs(t, err, &pqErr)
-		assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
-		assert.Contains(t, pqErr.Constraint, "match_request_from_request_to_unique")
+		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
+	})
+	t.Run("invalid requestTo", func(t *testing.T) {
+		matchRepo := repository.NewMatch(testQuery)
+		fromUsr := createNewAccount(t)
+
+		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, util.RandomUUID(), domain.Unknown)
+		require.Error(t, err)
+		require.Zero(t, matchId)
+		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+	})
+	t.Run("invalid requestFrom", func(t *testing.T) {
+		matchRepo := repository.NewMatch(testQuery)
+		toUsr := createNewAccount(t)
+		matchId, err := matchRepo.InsertNewMatch(util.RandomUUID(), toUsr.ID, domain.Unknown)
+		require.Error(t, err)
+		require.Zero(t, matchId)
+		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
 	})
 }
 
 func Test_SelectMatchReqToUserId(t *testing.T) {
-	matchRepo := NewMatch(testQuery)
+	matchRepo := repository.NewMatch(testQuery)
 	t.Run("valid match", func(t *testing.T) {
 		toUser := createNewAccount(t)
 		var ExpectedfirstFirstUserId string
@@ -68,6 +78,9 @@ func Test_SelectMatchReqToUserId(t *testing.T) {
 				ExpectedfirstFirstUserId = fromUsr.ID
 			}
 			bio := createNewInterestBio(t, fromUsr.ID)
+			intr := repository.NewInterest(testQuery)
+			err := intr.InsertNewStats(bio.Id)
+			require.NoError(t, err)
 			createNewInterestHobbie(t, bio.Id)
 			createNewInterestMovieSeries(t, bio.Id)
 			createNewInterestSport(t, bio.Id)
@@ -104,7 +117,7 @@ func Test_SelectMatchReqToUserId(t *testing.T) {
 	})
 }
 func Test_GetMatchById(t *testing.T) {
-	matchRepo := NewMatch(testQuery)
+	matchRepo := repository.NewMatch(testQuery)
 	t.Run("valid select", func(t *testing.T) {
 		matchId := createNewMatch(t)
 		matchRes, err := matchRepo.GetMatchById(matchId)
@@ -114,13 +127,13 @@ func Test_GetMatchById(t *testing.T) {
 	t.Run("invalid userId", func(t *testing.T) {
 		matchRes, err := matchRepo.GetMatchById(util.RandomUUID())
 		require.Error(t, err)
-		assert.ErrorIs(t, err, sql.ErrNoRows)
+		assert.ErrorIs(t, err, common.ErrResourceNotFound)
 		assert.Empty(t, matchRes)
 	})
 }
 
 func Test_UpdateMatchById(t *testing.T) {
-	matchRepo := NewMatch(testQuery)
+	matchRepo := repository.NewMatch(testQuery)
 	setupFunc := func(t *testing.T) entity.Match {
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
@@ -129,7 +142,7 @@ func Test_UpdateMatchById(t *testing.T) {
 		require.NotEmpty(t, matchId)
 		match, err := matchRepo.GetMatchById(matchId)
 		require.NoError(t, err)
-		return *match
+		return match
 	}
 	t.Run("valid update request_status", func(t *testing.T) {
 		newMatch := setupFunc(t)
@@ -166,12 +179,12 @@ func Test_UpdateMatchById(t *testing.T) {
 		newMatch.Id = util.RandomUUID()
 		err := matchRepo.UpdateMatchById(newMatch)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, sql.ErrNoRows)
+		assert.ErrorIs(t, err, common.ErrResourceNotFound)
 	})
 
 }
 func createNewMatch(t *testing.T) string {
-	matchRepo := NewMatch(testQuery)
+	matchRepo := repository.NewMatch(testQuery)
 	fromUsr := createNewAccount(t)
 	toUsr := createNewAccount(t)
 	matchStatus := domain.Unknown

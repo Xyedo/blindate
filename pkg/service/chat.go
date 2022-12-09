@@ -1,52 +1,36 @@
 package service
 
 import (
-	"context"
 	"database/sql"
-	"errors"
-	"fmt"
+	"net/http"
 	"strings"
 
-	"github.com/lib/pq"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/domain/entity"
 	"github.com/xyedo/blindate/pkg/repository"
 )
 
-var (
-	ErrRefMediaType   = fmt.Errorf("%w:invalid media types", domain.ErrRefNotFound23503)
-	ErrRefConvoID     = fmt.Errorf("%w:invalid convoId", domain.ErrRefNotFound23503)
-	ErrRefReplyTo     = fmt.Errorf("%w:invalid reply_to", domain.ErrRefNotFound23503)
-	ErrAuthorNotValid = errors.New("author not in the conversation")
-)
-
-func NewChat(chatRepo repository.Chat, matchRepo repository.Match) *chat {
-	return &chat{
+func NewChat(chatRepo repository.Chat, matchRepo repository.Match) *Chat {
+	return &Chat{
 		chatRepo:  chatRepo,
 		matchRepo: matchRepo,
 	}
 }
 
-type chat struct {
+type Chat struct {
 	chatRepo  repository.Chat
 	matchRepo repository.Match
 }
 
-func (c *chat) CreateNewChat(content *domain.Chat) error {
-
+func (c *Chat) CreateNewChat(content *domain.Chat) error {
 	chatEntity := c.convertToEntity(content)
 	matchEntity, err := c.matchRepo.GetMatchById(chatEntity.ConversationId)
 	if err != nil {
-		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccessingDB
-		}
-		if errors.Is(err, sql.ErrNoRows) {
-			return ErrRefConvoID
-		}
 		return err
 	}
 	if !(chatEntity.Author == matchEntity.RequestFrom || chatEntity.Author == matchEntity.RequestTo) {
-		return ErrAuthorNotValid
+		return common.WrapWithNewError(common.ErrAuthorNotValid, http.StatusForbidden, "author not in this conversation")
 	}
 	if matchEntity.RequestStatus != string(domain.Accepted) {
 		return ErrInvalidMatchStatus
@@ -55,24 +39,6 @@ func (c *chat) CreateNewChat(content *domain.Chat) error {
 	for _, cleanChat := range cleanChats {
 		err = c.chatRepo.InsertNewChat(cleanChat)
 		if err != nil {
-			var pqErr *pq.Error
-			if errors.As(err, &pqErr) {
-				if pqErr.Code == "23503" {
-					if strings.Contains(pqErr.Constraint, "media_type") {
-						return ErrRefMediaType
-					}
-					if strings.Contains(pqErr.Constraint, "conversation_id") {
-						return ErrRefConvoID
-					}
-					if strings.Contains(pqErr.Constraint, "author") {
-						return ErrAuthorNotValid
-					}
-					if strings.Contains(pqErr.Constraint, "reply_to") {
-						return ErrRefReplyTo
-					}
-				}
-				return pqErr
-			}
 			return err
 		}
 	}
@@ -80,12 +46,9 @@ func (c *chat) CreateNewChat(content *domain.Chat) error {
 
 }
 
-func (c *chat) GetMessages(convoId string, filter entity.ChatFilter) ([]domain.Chat, error) {
+func (c *Chat) GetMessages(convoId string, filter entity.ChatFilter) ([]domain.Chat, error) {
 	chats, err := c.chatRepo.SelectChat(convoId, filter)
 	if err != nil {
-		if errors.Is(err, context.Canceled) {
-			return nil, domain.ErrTooLongAccessingDB
-		}
 		return nil, err
 	}
 
@@ -96,20 +59,14 @@ func (c *chat) GetMessages(convoId string, filter entity.ChatFilter) ([]domain.C
 	return chatDomain, nil
 }
 
-func (c *chat) DeleteMessagesById(chatId string) error {
+func (c *Chat) DeleteMessagesById(chatId string) error {
 	err := c.chatRepo.DeleteChatById(chatId)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return domain.ErrRefNotFound23503
-		}
-		if errors.Is(err, context.Canceled) {
-			return domain.ErrTooLongAccessingDB
-		}
 		return err
 	}
 	return nil
 }
-func (*chat) sanitizeChat(chat *entity.Chat) []*entity.Chat {
+func (*Chat) sanitizeChat(chat *entity.Chat) []*entity.Chat {
 	chat.Messages = strings.TrimSpace(chat.Messages)
 	if chat.Attachment != nil && chat.Messages != "" {
 		chatWAttach := *chat
@@ -120,7 +77,7 @@ func (*chat) sanitizeChat(chat *entity.Chat) []*entity.Chat {
 	}
 	return []*entity.Chat{chat}
 }
-func (*chat) convertToEntity(content *domain.Chat) *entity.Chat {
+func (*Chat) convertToEntity(content *domain.Chat) *entity.Chat {
 	chatEntity := &entity.Chat{
 		Id:             content.Id,
 		ConversationId: content.ConversationId,
@@ -145,7 +102,7 @@ func (*chat) convertToEntity(content *domain.Chat) *entity.Chat {
 	return chatEntity
 }
 
-func (*chat) convertToDomain(content *entity.Chat) *domain.Chat {
+func (*Chat) convertToDomain(content *entity.Chat) *domain.Chat {
 	chatDomain := &domain.Chat{
 		Id:             content.Id,
 		ConversationId: content.ConversationId,

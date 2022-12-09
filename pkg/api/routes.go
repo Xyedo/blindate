@@ -7,17 +7,17 @@ import (
 )
 
 type Route struct {
-	Healthcheck    *healthcheck
-	User           *user
-	BasicInfo      basicinfo
-	Location       *location
-	Authentication auth
+	Healthcheck    *Healthcheck
+	User           *User
+	BasicInfo      *BasicInfo
+	Location       *Location
+	Authentication *Auth
 	Tokenizer      jwtSvc
-	Interest       *interest
-	Online         *online
-	Match          *match
-	Convo          *conversation
-	Chat           *chat
+	Interest       *Interest
+	Online         *Online
+	Match          *Match
+	Convo          *Conversation
+	Chat           *Chat
 }
 
 func Routes(route Route) http.Handler {
@@ -42,6 +42,7 @@ func Routes(route Route) http.Handler {
 	}
 
 	registerValidDObValidator()
+	registerValidEducationLevelFieldValidator()
 	ru := route.User
 	v1.POST("/users", ru.postUserHandler)
 	auth := v1.Group("/users/:userId", validateUser(route.Tokenizer))

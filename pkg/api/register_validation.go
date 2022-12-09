@@ -19,6 +19,16 @@ func registerValidDObValidator() {
 		panic("not ok validator")
 	}
 }
+func registerValidEducationLevelFieldValidator() {
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		err := v.RegisterValidation("valideducationlevel", validation.ValidEducationLevel)
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		panic("not ok validator")
+	}
+}
 func registerTagName() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterTagNameFunc(func(fld reflect.StructField) string {

@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/entity"
-	"github.com/xyedo/blindate/pkg/service"
+	"github.com/xyedo/blindate/pkg/domain/entity"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
@@ -19,19 +19,19 @@ type chatSvc interface {
 	DeleteMessagesById(chatId string) error
 }
 
-func NewChat(chatSvc chatSvc, attachSvc attachmentManager) *chat {
-	return &chat{
+func NewChat(chatSvc chatSvc, attachSvc attachmentManager) *Chat {
+	return &Chat{
 		chatSvc:   chatSvc,
 		attachSvc: attachSvc,
 	}
 }
 
-type chat struct {
+type Chat struct {
 	chatSvc   chatSvc
 	attachSvc attachmentManager
 }
 
-func (chat *chat) postChatHandler(c *gin.Context) {
+func (chat *Chat) postChatHandler(c *gin.Context) {
 	var input struct {
 		Message string  `json:"message" binding:"required,max=4096"`
 		ReplyTo *string `json:"replyTo" binding:"omitempty,uuid"`
@@ -56,18 +56,7 @@ func (chat *chat) postChatHandler(c *gin.Context) {
 		SentAt:         time.Now(),
 	}
 	if err := chat.chatSvc.CreateNewChat(&dtoChat); err != nil {
-		switch {
-		case errors.Is(err, service.ErrRefMediaType):
-			errUnprocessableEntityResp(c, "invalid media types")
-		case errors.Is(err, service.ErrRefConvoID):
-			errUnprocessableEntityResp(c, "conversationId is invalid")
-		case errors.Is(err, service.ErrAuthorNotValid):
-			errUnprocessableEntityResp(c, "author is invalid user")
-		case errors.Is(err, service.ErrRefReplyTo):
-			errUnprocessableEntityResp(c, "replyTo is invalid chatId")
-		default:
-			errServerResp(c, err)
-		}
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -82,7 +71,7 @@ func (chat *chat) postChatHandler(c *gin.Context) {
 
 }
 
-func (chat *chat) postChatMediaHandler(c *gin.Context) {
+func (chat *Chat) postChatMediaHandler(c *gin.Context) {
 	var validAudioTypes = []string{
 		"application/ogg",
 		"audio/mpeg",
@@ -123,18 +112,7 @@ func (chat *chat) postChatMediaHandler(c *gin.Context) {
 		},
 	}
 	if err := chat.chatSvc.CreateNewChat(&dtoChat); err != nil {
-		switch {
-		case errors.Is(err, service.ErrRefMediaType):
-			errUnprocessableEntityResp(c, "invalid media types")
-		case errors.Is(err, service.ErrRefConvoID):
-			errUnprocessableEntityResp(c, "conversationId is invalid")
-		case errors.Is(err, service.ErrAuthorNotValid):
-			errUnprocessableEntityResp(c, "author is invalid user")
-		case errors.Is(err, service.ErrRefReplyTo):
-			errUnprocessableEntityResp(c, "replyTo is invalid chatId")
-		default:
-			errServerResp(c, err)
-		}
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -148,7 +126,7 @@ func (chat *chat) postChatMediaHandler(c *gin.Context) {
 	})
 }
 
-func (chat *chat) getMessagesHandler(c *gin.Context) {
+func (chat *Chat) getMessagesHandler(c *gin.Context) {
 	var query struct {
 		Limit  *int       `form:"limit" binding:"omitempty,min=30,max=90"`
 		At     *time.Time `form:"at" binding:"omitempty,required_with_all=ChatId After"`
@@ -187,7 +165,7 @@ func (chat *chat) getMessagesHandler(c *gin.Context) {
 	convoId := c.GetString("convId")
 	dtoChats, err := chat.chatSvc.GetMessages(convoId, chatQueryFilter)
 	if err != nil {
-		if errors.Is(err, domain.ErrTooLongAccessingDB) {
+		if errors.Is(err, common.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -202,13 +180,13 @@ func (chat *chat) getMessagesHandler(c *gin.Context) {
 	})
 }
 
-func (chat *chat) deleteMessagesByIdHandler(c *gin.Context) {
+func (chat *Chat) deleteMessagesByIdHandler(c *gin.Context) {
 	chatId := c.GetString("chatId")
 	if err := chat.chatSvc.DeleteMessagesById(chatId); err != nil {
 		switch {
-		case errors.Is(err, domain.ErrRefNotFound23503):
+		case errors.Is(err, common.ErrRefNotFound23503):
 			errNotFoundResp(c, "provided chatId in url is not found!")
-		case errors.Is(err, domain.ErrTooLongAccessingDB):
+		case errors.Is(err, common.ErrTooLongAccessingDB):
 			errResourceConflictResp(c)
 		default:
 			errServerResp(c, err)

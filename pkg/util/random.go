@@ -20,6 +20,9 @@ func init() {
 func RandomEmail(n int) string {
 	return fmt.Sprintf("%s@example.com", RandomString(n))
 }
+func RandDOBString(minYear, maxYear int64) string {
+	return RandDOB(minYear, maxYear).Format(time.RFC3339)
+}
 func RandDOB(minYear, maxYear int64) time.Time {
 	year := int(RandomInt(minYear, maxYear))
 	month := RandomInt(1, 12)

@@ -9,21 +9,21 @@ import (
 
 type locationSvc interface {
 	CreateNewLocation(location *domain.Location) error
-	UpdateLocation(location *domain.Location) error
-	GetLocation(id string) (*domain.Location, error)
+	UpdateLocation(userId string, changeLat, changeLng *string) error
+	GetLocation(id string) (domain.Location, error)
 }
 
-func NewLocation(locationService locationSvc) *location {
-	return &location{
+func NewLocation(locationService locationSvc) *Location {
+	return &Location{
 		locationService: locationService,
 	}
 }
 
-type location struct {
+type Location struct {
 	locationService locationSvc
 }
 
-func (l *location) postLocationByUserIdHandler(c *gin.Context) {
+func (l *Location) postLocationByUserIdHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	var input struct {
 		Lat string `json:"lat" binding:"required,latitude"`
@@ -51,7 +51,7 @@ func (l *location) postLocationByUserIdHandler(c *gin.Context) {
 		"message": "location created",
 	})
 }
-func (l *location) getLocationByUserIdHandler(c *gin.Context) {
+func (l *Location) getLocationByUserIdHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	location, err := l.locationService.GetLocation(userId)
 	if err != nil {
@@ -66,7 +66,7 @@ func (l *location) getLocationByUserIdHandler(c *gin.Context) {
 	})
 }
 
-func (l *location) patchLocationByUserIdHandler(c *gin.Context) {
+func (l *Location) patchLocationByUserIdHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	var input struct {
 		Lat *string `json:"lat" binding:"omitempty,latitude"`
@@ -84,19 +84,7 @@ func (l *location) patchLocationByUserIdHandler(c *gin.Context) {
 		}
 		return
 	}
-	location, err := l.locationService.GetLocation(userId)
-	if err != nil {
-		jsonHandleError(c, err)
-		return
-	}
-	if input.Lat != nil {
-		location.Lat = *input.Lat
-	}
-	if input.Lng != nil {
-		location.Lng = *input.Lng
-	}
-
-	err = l.locationService.UpdateLocation(location)
+	err = l.locationService.UpdateLocation(userId, input.Lat, input.Lng)
 	if err != nil {
 		jsonHandleError(c, err)
 		return

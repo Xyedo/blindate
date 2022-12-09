@@ -10,20 +10,20 @@ import (
 type onlineSvc interface {
 	CreateNewOnline(userId string) error
 	PutOnline(userId string, online bool) error
-	GetOnline(userId string) (*domain.Online, error)
+	GetOnline(userId string) (domain.Online, error)
 }
 
-func NewOnline(onlineSvc onlineSvc) *online {
-	return &online{
+func NewOnline(onlineSvc onlineSvc) *Online {
+	return &Online{
 		onlineSvc: onlineSvc,
 	}
 }
 
-type online struct {
+type Online struct {
 	onlineSvc onlineSvc
 }
 
-func (o *online) postUserOnlineHandler(c *gin.Context) {
+func (o *Online) postUserOnlineHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 
 	err := o.onlineSvc.CreateNewOnline(userId)
@@ -38,7 +38,7 @@ func (o *online) postUserOnlineHandler(c *gin.Context) {
 	})
 
 }
-func (o *online) getUserOnlineHandler(c *gin.Context) {
+func (o *Online) getUserOnlineHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	onlineUser, err := o.onlineSvc.GetOnline(userId)
 	if err != nil {
@@ -52,7 +52,7 @@ func (o *online) getUserOnlineHandler(c *gin.Context) {
 		},
 	})
 }
-func (o *online) putuserOnlineHandler(c *gin.Context) {
+func (o *Online) putuserOnlineHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	var input struct {
 		Online *bool `json:"online" binding:"required"`

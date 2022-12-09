@@ -1,32 +1,30 @@
-package repository
+package repository_test
 
 import (
-	"database/sql"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/domain/entity"
+	"github.com/xyedo/blindate/pkg/repository"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
 func Test_InsertConversation(t *testing.T) {
-	conv := NewConversation(testQuery)
+	conv := repository.NewConversation(testQuery)
 	t.Run("valid new conv", func(t *testing.T) {
 		createNewConvo(conv, t)
 	})
 	t.Run("invalid new conv", func(t *testing.T) {
 		id, err := conv.InsertConversation(util.RandomUUID())
 		require.Error(t, err)
+		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
 		require.Empty(t, id)
-		var pqErr *pq.Error
-		require.ErrorAs(t, err, &pqErr)
-		require.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
-		require.Contains(t, pqErr.Constraint, "conversations_match_id_fkey")
+
 	})
 	t.Run("duplicate conv", func(t *testing.T) {
 		matchId := createNewMatch(t)
@@ -35,19 +33,17 @@ func Test_InsertConversation(t *testing.T) {
 		require.NotEmpty(t, id)
 		id, err = conv.InsertConversation(matchId)
 		require.Error(t, err)
+		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
 		require.Empty(t, id)
-		var pqErr *pq.Error
-		require.ErrorAs(t, err, &pqErr)
-		assert.Equal(t, pq.ErrorCode("23505"), pqErr.Code)
-		assert.Contains(t, pqErr.Constraint, "conversations_pkey")
+
 	})
 }
 
 func Test_SelectConversationById(t *testing.T) {
-	conv := NewConversation(testQuery)
-	matchRepo := NewMatch(testQuery)
-	chat := NewChat(testQuery)
-	user := NewUser(testQuery)
+	conv := repository.NewConversation(testQuery)
+	matchRepo := repository.NewMatch(testQuery)
+	chat := repository.NewChat(testQuery)
+	user := repository.NewUser(testQuery)
 	t.Run("valid select with full attributes", func(t *testing.T) {
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
@@ -121,16 +117,16 @@ func Test_SelectConversationById(t *testing.T) {
 		conv, err := conv.SelectConversationById(util.RandomUUID())
 		require.Error(t, err)
 		require.Empty(t, conv)
-		assert.ErrorIs(t, err, sql.ErrNoRows)
+		assert.ErrorIs(t, err, common.ErrResourceNotFound)
 
 	})
 }
 
 func Test_SelectConvoByUserId(t *testing.T) {
-	conv := NewConversation(testQuery)
-	matchRepo := NewMatch(testQuery)
-	chat := NewChat(testQuery)
-	user := NewUser(testQuery)
+	conv := repository.NewConversation(testQuery)
+	matchRepo := repository.NewMatch(testQuery)
+	chat := repository.NewChat(testQuery)
+	user := repository.NewUser(testQuery)
 	t.Run("valid select with full attributes", func(t *testing.T) {
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
@@ -200,7 +196,7 @@ func Test_SelectConvoByUserId(t *testing.T) {
 
 	})
 	t.Run("valid select with little to none attributes", func(t *testing.T) {
-		matchRepo := NewMatch(testQuery)
+		matchRepo := repository.NewMatch(testQuery)
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
 		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Requested)
@@ -265,7 +261,7 @@ func Test_SelectConvoByUserId(t *testing.T) {
 }
 
 func Test_UpdateChatRow(t *testing.T) {
-	conv := NewConversation(testQuery)
+	conv := repository.NewConversation(testQuery)
 	t.Run("valid update", func(t *testing.T) {
 		convoId := createNewConvo(conv, t)
 		err := conv.UpdateChatRow(convoId)
@@ -274,11 +270,11 @@ func Test_UpdateChatRow(t *testing.T) {
 	t.Run("invalid convoId", func(t *testing.T) {
 		err := conv.UpdateChatRow(util.RandomUUID())
 		require.Error(t, err)
-		require.ErrorIs(t, err, sql.ErrNoRows)
+		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
 	})
 }
 func Test_UpdateDayPass(t *testing.T) {
-	conv := NewConversation(testQuery)
+	conv := repository.NewConversation(testQuery)
 	t.Run("valid update", func(t *testing.T) {
 		convoId := createNewConvo(conv, t)
 		err := conv.UpdateDayPass(convoId)
@@ -287,16 +283,16 @@ func Test_UpdateDayPass(t *testing.T) {
 	t.Run("invalid convoId", func(t *testing.T) {
 		err := conv.UpdateDayPass(util.RandomUUID())
 		require.Error(t, err)
-		require.ErrorIs(t, err, sql.ErrNoRows)
+		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
 	})
 }
 
 func Test_DeleteConvoById(t *testing.T) {
-	conv := NewConversation(testQuery)
+	conv := repository.NewConversation(testQuery)
 
 	t.Run("valid", func(t *testing.T) {
-		chatRepo := NewChat(testQuery)
-		matchRepo := NewMatch(testQuery)
+		chatRepo := repository.NewChat(testQuery)
+		matchRepo := repository.NewMatch(testQuery)
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
 		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Requested)
@@ -322,7 +318,7 @@ func Test_DeleteConvoById(t *testing.T) {
 		require.NoError(t, err)
 		convs, err := conv.SelectConversationById(convoId)
 		require.Error(t, err)
-		require.ErrorIs(t, err, sql.ErrNoRows)
+		assert.ErrorIs(t, err, common.ErrResourceNotFound)
 		assert.Empty(t, convs)
 		chats, err := chatRepo.SelectChat(convoId, entity.ChatFilter{
 			Limit: 10,
@@ -334,10 +330,10 @@ func Test_DeleteConvoById(t *testing.T) {
 	t.Run("invalid convoId", func(t *testing.T) {
 		err := conv.DeleteConversationById(util.RandomUUID())
 		require.Error(t, err)
-		assert.ErrorIs(t, err, sql.ErrNoRows)
+		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
 	})
 }
-func createNewConvo(conv *conversation, t *testing.T) string {
+func createNewConvo(conv *repository.ConvConn, t *testing.T) string {
 	matchId := createNewMatch(t)
 	id, err := conv.InsertConversation(matchId)
 	require.NoError(t, err)

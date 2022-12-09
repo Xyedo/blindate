@@ -9,7 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 	domain "github.com/xyedo/blindate/pkg/domain"
-	entity "github.com/xyedo/blindate/pkg/entity"
+	entity "github.com/xyedo/blindate/pkg/domain/entity"
 )
 
 // MockConversation is a mock of Conversation interface.
@@ -65,10 +65,10 @@ func (mr *MockConversationMockRecorder) InsertConversation(arg0 interface{}) *go
 }
 
 // SelectConversationById mocks base method.
-func (m *MockConversation) SelectConversationById(arg0 string) (*domain.Conversation, error) {
+func (m *MockConversation) SelectConversationById(arg0 string) (domain.Conversation, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "SelectConversationById", arg0)
-	ret0, _ := ret[0].(*domain.Conversation)
+	ret0, _ := ret[0].(domain.Conversation)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

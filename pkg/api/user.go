@@ -12,9 +12,8 @@ import (
 
 type userSvc interface {
 	CreateUser(newUser *domain.User) error
-	VerifyCredential(email, password string) (string, error)
-	GetUserById(id string) (*domain.User, error)
-	UpdateUser(user *domain.User) error
+	GetUserById(id string) (domain.User, error)
+	UpdateUser(userId string, updateUser domain.UpdateUser) error
 	CreateNewProfilePic(profPicParam domain.ProfilePicture) (string, error)
 }
 
@@ -22,19 +21,19 @@ type attachmentManager interface {
 	UploadBlob(file io.Reader, attach domain.Uploader) (string, error)
 }
 
-func NewUser(userSvc userSvc, attachmentSvc attachmentManager) *user {
-	return &user{
+func NewUser(userSvc userSvc, attachmentSvc attachmentManager) *User {
+	return &User{
 		userService:   userSvc,
 		attachmentSvc: attachmentSvc,
 	}
 }
 
-type user struct {
+type User struct {
 	userService   userSvc
 	attachmentSvc attachmentManager
 }
 
-func (u *user) postUserHandler(c *gin.Context) {
+func (u *User) postUserHandler(c *gin.Context) {
 	var input struct {
 		FullName string    `json:"fullName" binding:"required,max=50"`
 		Alias    string    `json:"alias" binding:"required,max=15"`
@@ -80,15 +79,10 @@ func (u *user) postUserHandler(c *gin.Context) {
 	})
 }
 
-func (u *user) putUserImageProfileHandler(c *gin.Context) {
+func (u *User) putUserImageProfileHandler(c *gin.Context) {
 	selectedQ := c.Query("selected")
 	selected := strings.EqualFold(selectedQ, "true")
 	userId := c.GetString("userId")
-	userDb, err := u.userService.GetUserById(userId)
-	if err != nil {
-		jsonHandleError(c, err)
-		return
-	}
 	var validImageTypes = []string{
 		"image/avif",
 		"image/jpeg",
@@ -101,7 +95,7 @@ func (u *user) putUserImageProfileHandler(c *gin.Context) {
 		return
 	}
 	newProfPic := domain.ProfilePicture{
-		UserId:      userDb.ID,
+		UserId:      userId,
 		Selected:    selected,
 		PictureLink: key,
 	}
@@ -120,7 +114,7 @@ func (u *user) putUserImageProfileHandler(c *gin.Context) {
 		},
 	})
 }
-func (u *user) getUserByIdHandler(c *gin.Context) {
+func (u *User) getUserByIdHandler(c *gin.Context) {
 	userId := c.GetString("userId")
 	user, err := u.userService.GetUserById(userId)
 	if err != nil {
@@ -136,23 +130,9 @@ func (u *user) getUserByIdHandler(c *gin.Context) {
 	})
 }
 
-func (u *user) patchUserByIdHandler(c *gin.Context) {
-	userId := c.GetString("userId")
-	user, err := u.userService.GetUserById(userId)
-	if err != nil {
-		jsonHandleError(c, err)
-		return
-	}
-	var input struct {
-		FullName    *string    `json:"fullName" binding:"omitempty,max=50"`
-		Alias       *string    `json:"alias" binding:"omitempty,max=15"`
-		Email       *string    `json:"email" binding:"omitempty,email"`
-		OldPassword *string    `json:"oldPassword" binding:"required_with=NewPassword,omitempty,min=8"`
-		NewPassword *string    `json:"newPassword" binding:"required_with=OldPassword,omitempty,min=8"`
-		Dob         *time.Time `json:"dob" binding:"omitempty,validdob"`
-	}
-
-	err = c.ShouldBindJSON(&input)
+func (u *User) patchUserByIdHandler(c *gin.Context) {
+	var input domain.UpdateUser
+	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"fullName":    "must less than 50 character",
@@ -168,32 +148,8 @@ func (u *user) patchUserByIdHandler(c *gin.Context) {
 		}
 		return
 	}
-	if input.NewPassword != nil && input.OldPassword != nil {
-		_, err := u.userService.VerifyCredential(user.Email, *input.OldPassword)
-		if err != nil {
-			jsonHandleError(c, err)
-			return
-		}
-		user.Password = *input.NewPassword
-	}
-
-	if input.FullName != nil {
-		user.FullName = *input.FullName
-	}
-
-	if input.Alias != nil {
-		user.Alias = *input.Alias
-	}
-
-	if input.Email != nil {
-		user.Active = false
-		user.Email = *input.Email
-	}
-	if input.Dob != nil {
-		user.Dob = *input.Dob
-	}
-
-	err = u.userService.UpdateUser(user)
+	userId := c.GetString("userId")
+	err = u.userService.UpdateUser(userId, input)
 	if err != nil {
 		jsonHandleError(c, err)
 		return

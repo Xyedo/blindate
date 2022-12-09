@@ -3,75 +3,97 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/domain/entity"
 )
 
 type Location interface {
-	InsertNewLocation(location *entity.Location) (int64, error)
-	UpdateLocation(location *entity.Location) (int64, error)
-	GetLocationByUserId(id string) (*entity.Location, error)
+	InsertNewLocation(location *entity.Location) error
+	UpdateLocation(location *entity.Location) error
+	GetLocationByUserId(id string) (entity.Location, error)
 	GetClosestUser(userId, geom string, limit int) ([]domain.BigUser, error)
 }
 
-func NewLocation(db *sqlx.DB) *location {
-	return &location{
+func NewLocation(db *sqlx.DB) *LocConn {
+	return &LocConn{
 		conn: db,
 	}
 }
 
-type location struct {
+type LocConn struct {
 	conn *sqlx.DB
 }
 
-func (l *location) InsertNewLocation(location *entity.Location) (int64, error) {
+func (l *LocConn) InsertNewLocation(location *entity.Location) error {
 	query := `
 		INSERT INTO locations(user_id, geog, created_at, updated_at)
-		VALUES($1, ST_GeomFromText($2), $3, $3)`
+		VALUES($1, ST_GeomFromText($2), $3, $3)
+		RETURNING user_id`
 	now := time.Now()
 	args := []any{location.UserId, location.Geog, now}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	rows, err := l.conn.ExecContext(ctx, query, args...)
+
+	var retUserId string
+	err := l.conn.GetContext(ctx, &retUserId, query, args...)
 	if err != nil {
-		return 0, err
-	}
-	ret, err := rows.RowsAffected()
-	if err != nil {
-		return 0, err
+		if errors.Is(err, context.Canceled) {
+			return common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return common.WrapError(err, common.ErrResourceNotFound)
+		}
+		var pqErr *pq.Error
+		if errors.As(err, &pqErr) {
+			if pqErr.Code == "23503" {
+				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid userId")
+			}
+			if pqErr.Code == "23505" {
+				return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "location already created")
+			}
+		}
+		return err
 	}
 	location.CreatedAt = now
 	location.UpdatedAt = now
-	return ret, nil
+	return nil
 }
 
-func (l *location) UpdateLocation(location *entity.Location) (int64, error) {
+func (l *LocConn) UpdateLocation(location *entity.Location) error {
 	query := `
 		UPDATE locations SET geog = ST_GeomFromText($1), updated_at = $2
-		WHERE user_id = $3`
-	args := []any{location.Geog, time.Now(), location.UserId}
+		WHERE user_id = $3
+		RETURNING user_id`
+	updatedAt := time.Now()
+	args := []any{location.Geog, updatedAt, location.UserId}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	res, err := l.conn.ExecContext(ctx, query, args...)
+	var retUserId string
+	err := l.conn.GetContext(ctx, &retUserId, query, args...)
 	if err != nil {
-		return 0, nil
+		if errors.Is(err, context.Canceled) {
+			return common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return common.WrapError(err, common.ErrResourceNotFound)
+		}
+		return err
 	}
-	rows, err := res.RowsAffected()
-	if err != nil {
-		return 0, nil
-	}
-	return rows, nil
+	location.UpdatedAt = updatedAt
+	return nil
 }
 
-func (l *location) GetLocationByUserId(id string) (*entity.Location, error) {
+func (l *LocConn) GetLocationByUserId(id string) (entity.Location, error) {
 	query := `
 		SELECT 
 			user_id,
@@ -87,13 +109,19 @@ func (l *location) GetLocationByUserId(id string) (*entity.Location, error) {
 	var location entity.Location
 	err := l.conn.GetContext(ctx, &location, query, id)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, context.Canceled) {
+			return entity.Location{}, common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.Location{}, common.WrapError(err, common.ErrResourceNotFound)
+		}
+		return entity.Location{}, err
 	}
-	return &location, nil
+	return location, nil
 
 }
 
-func (l *location) GetClosestUser(userId, geom string, limit int) ([]domain.BigUser, error) {
+func (l *LocConn) GetClosestUser(userId, geom string, limit int) ([]domain.BigUser, error) {
 	query := `
 		SELECT 
 			u.id as user_id,
@@ -155,6 +183,10 @@ func (l *location) GetClosestUser(userId, geom string, limit int) ([]domain.BigU
 	matchs := make([]domain.BigUser, 0)
 	rows, err := l.conn.QueryxContext(ctx, query, geom, limit, userId)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return nil, common.WrapError(err, common.ErrTooLongAccessingDB)
+		}
+
 		return nil, err
 	}
 	defer func(rows *sqlx.Rows) {
@@ -176,7 +208,7 @@ func (l *location) GetClosestUser(userId, geom string, limit int) ([]domain.BigU
 	}
 	return matchs, nil
 }
-func (*location) createBigUser(row sqlx.ColScanner) (domain.BigUser, error) {
+func (*LocConn) createBigUser(row sqlx.ColScanner) (domain.BigUser, error) {
 	var newBigUser domain.BigUser
 	var newBasicInfo entity.BasicInfo
 	var newBasicInfoGender sql.NullString

@@ -1,23 +1,24 @@
-package repository
+package repository_test
 
 import (
 	"database/sql"
 	"testing"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/entity"
+	"github.com/xyedo/blindate/pkg/domain/entity"
+	"github.com/xyedo/blindate/pkg/repository"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
 func Test_InsertNewChat(t *testing.T) {
-	chat := NewChat(testQuery)
+	chat := repository.NewChat(testQuery)
 	setup := func(t *testing.T) (convoId, fromUserId, toUserId string) {
-		convRepo := NewConversation(testQuery)
-		matchRepo := NewMatch(testQuery)
+		convRepo := repository.NewConversation(testQuery)
+		matchRepo := repository.NewMatch(testQuery)
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
 		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Requested)
@@ -74,11 +75,7 @@ func Test_InsertNewChat(t *testing.T) {
 			},
 		})
 		require.Error(t, err)
-		var pqErr *pq.Error
-
-		require.ErrorAs(t, err, &pqErr)
-		assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
-		assert.Contains(t, pqErr.Constraint, "media_type")
+		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
 	})
 	t.Run("invalid conversationId", func(t *testing.T) {
 		_, fromUsr, _ := setup(t)
@@ -89,10 +86,7 @@ func Test_InsertNewChat(t *testing.T) {
 			SentAt:         time.Now(),
 		})
 		require.Error(t, err)
-		var pqErr *pq.Error
-		require.ErrorAs(t, err, &pqErr)
-		assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
-		assert.Contains(t, pqErr.Constraint, "conversation_id")
+		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
 	})
 	t.Run("invalid author", func(t *testing.T) {
 		convoId, _, _ := setup(t)
@@ -103,10 +97,7 @@ func Test_InsertNewChat(t *testing.T) {
 			SentAt:         time.Now(),
 		})
 		require.Error(t, err)
-		var pqErr *pq.Error
-		require.ErrorAs(t, err, &pqErr)
-		assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
-		assert.Contains(t, pqErr.Constraint, "author")
+		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
 	})
 	t.Run("invalid reply_to", func(t *testing.T) {
 		convoId, fromUsr, _ := setup(t)
@@ -121,15 +112,12 @@ func Test_InsertNewChat(t *testing.T) {
 			SentAt: time.Now(),
 		})
 		require.Error(t, err)
-		var pqErr *pq.Error
-		require.ErrorAs(t, err, &pqErr)
-		assert.Equal(t, pq.ErrorCode("23503"), pqErr.Code)
-		assert.Contains(t, pqErr.Constraint, "reply_to")
+		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
 	})
 }
 
 func Test_UpdateSeenChatById(t *testing.T) {
-	chat := NewChat(testQuery)
+	chat := repository.NewChat(testQuery)
 	t.Run("valid", func(t *testing.T) {
 		chatId := createNewChat(chat, t)
 		err := chat.UpdateSeenChatById(chatId)
@@ -138,12 +126,12 @@ func Test_UpdateSeenChatById(t *testing.T) {
 	t.Run("invalid chatId", func(t *testing.T) {
 		err := chat.UpdateSeenChatById(util.RandomUUID())
 		require.Error(t, err)
-		assert.ErrorIs(t, err, sql.ErrNoRows)
+		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
 	})
 }
 
 func Test_DeleteChat(t *testing.T) {
-	chat := NewChat(testQuery)
+	chat := repository.NewChat(testQuery)
 	t.Run("valid delete", func(t *testing.T) {
 		chatId := createNewChat(chat, t)
 		err := chat.DeleteChatById(chatId)
@@ -152,11 +140,11 @@ func Test_DeleteChat(t *testing.T) {
 	t.Run("invalid chatId", func(t *testing.T) {
 		err := chat.DeleteChatById(util.RandomUUID())
 		require.Error(t, err)
-		require.ErrorIs(t, err, sql.ErrNoRows)
+		require.ErrorIs(t, err, common.ErrRefNotFound23503)
 	})
 	t.Run("delete refrenced chat", func(t *testing.T) {
-		conv := NewConversation(testQuery)
-		matchRepo := NewMatch(testQuery)
+		conv := repository.NewConversation(testQuery)
+		matchRepo := repository.NewMatch(testQuery)
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
 		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Requested)
@@ -189,10 +177,10 @@ func Test_DeleteChat(t *testing.T) {
 }
 
 func Test_SelectChat(t *testing.T) {
-	chat := NewChat(testQuery)
-	conv := NewConversation(testQuery)
+	chat := repository.NewChat(testQuery)
+	conv := repository.NewConversation(testQuery)
 	t.Run("valid chat", func(t *testing.T) {
-		matchRepo := NewMatch(testQuery)
+		matchRepo := repository.NewMatch(testQuery)
 		fromUsr := createNewAccount(t)
 		toUsr := createNewAccount(t)
 		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Requested)
@@ -266,9 +254,9 @@ func Test_SelectChat(t *testing.T) {
 	})
 
 }
-func createNewChat(chat *chat, t *testing.T) string {
-	conv := NewConversation(testQuery)
-	matchRepo := NewMatch(testQuery)
+func createNewChat(chat *repository.ChatConn, t *testing.T) string {
+	conv := repository.NewConversation(testQuery)
+	matchRepo := repository.NewMatch(testQuery)
 	fromUsr := createNewAccount(t)
 	toUsr := createNewAccount(t)
 	matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Requested)
