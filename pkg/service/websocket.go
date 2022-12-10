@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/xyedo/blindate/internal/rwmap"
 	"github.com/xyedo/blindate/pkg/domain"
 )
 
@@ -16,15 +17,15 @@ const (
 
 func NewWs() *Ws {
 	return &Ws{
-		Clients:       make(map[domain.WsConn]string),
-		ReverseClient: make(map[string]domain.WsConn),
+		Clients:       rwmap.New[domain.WsConn, string](),
+		ReverseClient: rwmap.New[string, domain.WsConn](),
 		WsChan:        make(chan domain.WsPayload),
 	}
 }
 
 type Ws struct {
-	Clients       map[domain.WsConn]string
-	ReverseClient map[string]domain.WsConn
+	Clients       *rwmap.RwMap[domain.WsConn, string]
+	ReverseClient *rwmap.RwMap[string, domain.WsConn]
 	WsChan        chan domain.WsPayload
 }
 
@@ -72,11 +73,12 @@ func (ws *Ws) ListenForWsPayload(conn *domain.WsConn) {
 
 func (ws *Ws) cleanUp(conn *domain.WsConn) {
 	conn.Close()
-	userId, ok := ws.Clients[*conn]
+
+	userId, ok := ws.Clients.Get(*conn)
 	if !ok {
 		return
 	}
-	delete(ws.Clients, *conn)
-	delete(ws.ReverseClient, userId)
+	ws.Clients.Delete(*conn)
+	ws.ReverseClient.Delete(userId)
 
 }

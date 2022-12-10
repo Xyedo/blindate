@@ -20,7 +20,7 @@ type EventDeps struct {
 
 func (d *EventDeps) HandleSeenAtevent(payload event.ChatSeenPayload) {
 	sendToChat := func(reqUserId string, updatedChatIds []string) {
-		socket, ok := d.Ws.ReverseClient[reqUserId]
+		socket, ok := d.Ws.ReverseClient.Get(reqUserId)
 		if !ok {
 			return
 		}
@@ -42,7 +42,7 @@ func (d *EventDeps) HandleSeenAtevent(payload event.ChatSeenPayload) {
 
 func (d *EventDeps) HandleProfileUpdateEvent(payload event.ProfileUpdatedPayload) {
 	sendToConversation := func(updatedUser domain.User, userId, convUserId string) {
-		socket, ok := d.Ws.ReverseClient[convUserId]
+		socket, ok := d.Ws.ReverseClient.Get(convUserId)
 		if !ok {
 			return
 		}
@@ -78,7 +78,7 @@ func (d *EventDeps) HandleProfileUpdateEvent(payload event.ProfileUpdatedPayload
 
 func (d *EventDeps) HandleRevealUpdateEvent(payload event.MatchRevealedPayload) {
 	sendToMatch := func(reqUserId string, match entity.Match) {
-		conn, ok := d.Ws.ReverseClient[reqUserId]
+		conn, ok := d.Ws.ReverseClient.Get(reqUserId)
 		if !ok {
 			return
 		}
@@ -124,16 +124,16 @@ func (d *EventDeps) HandleCreateChatEvent(payload event.ChatCreatedPayload) {
 		log.Println(err)
 		return
 	}
-	if authorSoc, ok := d.Ws.ReverseClient[conv.FromUser.ID]; ok {
+	if authorSoc, ok := d.Ws.ReverseClient.Get(conv.FromUser.ID); ok {
 		sendResponse(authorSoc, conv.FromUser.ID, payload.Chat, conv)
 	}
-	if recipientSoc, ok := d.Ws.ReverseClient[conv.ToUser.ID]; ok {
+	if recipientSoc, ok := d.Ws.ReverseClient.Get(conv.ToUser.ID); ok {
 		sendResponse(recipientSoc, conv.ToUser.ID, payload.Chat, conv)
 	}
 }
 func (d *EventDeps) removingUser(socket domain.WsConn, reqUserId string) {
 	_ = socket.Close()
-	delete(d.Ws.Clients, socket)
-	delete(d.Ws.ReverseClient, reqUserId)
+	d.Ws.Clients.Delete(socket)
+	d.Ws.ReverseClient.Delete(reqUserId)
 	_ = d.Online.PutOnline(reqUserId, false)
 }

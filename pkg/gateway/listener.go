@@ -37,7 +37,7 @@ func (d *WsDeps) ListenToWsChan() {
 
 }
 func (d *WsDeps) OnLeaving(event domain.WsPayload) {
-	userId, ok := d.Ws.Clients[event.Conn]
+	userId, ok := d.Ws.Clients.Get(event.Conn)
 	if !ok {
 		return
 	}
@@ -47,7 +47,7 @@ func (d *WsDeps) OnLeaving(event domain.WsPayload) {
 
 func (d *WsDeps) OnSimpleAction(event domain.WsPayload, action string) {
 	sendToConversation := func(toUserId, convId string) {
-		socket, ok := d.Ws.ReverseClient[toUserId]
+		socket, ok := d.Ws.ReverseClient.Get(toUserId)
 		if !ok {
 			return
 		}
@@ -73,7 +73,7 @@ func (d *WsDeps) OnSimpleAction(event domain.WsPayload, action string) {
 }
 func (d *WsDeps) removingUser(socket domain.WsConn, userId string) {
 	_ = socket.Close()
-	delete(d.Ws.Clients, socket)
-	delete(d.Ws.ReverseClient, userId)
+	d.Ws.Clients.Delete(socket)
+	d.Ws.ReverseClient.Delete(userId)
 	d.OnlinceSvc.PutOnline(userId, false)
 }

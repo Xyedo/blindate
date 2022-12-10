@@ -51,8 +51,8 @@ func (ws *Ws) wsEndPoint(c *gin.Context) {
 	}
 	ws.onlineSvc.PutOnline(userId, true)
 	conn := domain.WsConn{Conn: wsConn}
-	ws.wsSvc.Clients[conn] = userId
-	ws.wsSvc.ReverseClient[userId] = conn
+	ws.wsSvc.Clients.Set(conn, userId)
+	ws.wsSvc.ReverseClient.Set(userId, conn)
 
 	go ws.wsSvc.ListenForWsPayload(&conn)
 }
