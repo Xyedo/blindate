@@ -43,7 +43,7 @@ type Interest struct {
 }
 
 func (i *Interest) getInterestHandler(c *gin.Context) {
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	intr, err := i.interestSvc.GetInterest(userId)
 	if err != nil {
 		jsonHandleError(c, err)
@@ -73,7 +73,7 @@ func (i *Interest) postInterestBioHandler(c *gin.Context) {
 		}
 		return
 	}
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	bio := domain.Bio{
 		UserId: userId,
 		Bio:    *input.Bio,
@@ -108,7 +108,7 @@ func (i *Interest) putInterestBioHandler(c *gin.Context) {
 		}
 		return
 	}
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	bio, err := i.interestSvc.GetBio(userId)
 	if err != nil {
 		jsonHandleError(c, err)
@@ -137,7 +137,7 @@ func (i *Interest) putInterestBioHandler(c *gin.Context) {
 }
 
 func (i *Interest) postInterestHobbiesHandler(c *gin.Context) {
-	interestId := c.GetString("interestId")
+	interestId := c.GetString(keyInterestId)
 	var input struct {
 		Hobbies []string `json:"hobbies" binding:"required,max=10,unique,dive,min=2,max=50"`
 	}
@@ -171,7 +171,7 @@ func (i *Interest) putInterestHobbiesHandler(c *gin.Context) {
 	var input struct {
 		Hobbies []domain.Hobbie `json:"hobbies" binding:"required,max=10,unique=Hobbie"`
 	}
-	interestId := c.GetString("interestId")
+	interestId := c.GetString(keyInterestId)
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
@@ -213,7 +213,7 @@ func (i *Interest) deleteInterestHobbiesHandler(c *gin.Context) {
 		}
 		return
 	}
-	interestId := c.GetString("interestId")
+	interestId := c.GetString(keyInterestId)
 	deletedIds, err := i.interestSvc.DeleteHobbies(interestId, input.Ids)
 	if err != nil {
 		jsonHandleError(c, err)
@@ -230,7 +230,7 @@ func (i *Interest) deleteInterestHobbiesHandler(c *gin.Context) {
 }
 
 func (i *Interest) postInterestMovieSeriesHandler(c *gin.Context) {
-	interestId := c.GetString("interestId")
+	interestId := c.GetString(keyInterestId)
 	var input struct {
 		MovieSeries []string `json:"movieSeries" binding:"required,max=10,unique,dive,min=2,max=50"`
 	}
@@ -261,7 +261,7 @@ func (i *Interest) putInterestMovieSeriesHandler(c *gin.Context) {
 	var input struct {
 		MovieSeries []domain.MovieSerie `json:"movieSeries" binding:"required,max=10,unique=MovieSerie"`
 	}
-	interestId := c.GetString("interestId")
+	interestId := c.GetString(keyInterestId)
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
@@ -289,7 +289,7 @@ func (i *Interest) putInterestMovieSeriesHandler(c *gin.Context) {
 
 }
 func (i *Interest) deleteInterestMovieSeriesHandler(c *gin.Context) {
-	interestId := c.GetString("interestId")
+	interestId := c.GetString(keyInterestId)
 	var input struct {
 		Ids []string `json:"ids" binding:"required,unique,dive,uuid"`
 	}
@@ -320,7 +320,7 @@ func (i *Interest) deleteInterestMovieSeriesHandler(c *gin.Context) {
 }
 
 func (i *Interest) postInterestTravelingHandler(c *gin.Context) {
-	interestId := c.GetString("interestId")
+	interestId := c.GetString(keyInterestId)
 	var input struct {
 		Travels []string `json:"travels" binding:"required,max=10,unique,dive,min=2,max=50"`
 	}
@@ -353,7 +353,7 @@ func (i *Interest) putInterestTravelingHandler(c *gin.Context) {
 	var input struct {
 		Travels []domain.Travel `json:"travels" binding:"required,max=10,unique=Travel"`
 	}
-	interestId := c.GetString("interestId")
+	interestId := c.GetString(keyInterestId)
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
@@ -380,7 +380,7 @@ func (i *Interest) putInterestTravelingHandler(c *gin.Context) {
 	})
 }
 func (i *Interest) deleteInterestTravelingHandler(c *gin.Context) {
-	interestId := c.GetString("interestId")
+	interestId := c.GetString(keyInterestId)
 	var input struct {
 		Ids []string `json:"ids" binding:"required,unique,dive,uuid"`
 	}
@@ -411,7 +411,7 @@ func (i *Interest) deleteInterestTravelingHandler(c *gin.Context) {
 }
 
 func (i *Interest) postInterestSportHandler(c *gin.Context) {
-	interestId := c.GetString("interestId")
+	interestId := c.GetString(keyInterestId)
 	var input struct {
 		Sports []string `json:"sports" binding:"required,max=10,unique,dive,min=2,max=50"`
 	}
@@ -443,7 +443,7 @@ func (i *Interest) putInterestSportHandler(c *gin.Context) {
 	var input struct {
 		Sports []domain.Sport `json:"sports" binding:"required,max=10,unique=Sport"`
 	}
-	interestId := c.GetString("interestId")
+	interestId := c.GetString(keyInterestId)
 	err := c.ShouldBindJSON(&input)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
@@ -470,7 +470,7 @@ func (i *Interest) putInterestSportHandler(c *gin.Context) {
 	})
 }
 func (i *Interest) deleteInterestSportHandler(c *gin.Context) {
-	interestId := c.GetString("interestId")
+	interestId := c.GetString(keyInterestId)
 	var input struct {
 		Ids []string `json:"ids" binding:"required,unique,dive,uuid"`
 	}

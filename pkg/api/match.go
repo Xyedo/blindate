@@ -27,7 +27,7 @@ type Match struct {
 }
 
 func (m *Match) getNewUserToMatchHandler(c *gin.Context) {
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	res, err := m.matchSvc.FindUserToMatch(userId)
 	if err != nil {
 		jsonHandleError(c, err)
@@ -57,7 +57,7 @@ func (m *Match) postNewMatchHandler(c *gin.Context) {
 		}
 		return
 	}
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	matchId, err := m.matchSvc.PostNewMatch(userId, input.ToUserId, domain.MatchStatus(input.MatchStatus))
 	if err != nil {
 		jsonHandleError(c, err)
@@ -72,7 +72,7 @@ func (m *Match) postNewMatchHandler(c *gin.Context) {
 
 }
 func (m *Match) getAllMatchRequestedHandler(c *gin.Context) {
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	matcheds, err := m.matchSvc.GetMatchReqToUserId(userId)
 	if err != nil {
 		jsonHandleError(c, err)
@@ -92,7 +92,7 @@ func (m *Match) putRequestHandler(c *gin.Context) {
 	}
 	if err := c.ShouldBind(&input); err != nil {
 		if errjson := jsonBindingErrResp(err, c, map[string]string{
-			"Request": "required and the value must be `accepted` or `declined`",
+			"request": "required and the value must be `accepted` or `declined`",
 		}); errjson != nil {
 			errServerResp(c, err)
 			return
@@ -100,7 +100,7 @@ func (m *Match) putRequestHandler(c *gin.Context) {
 		return
 
 	}
-	matchId := c.GetString("matchId")
+	matchId := c.GetString(keyMatchId)
 	err := m.matchSvc.RequestChange(matchId, domain.MatchStatus(input.Request))
 	if err != nil {
 		jsonHandleError(c, err)
@@ -125,7 +125,7 @@ func (m *Match) putRevealHandler(c *gin.Context) {
 		return
 
 	}
-	matchId := c.GetString("matchId")
+	matchId := c.GetString(keyMatchId)
 
 	err := m.matchSvc.RevealChange(matchId, domain.MatchStatus(input.Reveal))
 	if err != nil {

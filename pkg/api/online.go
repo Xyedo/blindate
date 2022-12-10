@@ -24,7 +24,7 @@ type Online struct {
 }
 
 func (o *Online) postUserOnlineHandler(c *gin.Context) {
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 
 	err := o.onlineSvc.CreateNewOnline(userId)
 	if err != nil {
@@ -39,7 +39,7 @@ func (o *Online) postUserOnlineHandler(c *gin.Context) {
 
 }
 func (o *Online) getUserOnlineHandler(c *gin.Context) {
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	onlineUser, err := o.onlineSvc.GetOnline(userId)
 	if err != nil {
 		jsonHandleError(c, err)
@@ -53,7 +53,7 @@ func (o *Online) getUserOnlineHandler(c *gin.Context) {
 	})
 }
 func (o *Online) putuserOnlineHandler(c *gin.Context) {
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	var input struct {
 		Online *bool `json:"online" binding:"required"`
 	}

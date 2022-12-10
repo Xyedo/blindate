@@ -47,7 +47,7 @@ func (chat *Chat) postChatHandler(c *gin.Context) {
 		}
 		return
 	}
-	convoId := c.GetString("convId")
+	convoId := c.GetString(keyConvId)
 	userId := c.GetString("userId")
 	dtoChat := domain.Chat{
 		ConversationId: convoId,

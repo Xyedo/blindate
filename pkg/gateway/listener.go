@@ -26,8 +26,12 @@ func (d *WsDeps) ListenToWsChan() {
 			d.OnSimpleAction(event, "onSendingVoiceStart")
 		case "onSendingVoiceStop":
 			d.OnSimpleAction(event, "onSendingVoiceStop")
+		case "onChoosingStickerStart":
+			d.OnSimpleAction(event, "onChoosingStickerStart")
+		case "onChoosingStickerStop":
+			d.OnSimpleAction(event, "onChoosingStickerStop")
 		case "onLeaving":
-
+			d.OnLeaving(event)
 		}
 	}
 

@@ -24,7 +24,7 @@ type BasicInfo struct {
 }
 
 func (b *BasicInfo) postBasicInfoHandler(c *gin.Context) {
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	var input domain.BasicInfo
 	if err := c.ShouldBindJSON(&input); err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
@@ -74,7 +74,7 @@ func (b *BasicInfo) postBasicInfoHandler(c *gin.Context) {
 }
 
 func (b *BasicInfo) getBasicInfoHandler(c *gin.Context) {
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	basicInfo, err := b.basicinfoService.GetBasicInfoByUserId(userId)
 	if err != nil {
 		jsonHandleError(c, err)
@@ -111,7 +111,7 @@ func (b *BasicInfo) patchBasicInfoHandler(c *gin.Context) {
 		}
 		return
 	}
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	err = b.basicinfoService.UpdateBasicInfo(userId, inputBasicInfo)
 	if err != nil {
 		jsonHandleError(c, err)
