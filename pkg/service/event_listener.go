@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/domain/entity"
@@ -28,6 +29,7 @@ func (d *EventDeps) HandleSeenAtevent(payload event.ChatSeenPayload) {
 		response.Data = map[string]any{
 			"seenChatIds": updatedChatIds,
 		}
+		socket.SetWriteDeadline(time.Now().Add(writeWait))
 		err := socket.WriteJSON(response)
 		if err != nil {
 			log.Println("webscoket err", err)
@@ -40,17 +42,18 @@ func (d *EventDeps) HandleSeenAtevent(payload event.ChatSeenPayload) {
 
 func (d *EventDeps) HandleProfileUpdateEvent(payload event.ProfileUpdatedPayload) {
 	sendToConversation := func(updatedUser domain.User, userId, convUserId string) {
-		client, ok := d.Ws.ReverseClient[convUserId]
+		socket, ok := d.Ws.ReverseClient[convUserId]
 		if !ok {
 			return
 		}
 		var response domain.WsResponse
 		response.Action = "update.conversation.profile"
 		response.Data = map[string]any{"updatedUser": updatedUser}
-		err := client.WriteJSON(response)
+		socket.SetWriteDeadline(time.Now().Add(writeWait))
+		err := socket.WriteJSON(response)
 		if err != nil {
 			log.Println("webscoket err", err)
-			d.removingUser(client, convUserId)
+			d.removingUser(socket, convUserId)
 		}
 	}
 
@@ -85,6 +88,7 @@ func (d *EventDeps) HandleRevealUpdateEvent(payload event.MatchRevealedPayload) 
 				"match": match,
 			},
 		}
+		conn.SetWriteDeadline(time.Now().Add(writeWait))
 		err := conn.WriteJSON(response)
 		if err != nil {
 			log.Println("webscoket err", err)
@@ -102,6 +106,7 @@ func (d *EventDeps) HandleRevealUpdateEvent(payload event.MatchRevealedPayload) 
 }
 func (d *EventDeps) HandleCreateChatEvent(payload event.ChatCreatedPayload) {
 	sendResponse := func(socketConn domain.WsConn, userId string, chat []domain.Chat, conv domain.Conversation) {
+		socketConn.SetWriteDeadline(time.Now().Add(writeWait))
 		err := socketConn.WriteJSON(domain.WsResponse{
 			Action: "OnMessage",
 			Data: map[string]any{
