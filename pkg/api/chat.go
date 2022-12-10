@@ -15,6 +15,7 @@ import (
 // TODO: Create chat_test.go
 type chatSvc interface {
 	CreateNewChat(content *domain.Chat) error
+	UpdateSeenChat(convId, userId string) error
 	GetMessages(convoId string, filter entity.ChatFilter) ([]domain.Chat, error)
 	DeleteMessagesById(chatId string) error
 }
@@ -179,7 +180,19 @@ func (chat *Chat) getMessagesHandler(c *gin.Context) {
 		},
 	})
 }
-
+func (chat *Chat) putSeenAtHandler(c *gin.Context) {
+	convoId := c.GetString("convId")
+	userId := c.GetString("userId")
+	err := chat.chatSvc.UpdateSeenChat(convoId, userId)
+	if err != nil {
+		jsonHandleError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "seenAt updated",
+	})
+}
 func (chat *Chat) deleteMessagesByIdHandler(c *gin.Context) {
 	chatId := c.GetString("chatId")
 	if err := chat.chatSvc.DeleteMessagesById(chatId); err != nil {

@@ -4,6 +4,7 @@ import (
 	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/domain/entity"
+	"github.com/xyedo/blindate/pkg/event"
 	"github.com/xyedo/blindate/pkg/repository"
 )
 
@@ -52,7 +53,7 @@ func (m *Match) GetMatchReqToUserId(userId string) ([]domain.MatchUser, error) {
 }
 
 func (m *Match) RequestChange(matchId string, matchStatus domain.MatchStatus) error {
-	matchEntity, err := m.getMatchById(matchId)
+	matchEntity, err := m.GetMatchById(matchId)
 	if err != nil {
 		return err
 	}
@@ -78,7 +79,7 @@ func (m *Match) RequestChange(matchId string, matchStatus domain.MatchStatus) er
 }
 
 func (m *Match) RevealChange(matchId string, matchStatus domain.MatchStatus) error {
-	matchEntity, err := m.getMatchById(matchId)
+	matchEntity, err := m.GetMatchById(matchId)
 	if err != nil {
 		return err
 	}
@@ -91,16 +92,28 @@ func (m *Match) RevealChange(matchId string, matchStatus domain.MatchStatus) err
 			return ErrInvalidMatchStatus
 		}
 		matchEntity.RevealStatus = string(domain.Requested)
+		event.MatchRevealed.Trigger(event.MatchRevealedPayload{
+			MatchId:     matchId,
+			MatchStatus: domain.Requested,
+		})
 	case domain.Declined:
 		if matchEntity.RevealStatus == string(domain.Unknown) {
 			return ErrInvalidMatchStatus
 		}
 		matchEntity.RevealStatus = string(domain.Declined)
+		event.MatchRevealed.Trigger(event.MatchRevealedPayload{
+			MatchId:     matchId,
+			MatchStatus: domain.Declined,
+		})
 	case domain.Accepted:
 		if matchEntity.RevealStatus != string(domain.Requested) {
 			return ErrInvalidMatchStatus
 		}
 		matchEntity.RevealStatus = string(domain.Accepted)
+		event.MatchRevealed.Trigger(event.MatchRevealedPayload{
+			MatchId:     matchId,
+			MatchStatus: domain.Accepted,
+		})
 	}
 
 	err = m.updateMatch(matchEntity)
@@ -118,7 +131,7 @@ func (m *Match) updateMatch(matchEntity entity.Match) error {
 	return nil
 }
 
-func (m *Match) getMatchById(matchId string) (entity.Match, error) {
+func (m *Match) GetMatchById(matchId string) (entity.Match, error) {
 	matchEntity, err := m.matchRepo.GetMatchById(matchId)
 	if err != nil {
 		return entity.Match{}, err

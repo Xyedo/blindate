@@ -12,6 +12,16 @@ const (
 	authorizationHeaderKey = "Authorization"
 )
 
+func validateWs(jwtService jwtSvc) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := validateToken(c, jwtService)
+		if id == "" {
+			return
+		}
+		c.Set("userId", id)
+		c.Next()
+	}
+}
 func validateUser(jwtService jwtSvc) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		id := validateToken(c, jwtService)

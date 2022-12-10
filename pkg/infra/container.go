@@ -3,11 +3,12 @@ package infra
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/xyedo/blindate/pkg/api"
+	"github.com/xyedo/blindate/pkg/gateway"
 	"github.com/xyedo/blindate/pkg/repository"
 	"github.com/xyedo/blindate/pkg/service"
 )
 
-func (cfg *Config) Container(db *sqlx.DB) api.Route {
+func (cfg *Config) Container(db *sqlx.DB) (api.Route, service.EventDeps, gateway.WsDeps) {
 	attachmentSvc := service.NewS3(cfg.BucketName)
 
 	userRepo := repository.NewUser(db)
@@ -50,17 +51,31 @@ func (cfg *Config) Container(db *sqlx.DB) api.Route {
 	chatSvc := service.NewChat(chatRepp, matchRepo)
 	chatHandler := api.NewChat(chatSvc, attachmentSvc)
 
+	wsSvc := service.NewWs()
+	WsHandler := api.NewWs(wsSvc, onlineSvc)
 	return api.Route{
-		User:           userHandler,
-		Healthcheck:    healthcheckHander,
-		BasicInfo:      basicInfoHandler,
-		Location:       locationHandler,
-		Authentication: authHandler,
-		Tokenizer:      tokenSvc,
-		Interest:       interestHandler,
-		Online:         onlineHandler,
-		Convo:          convHandler,
-		Chat:           chatHandler,
-		Match:          matchHandler,
-	}
+			User:           userHandler,
+			Healthcheck:    healthcheckHander,
+			BasicInfo:      basicInfoHandler,
+			Location:       locationHandler,
+			Authentication: authHandler,
+			Tokenizer:      tokenSvc,
+			Interest:       interestHandler,
+			Online:         onlineHandler,
+			Convo:          convHandler,
+			Chat:           chatHandler,
+			Match:          matchHandler,
+			Webscoket:      WsHandler,
+		}, service.EventDeps{
+			UserSvc:  userSvc,
+			ConvSvc:  convSvc,
+			MatchSvc: matchSvc,
+			Online:   onlineSvc,
+			Ws:       wsSvc,
+		}, gateway.WsDeps{
+			Ws:         wsSvc,
+			ChatSvc:    chatSvc,
+			MatchSvc:   matchSvc,
+			OnlinceSvc: onlineSvc,
+		}
 }

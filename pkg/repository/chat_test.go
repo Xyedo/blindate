@@ -119,21 +119,48 @@ func Test_InsertNewChat(t *testing.T) {
 func Test_UpdateSeenChatById(t *testing.T) {
 	chat := repository.NewChat(testQuery)
 	t.Run("valid", func(t *testing.T) {
-		chatId := createNewChat(chat, t)
-		err := chat.UpdateSeenChatById(chatId)
+		conv := repository.NewConversation(testQuery)
+		matchRepo := repository.NewMatch(testQuery)
+		fromUsr := createNewAccount(t)
+		toUsr := createNewAccount(t)
+		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, domain.Requested)
 		require.NoError(t, err)
+		convoId, err := conv.InsertConversation(matchId)
+		require.NoError(t, err)
+		require.NotEmpty(t, convoId)
+		//this should not happen in prod. the author must have link by converstation
+		newChat := &entity.Chat{
+			ConversationId: convoId,
+			Author:         fromUsr.ID,
+			Messages:       "whatsup sexy!",
+			SentAt:         time.Now(),
+		}
+		err = chat.InsertNewChat(newChat)
+		require.NoError(t, err)
+		err = chat.InsertNewChat(&entity.Chat{
+			ConversationId: convoId,
+			Author:         toUsr.ID,
+			Messages:       "omg whatsup",
+			SentAt:         time.Now(),
+		})
+		require.NoError(t, err)
+		changedChatIds, err := chat.UpdateSeenChat(convoId, fromUsr.ID)
+		require.NoError(t, err)
+		require.Len(t, changedChatIds, 1)
+		assert.NotEmpty(t, changedChatIds[0])
 	})
 	t.Run("invalid chatId", func(t *testing.T) {
-		err := chat.UpdateSeenChatById(util.RandomUUID())
+		changedChatIds, err := chat.UpdateSeenChat(util.RandomUUID(), util.RandomUUID())
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.Empty(t, changedChatIds)
 	})
 }
 
 func Test_DeleteChat(t *testing.T) {
 	chat := repository.NewChat(testQuery)
 	t.Run("valid delete", func(t *testing.T) {
-		chatId := createNewChat(chat, t)
+		chatId, _ := createNewChat(chat, t)
 		err := chat.DeleteChatById(chatId)
 		require.NoError(t, err)
 	})
@@ -254,7 +281,7 @@ func Test_SelectChat(t *testing.T) {
 	})
 
 }
-func createNewChat(chat *repository.ChatConn, t *testing.T) string {
+func createNewChat(chat *repository.ChatConn, t *testing.T) (string, string) {
 	conv := repository.NewConversation(testQuery)
 	matchRepo := repository.NewMatch(testQuery)
 	fromUsr := createNewAccount(t)
@@ -273,5 +300,5 @@ func createNewChat(chat *repository.ChatConn, t *testing.T) string {
 	}
 	err = chat.InsertNewChat(newChat)
 	require.NoError(t, err)
-	return newChat.Id
+	return newChat.Id, convoId
 }

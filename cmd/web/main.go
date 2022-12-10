@@ -7,6 +7,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/xyedo/blindate/pkg/event"
 	"github.com/xyedo/blindate/pkg/infra"
 )
 
@@ -39,7 +40,15 @@ func main() {
 			log.Panic(err)
 		}
 	}(db)
+	routes, eventDeps, wsDeps := cfg.Container(db)
 
-	log.Fatal(cfg.NewServer(cfg.Container(db)))
+	event.ProfileUpdated.Register(&eventDeps)
+	event.MatchRevealed.Register(&eventDeps)
+	event.ChatSeen.Register(&eventDeps)
+	event.ChatCreated.Register(&eventDeps)
+
+	go wsDeps.ListenToWsChan()
+
+	log.Fatal(cfg.NewServer(routes))
 
 }

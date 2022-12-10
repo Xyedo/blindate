@@ -77,16 +77,17 @@ func (mr *MockChatMockRecorder) SelectChat(arg0, arg1 interface{}) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SelectChat", reflect.TypeOf((*MockChat)(nil).SelectChat), arg0, arg1)
 }
 
-// UpdateSeenChatById mocks base method.
-func (m *MockChat) UpdateSeenChatById(arg0 string) error {
+// UpdateSeenChat mocks base method.
+func (m *MockChat) UpdateSeenChat(arg0, arg1 string) ([]string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateSeenChatById", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "UpdateSeenChat", arg0, arg1)
+	ret0, _ := ret[0].([]string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
-// UpdateSeenChatById indicates an expected call of UpdateSeenChatById.
-func (mr *MockChatMockRecorder) UpdateSeenChatById(arg0 interface{}) *gomock.Call {
+// UpdateSeenChat indicates an expected call of UpdateSeenChat.
+func (mr *MockChatMockRecorder) UpdateSeenChat(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSeenChatById", reflect.TypeOf((*MockChat)(nil).UpdateSeenChatById), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSeenChat", reflect.TypeOf((*MockChat)(nil).UpdateSeenChat), arg0, arg1)
 }

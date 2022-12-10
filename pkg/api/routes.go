@@ -18,6 +18,7 @@ type Route struct {
 	Match          *Match
 	Convo          *Conversation
 	Chat           *Chat
+	Webscoket      *Ws
 }
 
 func Routes(route Route) http.Handler {
@@ -29,6 +30,8 @@ func Routes(route Route) http.Handler {
 	r.MaxMultipartMemory = 8 << 20
 
 	registerTagName()
+	registerValidDObValidator()
+	registerValidEducationLevelFieldValidator()
 	v1 := r.Group("/api/v1")
 	{
 		rh := route.Healthcheck
@@ -40,9 +43,11 @@ func Routes(route Route) http.Handler {
 		v1.PUT("/auth", ra.putAuthHandler)
 		v1.DELETE("/auth", ra.deleteAuthHandler)
 	}
+	{
+		rw := route.Webscoket
+		v1.GET("/ws", validateWs(route.Tokenizer), rw.wsEndPoint)
+	}
 
-	registerValidDObValidator()
-	registerValidEducationLevelFieldValidator()
 	ru := route.User
 	v1.POST("/users", ru.postUserHandler)
 	auth := v1.Group("/users/:userId", validateUser(route.Tokenizer))
@@ -74,6 +79,8 @@ func Routes(route Route) http.Handler {
 			conv.POST("/chat", rchat.postChatHandler)
 			conv.POST("/chat-media", rchat.postChatMediaHandler)
 			conv.GET("/chat", rchat.getMessagesHandler)
+			conv.PUT("/chat/seenAt", rchat.putSeenAtHandler)
+
 			conv.DELETE("chat/:chatId", validateChat(), rchat.deleteMessagesByIdHandler)
 		}
 
