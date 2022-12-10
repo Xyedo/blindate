@@ -7,6 +7,7 @@ import (
 
 	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
+	"github.com/xyedo/blindate/pkg/event"
 	"github.com/xyedo/blindate/pkg/repository"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -43,7 +44,7 @@ func (u *User) GetUserById(id string) (domain.User, error) {
 	}
 	return user, nil
 }
-func (u *User) GetUserIdWithProfilePics(id string) (domain.User, error) {
+func (u *User) GetUserByIdWithSelectedProfPic(id string) (domain.User, error) {
 	user, err := u.userRepository.GetUserById(id)
 	if err != nil {
 		return domain.User{}, err
@@ -99,6 +100,12 @@ func (u *User) UpdateUser(userId string, updateUser domain.UpdateUser) error {
 	if err != nil {
 		return err
 	}
+	if updateUser.Alias != nil || updateUser.FullName != nil {
+		event.ProfileUpdated.Trigger(event.ProfileUpdatedPayload{
+			UserId: userId,
+		})
+	}
+
 	return nil
 }
 
@@ -120,6 +127,11 @@ func (u *User) CreateNewProfilePic(profPicParam domain.ProfilePicture) (string, 
 	id, err := u.userRepository.CreateProfilePicture(profPicParam.UserId, profPicParam.PictureLink, profPicParam.Selected)
 	if err != nil {
 		return "", err
+	}
+	if profPicParam.Selected {
+		event.ProfileUpdated.Trigger(event.ProfileUpdatedPayload{
+			UserId: profPicParam.UserId,
+		})
 	}
 	return id, nil
 }

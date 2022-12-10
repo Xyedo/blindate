@@ -8,6 +8,7 @@ import (
 	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
 	"github.com/xyedo/blindate/pkg/domain/entity"
+	"github.com/xyedo/blindate/pkg/event"
 	"github.com/xyedo/blindate/pkg/repository"
 )
 
@@ -42,10 +43,36 @@ func (c *Chat) CreateNewChat(content *domain.Chat) error {
 			return err
 		}
 	}
+	cleanChatDTO := make([]domain.Chat, 0, len(cleanChats))
+	for i := range cleanChats {
+		cleanChatDTO = append(cleanChatDTO, *c.convertToDomain(cleanChats[i]))
+	}
+	event.ChatCreated.Trigger(event.ChatCreatedPayload{
+		Chat:   cleanChatDTO,
+		ConvId: content.ConversationId,
+	})
 	return nil
-
 }
+func (c *Chat) UpdateSeenChat(convId, userId string) error {
+	matchEntity, err := c.matchRepo.GetMatchById(convId)
+	if err != nil {
+		return err
+	}
+	if !(matchEntity.RequestFrom == userId || matchEntity.RequestTo == userId) {
+		return common.WrapWithNewError(common.ErrAuthorNotValid, http.StatusForbidden, "users not in this conversation")
+	}
+	changedChatIds, err := c.chatRepo.UpdateSeenChat(convId, userId)
+	if err != nil {
+		return err
+	}
 
+	event.ChatSeen.Trigger(event.ChatSeenPayload{
+		RequestFrom: matchEntity.RequestFrom,
+		RequestTo:   matchEntity.RequestTo,
+		SeenChatIds: changedChatIds,
+	})
+	return nil
+}
 func (c *Chat) GetMessages(convoId string, filter entity.ChatFilter) ([]domain.Chat, error) {
 	chats, err := c.chatRepo.SelectChat(convoId, filter)
 	if err != nil {

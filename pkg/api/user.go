@@ -82,7 +82,7 @@ func (u *User) postUserHandler(c *gin.Context) {
 func (u *User) putUserImageProfileHandler(c *gin.Context) {
 	selectedQ := c.Query("selected")
 	selected := strings.EqualFold(selectedQ, "true")
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	var validImageTypes = []string{
 		"image/avif",
 		"image/jpeg",
@@ -115,7 +115,7 @@ func (u *User) putUserImageProfileHandler(c *gin.Context) {
 	})
 }
 func (u *User) getUserByIdHandler(c *gin.Context) {
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	user, err := u.userService.GetUserById(userId)
 	if err != nil {
 		jsonHandleError(c, err)
@@ -148,7 +148,7 @@ func (u *User) patchUserByIdHandler(c *gin.Context) {
 		}
 		return
 	}
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	err = u.userService.UpdateUser(userId, input)
 	if err != nil {
 		jsonHandleError(c, err)

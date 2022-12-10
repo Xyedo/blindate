@@ -17,7 +17,7 @@ import (
 type Chat interface {
 	InsertNewChat(content *entity.Chat) error
 	SelectChat(convoId string, filter entity.ChatFilter) ([]entity.Chat, error)
-	UpdateSeenChatById(chatId string) error
+	UpdateSeenChat(convId, authorId string) ([]string, error)
 	DeleteChatById(chatId string) error
 }
 
@@ -151,23 +151,27 @@ func (c *ChatConn) DeleteChatById(chatId string) error {
 //		}
 //		return &newChat, nil
 //	}
-func (c *ChatConn) UpdateSeenChatById(chatId string) error {
-	query := `UPDATE chats SET seen_at = $1 WHERE id = $2 RETURNING id`
+func (c *ChatConn) UpdateSeenChat(convId, authorId string) ([]string, error) {
+	query := `UPDATE chats SET seen_at = $1 WHERE conversation_id = $2 AND author != $3 RETURNING id`
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	var retId string
 
-	err := c.conn.GetContext(ctx, &retId, query, sql.NullTime{Valid: true, Time: time.Now()}, chatId)
+	var retIds []string
+	err := c.conn.SelectContext(ctx, &retIds, query, sql.NullTime{Valid: true, Time: time.Now()}, convId, authorId)
 	if err != nil {
+
 		if errors.Is(err, context.Canceled) {
-			return common.WrapError(err, common.ErrTooLongAccessingDB)
+			return nil, common.WrapError(err, common.ErrTooLongAccessingDB)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return common.WrapError(err, common.ErrRefNotFound23503)
+			return nil, common.WrapError(err, common.ErrRefNotFound23503)
 		}
-		return err
+		return nil, err
 	}
-	return nil
+	if len(retIds) == 0 {
+		return nil, common.ErrResourceNotFound
+	}
+	return retIds, nil
 }
 
 func (c *ChatConn) SelectChat(convoId string, filter entity.ChatFilter) ([]entity.Chat, error) {

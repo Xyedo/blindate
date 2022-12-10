@@ -72,7 +72,7 @@ func validateToken(token, secret string) (string, error) {
 		var jwtErr *jwt.ValidationError
 		if errors.As(err, &jwtErr) {
 			if jwtErr.Errors == jwt.ValidationErrorExpired {
-				return "", common.WrapWithNewError(err, http.StatusUnauthorized, "token is expired, please login!")
+				return "", common.WrapWithNewError(err, http.StatusUnauthorized, "token is expired, please auth again!")
 			}
 		}
 		return "", common.WrapError(err, common.ErrNotMatchCredential)

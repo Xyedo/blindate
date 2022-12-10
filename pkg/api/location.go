@@ -24,7 +24,7 @@ type Location struct {
 }
 
 func (l *Location) postLocationByUserIdHandler(c *gin.Context) {
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	var input struct {
 		Lat string `json:"lat" binding:"required,latitude"`
 		Lng string `json:"lng" binding:"required,longitude"`
@@ -52,7 +52,7 @@ func (l *Location) postLocationByUserIdHandler(c *gin.Context) {
 	})
 }
 func (l *Location) getLocationByUserIdHandler(c *gin.Context) {
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	location, err := l.locationService.GetLocation(userId)
 	if err != nil {
 		jsonHandleError(c, err)
@@ -67,7 +67,7 @@ func (l *Location) getLocationByUserIdHandler(c *gin.Context) {
 }
 
 func (l *Location) patchLocationByUserIdHandler(c *gin.Context) {
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	var input struct {
 		Lat *string `json:"lat" binding:"omitempty,latitude"`
 		Lng *string `json:"lng" binding:"omitempty,longitude"`

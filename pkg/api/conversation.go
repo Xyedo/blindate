@@ -1,12 +1,9 @@
 package api
 
 import (
-	"context"
-	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xyedo/blindate/pkg/common"
 	"github.com/xyedo/blindate/pkg/domain"
 )
 
@@ -29,41 +26,38 @@ type Conversation struct {
 }
 
 func (conv *Conversation) postConversationHandler(c *gin.Context) {
-	convoId := c.GetString("convId")
-	_, err := conv.convSvc.CreateConversation(convoId)
+	var input struct {
+		MatchId string `json:"matchId" binding:"required,uuid"`
+	}
+	err := c.ShouldBindJSON(&input)
 	if err != nil {
-		switch {
-		case errors.Is(err, context.Canceled):
-			errResourceConflictResp(c)
-		case errors.Is(err, common.ErrRefNotFound23503):
-			errNotFoundResp(c, "provided userId  doesnt exists")
-		case errors.Is(err, common.ErrUniqueConstraint23505):
-			errUnprocessableEntityResp(c, "already having a conversation between both userId")
-		default:
+		errjson := jsonBindingErrResp(err, c, map[string]string{
+			"matchId": "must be required and must valid uuid",
+		})
+		if errjson != nil {
 			errServerResp(c, err)
+			return
 		}
+		return
+	}
+	_, err = conv.convSvc.CreateConversation(input.MatchId)
+	if err != nil {
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
 		"data": gin.H{
-			"conversationId": convoId,
+			"conversationId": input.MatchId,
 		},
 	})
 }
 
 func (conv *Conversation) getConversationByUserId(c *gin.Context) {
-	userId := c.GetString("userId")
+	userId := c.GetString(keyUserId)
 	convs, err := conv.convSvc.GetConversationByUserId(userId)
 	if err != nil {
-		switch {
-		case errors.Is(err, common.ErrResourceNotFound):
-			errNotFoundResp(c, "conversation with this userId is not found")
-		case errors.Is(err, context.Canceled):
-			errResourceConflictResp(c)
-		default:
-			errServerResp(c, err)
-		}
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -74,17 +68,10 @@ func (conv *Conversation) getConversationByUserId(c *gin.Context) {
 	})
 }
 func (conv *Conversation) getConversationById(c *gin.Context) {
-	convId := c.GetString("convId")
+	convId := c.GetString(keyConvId)
 	convRet, err := conv.convSvc.FindConversationById(convId)
 	if err != nil {
-		switch {
-		case errors.Is(err, common.ErrResourceNotFound):
-			errNotFoundResp(c, "conversation with this userId is not found")
-		case errors.Is(err, context.Canceled):
-			errResourceConflictResp(c)
-		default:
-			errServerResp(c, err)
-		}
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -95,17 +82,9 @@ func (conv *Conversation) getConversationById(c *gin.Context) {
 	})
 }
 func (conv *Conversation) deleteConversationById(c *gin.Context) {
-	convId := c.GetString("convId")
+	convId := c.GetString(keyConvId)
 	if err := conv.convSvc.DeleteConversationById(convId); err != nil {
-		switch {
-		case errors.Is(err, common.ErrResourceNotFound):
-			errNotFoundResp(c, "conversationId is not found")
-
-		case errors.Is(err, common.ErrTooLongAccessingDB):
-			errResourceConflictResp(c)
-		default:
-			errServerResp(c, err)
-		}
+		jsonHandleError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{

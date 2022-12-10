@@ -12,12 +12,36 @@ const (
 	authorizationHeaderKey = "Authorization"
 )
 
-func validateUser(jwtService jwtSvc) gin.HandlerFunc {
+func authToken(jwtSvc jwtSvc) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := validateToken(c, jwtService)
-		if id == "" {
+		authorizationHeader := c.GetHeader(authorizationHeaderKey)
+		fields := strings.Fields(authorizationHeader)
+		if len(fields) < 2 {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"status":  "fail",
+				"message": "Invalid Authorization Header format",
+			})
 			return
 		}
+		if !strings.EqualFold("Bearer", fields[0]) {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"status":  "fail",
+				"message": fmt.Sprintf("Unsupported Authorization type %s", fields[0]),
+			})
+			return
+		}
+
+		accessToken := fields[1]
+		id, err := jwtSvc.ValidateAccessToken(accessToken)
+		if err != nil {
+			jsonHandleError(c, err)
+			return
+		}
+		c.Set(keyUserId, id)
+	}
+}
+func validateUser() gin.HandlerFunc {
+	return func(c *gin.Context) {
 		var url struct {
 			UserId string `uri:"userId" binding:"required,uuid"`
 		}
@@ -29,41 +53,13 @@ func validateUser(jwtService jwtSvc) gin.HandlerFunc {
 			})
 			return
 		}
-
-		if url.UserId != id {
+		userId := c.GetString(keyUserId)
+		if url.UserId != userId {
 			errForbiddenResp(c, "you should not access this resoures")
 			return
 		}
-		c.Set("userId", url.UserId)
 		c.Next()
 	}
-}
-
-func validateToken(c *gin.Context, jwtSvc jwtSvc) string {
-	authorizationHeader := c.GetHeader(authorizationHeaderKey)
-	fields := strings.Fields(authorizationHeader)
-	if len(fields) < 2 {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-			"status":  "fail",
-			"message": "Invalid Authorization Header format",
-		})
-		return ""
-	}
-	if !strings.EqualFold("Bearer", fields[0]) {
-		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-			"status":  "fail",
-			"message": fmt.Sprintf("Unsupported Authorization type %s", fields[0]),
-		})
-		return ""
-	}
-
-	accessToken := fields[1]
-	id, err := jwtSvc.ValidateAccessToken(accessToken)
-	if err != nil {
-		jsonHandleError(c, err)
-		return ""
-	}
-	return id
 }
 
 func validateInterest() gin.HandlerFunc {
@@ -79,7 +75,7 @@ func validateInterest() gin.HandlerFunc {
 			})
 			return
 		}
-		c.Set("interestId", url.InterestId)
+		c.Set(keyInterestId, url.InterestId)
 		c.Next()
 	}
 }
@@ -96,7 +92,7 @@ func validateConversation() gin.HandlerFunc {
 			})
 			return
 		}
-		c.Set("convId", url.ConversationId)
+		c.Set(keyConvId, url.ConversationId)
 		c.Next()
 	}
 
@@ -115,7 +111,7 @@ func validateChat() gin.HandlerFunc {
 			})
 			return
 		}
-		c.Set("chatId", url.ChatId)
+		c.Set(keyChatId, url.ChatId)
 		c.Next()
 	}
 
@@ -133,7 +129,7 @@ func validateMatch() gin.HandlerFunc {
 			})
 			return
 		}
-		c.Set("matchId", url.MatchId)
+		c.Set(keyMatchId, url.MatchId)
 		c.Next()
 	}
 

@@ -33,6 +33,10 @@
     {
       "name": "Match",
       "description": "to search,accept,decline and find match"
+    },
+    {
+      "name": "Conversation",
+      "description": "to create, update, get conversation"
     }
   ],
   "paths": {
@@ -191,15 +195,16 @@
         ],
         "summary": "Sign Up New User",
         "operationId": "postUserHandler",
+        "security": [],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ReqUser"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "400": {
@@ -244,6 +249,11 @@
         "tags": [
           "Users"
         ],
+        "security": [
+          {
+            "loginAuth": []
+          }
+        ],
         "summary": "Get User By Id",
         "operationId": "getUserById",
         "responses": {
@@ -282,6 +292,11 @@
           },
           "required": true
         },
+        "security": [
+          {
+            "loginAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "item edited",
@@ -341,7 +356,13 @@
             }
           }
         ],
+        "security": [
+          {
+            "loginAuth": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
@@ -411,27 +432,17 @@
         }
       }
     },
-    "/users/{userId}/new-match": {
+    "/new-match": {
       "description": "to find a new match with another user",
       "summary": "find a new match",
-      "parameters": [
-        {
-          "name": "userId",
-          "in": "path",
-          "description": "unique indentifier for users",
-          "required": true,
-          "style": "simple",
-          "explode": false,
-          "schema": {
-            "type": "string",
-            "format": "uuid",
-            "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
-          }
-        }
-      ],
       "get": {
         "tags": [
           "Match"
+        ],
+        "security": [
+          {
+            "loginAuth": []
+          }
         ],
         "description": "finding a new user to match, after this, you can go to the postNewMatchHandler to decline or request to match",
         "operationId": "getNewUserToMatchHandler",
@@ -473,25 +484,15 @@
         }
       }
     },
-    "/users/{userId}/match": {
-      "parameters": [
-        {
-          "name": "userId",
-          "in": "path",
-          "description": "unique indentifier for users",
-          "required": true,
-          "style": "simple",
-          "explode": false,
-          "schema": {
-            "type": "string",
-            "format": "uuid",
-            "example": "d290f1ee-6c54-4b01-90e6-d701748f0851"
-          }
-        }
-      ],
+    "/match": {
       "get": {
         "tags": [
           "Match"
+        ],
+        "security": [
+          {
+            "loginAuth": []
+          }
         ],
         "description": "to get all match requested user",
         "summary": "get match req user",
@@ -539,7 +540,13 @@
         "description": "after getting a match, you have to decline it or request it",
         "summary": "to match or decline user",
         "operationId": "postNewMatchHandler",
+        "security": [
+          {
+            "loginAuth": []
+          }
+        ],
         "requestBody": {
+          "required": true,
           "description": "to what user and what match response",
           "content": {
             "application/json": {
@@ -651,8 +658,322 @@
         }
       }
     },
-    "/users/{userId}/match/{matchId}/request": {
-      "description": "request to "
+    "/match/{matchId}/request": {
+      "description": "change request to match",
+      "parameters": [
+        {
+          "name": "matchId",
+          "in": "path",
+          "description": "unique indentifier for match",
+          "required": true,
+          "style": "simple",
+          "explode": false,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "d290f1ee-6c54-4b01-90e6-d701748f0231"
+          }
+        }
+      ],
+      "summary": "change request on match",
+      "put": {
+        "tags": [
+          "Match"
+        ],
+        "security": [
+          {
+            "loginAuth": []
+          }
+        ],
+        "description": "to change from matchStatus to accept or declined",
+        "summary": "put matchStatus on request",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "request": {
+                    "type": "string",
+                    "enum": [
+                      "declined",
+                      "accepted"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/bad_request_json"
+          },
+          "409": {
+            "description": "error validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "fail"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "please refer to the documentation"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "properties": {
+                        "request": {
+                          "type": "string",
+                          "example": "request must required and must matchStatus enums"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "fail"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "request successly been changed"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/match/{matchId}/reveal": {
+      "summary": "put reveal on match",
+      "parameters": [
+        {
+          "name": "matchId",
+          "in": "path",
+          "description": "unique indentifier for match",
+          "required": true,
+          "style": "simple",
+          "explode": false,
+          "schema": {
+            "type": "string",
+            "format": "uuid",
+            "example": "d290f1ee-6c54-4b01-90e6-d701748f0231"
+          }
+        }
+      ],
+      "description": "change reveal matchStatus to requested,declined,accepted",
+      "put": {
+        "tags": [
+          "Match"
+        ],
+        "summary": "put matchStatus on reveal",
+        "security": [
+          {
+            "loginAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reveal": {
+                    "type": "string",
+                    "enum": [
+                      "requested",
+                      "declined",
+                      "accepted"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "reveal successly been changed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/bad_request_json"
+          },
+          "409": {
+            "description": "error validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "fail"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "please refer to the documentation"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "properties": {
+                        "reveal": {
+                          "type": "string",
+                          "example": "reveal must required and must matchStatus enums"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/conversation": {
+      "post": {
+        "security": [
+          {
+            "loginAuth": []
+          }
+        ],
+        "tags": [
+          "Conversation"
+        ],
+        "summary": "new conversation",
+        "description": "post a conversation based on matchId",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "matchId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "conversationId": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "error on validation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "fail"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "please refer to the documentation"
+                    },
+                    "errors": {
+                      "type": "object",
+                      "properties": {
+                        "matchId": {
+                          "type": "string",
+                          "example": "must be  required and must valid uuid"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/bad_request_json"
+          }
+        }
+      },
+      "get": {
+        "summary": "get conversation by userId",
+        "description": "get all conversation  by userId",
+        "tags": ["Conversation"],
+        "responses": {
+          "200": {
+            "description": "success getter",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items":{
+                    "$ref": "#/components/schemas/conversation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -981,6 +1302,72 @@
             "$ref": "#/components/schemas/simple_interest"
           }
         ]
+      },
+      "tiny_user": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fullName": {
+            "type": "string",
+            "example": "hafid Mahdi"
+          },
+          "alias": {
+            "type": "string",
+            "example": "xyedo"
+          },
+          "profilePic": {
+            "type": "string",
+            "example": "blindate.com/asfihoaf"
+          }
+        }
+      },
+      "conversation": {
+        "required": [
+          "fromUser",
+          "toUser",
+          "lastMessage",
+          "lastMessageSentAt",
+          "chatRows",
+          "dayPass"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fromUser": {
+            "type": "object",
+            "$ref": "#/components/schemas/tiny_user"
+          },
+          "toUser": {
+            "type": "object",
+            "$ref": "#/components/schemas/tiny_user"
+          },
+          "lastMessage": {
+            "type": "string",
+            "example":"gatau njir"
+          },
+          "lastMessageSentAt": {
+            "type": "string",
+            "format": "date"
+          },
+          "lastMessageSeenAt":{
+            "type": "string",
+            "format": "date"
+          },
+          "chatRows":{
+            "type": "integer",
+            "example":"200"
+          },
+          "dayPass": {
+            "type": "integer",
+            "example":"200"
+          }
+        }
       },
       "simple_basic_info": {
         "type": "object",
@@ -1447,12 +1834,12 @@
     },
     "securitySchemes": {
       "loginAuth": {
-        "type": "jwt token",
-        "in": "header",
-        "name": "Authorization Bearer"
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
       },
       "refreshAuth": {
-        "type": "jwt token",
+        "type": "apiKey",
         "in": "cookie",
         "name": "refreshToken"
       }
