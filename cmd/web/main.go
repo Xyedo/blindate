@@ -48,7 +48,9 @@ func main() {
 	event.ChatCreated.Register(&eventDeps)
 
 	go wsDeps.ListenToWsChan()
-
-	log.Fatal(cfg.NewServer(routes))
+	err = cfg.NewServer(routes)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 }

@@ -16,20 +16,20 @@ type RwMap[K comparable, V any] struct {
 
 func (rw *RwMap[K, V]) Set(key K, value V) {
 	rw.mu.Lock()
-	defer rw.mu.Unlock()
 	rw.m[key] = value
+	rw.mu.Unlock()
 
 }
 
 func (rw *RwMap[K, V]) Get(key K) (V, bool) {
 	rw.mu.RLock()
-	defer rw.mu.RUnlock()
 	value, ok := rw.m[key]
+	rw.mu.RUnlock()
 	return value, ok
 }
 
 func (rw *RwMap[K, V]) Delete(key K) {
 	rw.mu.Lock()
-	defer rw.mu.Unlock()
 	delete(rw.m, key)
+	rw.mu.Unlock()
 }

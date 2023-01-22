@@ -3,22 +3,21 @@ package service
 import (
 	"database/sql"
 
-	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/domain/entity"
-	"github.com/xyedo/blindate/pkg/repository"
+	"github.com/xyedo/blindate/pkg/domain/basicinfo"
+	basicInfoEntity "github.com/xyedo/blindate/pkg/domain/basicinfo/entities"
 )
 
-func NewBasicInfo(bInfoRepo repository.BasicInfo) *BasicInfo {
+func NewBasicInfo(bInfoRepo basicinfo.Repository) *BasicInfo {
 	return &BasicInfo{
 		basicInfoRepo: bInfoRepo,
 	}
 }
 
 type BasicInfo struct {
-	basicInfoRepo repository.BasicInfo
+	basicInfoRepo basicinfo.Repository
 }
 
-func (b *BasicInfo) CreateBasicInfo(bInfo domain.BasicInfo) error {
+func (b *BasicInfo) CreateBasicInfo(bInfo basicInfoEntity.FullDTO) error {
 	err := b.basicInfoRepo.InsertBasicInfo(b.domainToEntity(bInfo))
 	if err != nil {
 		return err
@@ -26,16 +25,16 @@ func (b *BasicInfo) CreateBasicInfo(bInfo domain.BasicInfo) error {
 	return nil
 }
 
-func (b *BasicInfo) GetBasicInfoByUserId(id string) (domain.BasicInfo, error) {
+func (b *BasicInfo) GetBasicInfoByUserId(id string) (basicInfoEntity.FullDTO, error) {
 	basicInfo, err := b.basicInfoRepo.GetBasicInfoByUserId(id)
 	if err != nil {
-		return domain.BasicInfo{}, err
+		return basicInfoEntity.FullDTO{}, err
 	}
 
 	return b.entityToDomain(basicInfo), nil
 }
 
-func (b *BasicInfo) UpdateBasicInfo(userId string, newBasicInfo domain.UpdateBasicInfo) error {
+func (b *BasicInfo) UpdateBasicInfo(userId string, newBasicInfo basicInfoEntity.Update) error {
 	basicInfoDomain, err := b.GetBasicInfoByUserId(userId)
 	if err != nil {
 		return err
@@ -81,8 +80,8 @@ func (b *BasicInfo) UpdateBasicInfo(userId string, newBasicInfo domain.UpdateBas
 	return nil
 }
 
-func (BasicInfo) entityToDomain(basicInfo entity.BasicInfo) domain.BasicInfo {
-	return domain.BasicInfo{
+func (BasicInfo) entityToDomain(basicInfo basicInfoEntity.Dao) basicInfoEntity.FullDTO {
+	return basicInfoEntity.FullDTO{
 		UserId:           basicInfo.UserId,
 		Gender:           basicInfo.Gender,
 		FromLoc:          newString(basicInfo.FromLoc),
@@ -99,8 +98,8 @@ func (BasicInfo) entityToDomain(basicInfo entity.BasicInfo) domain.BasicInfo {
 		UpdatedAt:        basicInfo.UpdatedAt,
 	}
 }
-func (BasicInfo) domainToEntity(basicInfo domain.BasicInfo) entity.BasicInfo {
-	return entity.BasicInfo{
+func (BasicInfo) domainToEntity(basicInfo basicInfoEntity.FullDTO) basicInfoEntity.Dao {
+	return basicInfoEntity.Dao{
 		UserId:           basicInfo.UserId,
 		Gender:           basicInfo.Gender,
 		FromLoc:          newNullString(basicInfo.FromLoc),

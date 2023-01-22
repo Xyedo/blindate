@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 func (cfg *Config) OpenPgDb() (*sqlx.DB, error) {

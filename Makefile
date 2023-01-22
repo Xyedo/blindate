@@ -1,6 +1,5 @@
 
-MG_PATH=./pkg/repository/migrations
-REPO_PATH=github.com/xyedo/blindate/pkg/repository
+MG_PATH=./pkg/infra/repository/migrations
 
 migrate-up: 
 	migrate -path $(MG_PATH) -database $(DB_DSN) up
@@ -18,7 +17,7 @@ down:
 	docker compose --env-file ./.env.dev down 
 
 mock-repo:
-	mockgen -destination pkg/repository/mock/$(mock_name) -package mockrepo $(REPO_PATH) $(interface) 
+	mockgen -destination pkg/infra/repository/mock/$(mock_name).go -package mockrepo -mock_names Repository=Mock$(mock_interface) github.com/xyedo/blindate/pkg/domain/$(domain_name) Repository 
 
 test :
 	go test ./... 

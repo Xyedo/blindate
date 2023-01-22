@@ -6,65 +6,64 @@ import (
 	"path/filepath"
 
 	"github.com/xyedo/blindate/pkg/common"
-	"github.com/xyedo/blindate/pkg/domain"
+	"github.com/xyedo/blindate/pkg/domain/user"
+	userEntity "github.com/xyedo/blindate/pkg/domain/user/entities"
 	"github.com/xyedo/blindate/pkg/event"
-	"github.com/xyedo/blindate/pkg/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func NewUser(userRepo repository.User) *User {
+func NewUser(userRepo user.Repository) *User {
 	return &User{
 		userRepository: userRepo,
 	}
 }
 
 type User struct {
-	userRepository repository.User
+	userRepository user.Repository
 }
 
-func (u *User) CreateUser(newUser *domain.User) error {
+func (u *User) CreateUser(newUser userEntity.Register) (string, error) {
 	hashedPass, err := hashAndSalt(newUser.Password)
 	if err != nil {
-		return err
+		return "", err
 	}
-	newUser.HashedPassword = hashedPass
-	newUser.Password = ""
+	newUser.Password = hashedPass
 
-	err = u.userRepository.InsertUser(newUser)
+	userId, err := u.userRepository.InsertUser(newUser)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return userId, nil
 }
-func (u *User) GetUserById(id string) (domain.User, error) {
+func (u *User) GetUserById(id string) (userEntity.FullDTO, error) {
 	user, err := u.userRepository.GetUserById(id)
 	if err != nil {
-		return domain.User{}, err
+		return userEntity.FullDTO{}, err
 	}
 	return user, nil
 }
-func (u *User) GetUserByIdWithSelectedProfPic(id string) (domain.User, error) {
+func (u *User) GetUserByIdWithSelectedProfPic(id string) (userEntity.FullDTO, error) {
 	user, err := u.userRepository.GetUserById(id)
 	if err != nil {
-		return domain.User{}, err
+		return userEntity.FullDTO{}, err
 	}
 
 	profPics, err := u.userRepository.SelectProfilePicture(id, nil)
 	if err != nil {
-		return domain.User{}, err
+		return userEntity.FullDTO{}, err
 	}
 	user.ProfilePic = profPics
 	return user, nil
 }
 
-func (u *User) UpdateUser(userId string, updateUser domain.UpdateUser) error {
+func (u *User) UpdateUser(userId string, updateUser userEntity.Update) error {
 	olduser, err := u.userRepository.GetUserById(userId)
 	if err != nil {
 		return err
 	}
 	if updateUser.NewPassword != nil && updateUser.OldPassword != nil {
-		err = bcrypt.CompareHashAndPassword([]byte(olduser.HashedPassword), []byte(*updateUser.OldPassword))
+		err = bcrypt.CompareHashAndPassword([]byte(olduser.Password), []byte(*updateUser.OldPassword))
 		if err != nil {
 			if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 				return common.WrapError(err, common.ErrNotMatchCredential)
@@ -72,13 +71,11 @@ func (u *User) UpdateUser(userId string, updateUser domain.UpdateUser) error {
 			return err
 		}
 
-		olduser.Password = *updateUser.NewPassword
-		hashedPass, err := hashAndSalt(olduser.Password)
+		hashedPass, err := hashAndSalt(*updateUser.NewPassword)
 		if err != nil {
 			return err
 		}
-		olduser.HashedPassword = hashedPass
-		olduser.Password = ""
+		olduser.Password = hashedPass
 	}
 
 	if updateUser.FullName != nil {
@@ -109,7 +106,7 @@ func (u *User) UpdateUser(userId string, updateUser domain.UpdateUser) error {
 	return nil
 }
 
-func (u *User) CreateNewProfilePic(profPicParam domain.ProfilePicture) (string, error) {
+func (u *User) CreateNewProfilePic(profPicParam userEntity.ProfilePic) (string, error) {
 	profPics, err := u.userRepository.SelectProfilePicture(profPicParam.UserId, nil)
 	if err != nil {
 		return "", err

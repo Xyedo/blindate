@@ -32,7 +32,7 @@ type Ws struct {
 func (ws *Ws) ListenForWsPayload(conn *domain.WsConn) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Println("Error", err)
+			log.Println("Error panic", err)
 		}
 		ws.cleanUp(conn)
 	}()
@@ -44,30 +44,32 @@ func (ws *Ws) ListenForWsPayload(conn *domain.WsConn) {
 		return nil
 	})
 
-	pingTicker := time.NewTicker(pingPeriod)
-	defer pingTicker.Stop()
-
 	var payload domain.WsPayload
 	for {
 		err := conn.ReadJSON(&payload)
 		if err != nil {
-			log.Println(err)
-			return
-		} else {
-			payload.Conn = *conn
-			ws.WsChan <- payload
-		}
-		select {
-		case <-pingTicker.C:
-			err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(writeWait))
-			if err != nil {
-				log.Println("ping err", err)
-				return
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("error: %v", err)
 			}
-		default:
-			continue
+			return
 		}
+		payload.Conn = *conn
+		ws.WsChan <- payload
+	}
+}
 
+func (ws *Ws) PingTicker(conn *domain.WsConn) {
+	pingTicker := time.NewTicker(pingPeriod)
+	defer func() {
+		pingTicker.Stop()
+		conn.Close()
+	}()
+	for {
+		<-pingTicker.C
+		err := conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(writeWait))
+		if err != nil {
+			return
+		}
 	}
 }
 
