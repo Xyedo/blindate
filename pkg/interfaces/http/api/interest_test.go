@@ -15,10 +15,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/xyedo/blindate/pkg/applications/service"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	interestEntity "github.com/xyedo/blindate/pkg/domain/interest/entities"
 	mockrepo "github.com/xyedo/blindate/pkg/infra/repository/mock"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func Test_postInterestBioHandler(t *testing.T) {
@@ -71,7 +71,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 					Bio:    "alah lo",
 				}
 				pqErr := &pq.Error{Code: "23505", Constraint: "user_id_unique"}
-				interestRepo.EXPECT().InsertInterestBio(gomock.Eq(interest)).Times(1).Return(common.WrapErrorWithMsg(pqErr, common.ErrUniqueConstraint23505, "interest already created"))
+				interestRepo.EXPECT().InsertInterestBio(gomock.Eq(interest)).Times(1).Return(apiError.WrapWithMsg(pqErr, apiError.ErrUniqueConstraint23505, "interest already created"))
 				interestRepo.EXPECT().InsertNewStats(gomock.Eq(interest.Id)).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
@@ -135,7 +135,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 					Bio:    "alah lo",
 				}
 				interestRepo.EXPECT().InsertInterestBio(gomock.Eq(interest)).Times(1).
-					Return(common.WrapErrorWithMsg(&pq.Error{Code: "23505", Constraint: "user_id"}, common.ErrRefNotFound23503, "userId is not invalid"))
+					Return(apiError.WrapWithMsg(&pq.Error{Code: "23505", Constraint: "user_id"}, apiError.ErrRefNotFound23503, "userId is not invalid"))
 				interestRepo.EXPECT().InsertNewStats(gomock.Eq(interest.Id)).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
@@ -159,7 +159,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 					Bio:    "alah lo",
 				}
 				interestRepo.EXPECT().InsertInterestBio(gomock.Eq(interest)).Times(1).
-					Return(common.ErrTooLongAccessingDB)
+					Return(apiError.ErrTooLongAccessingDB)
 				interestRepo.EXPECT().InsertNewStats(gomock.Eq(interest.Id)).Times(0)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
@@ -239,7 +239,7 @@ func Test_getInterestBioHandler(t *testing.T) {
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 
-				interestRepo.EXPECT().GetInterest(gomock.Eq(validId)).Times(1).Return(interestEntity.FullDTO{}, common.ErrResourceNotFound)
+				interestRepo.EXPECT().GetInterest(gomock.Eq(validId)).Times(1).Return(interestEntity.FullDTO{}, apiError.ErrResourceNotFound)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -390,9 +390,9 @@ func Test_putInterestBioHandler(t *testing.T) {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 
 				interestRepo.EXPECT().SelectInterestBio(gomock.Any()).Times(1).
-					Return(interestEntity.BioDTO{}, common.WrapErrorWithMsg(
+					Return(interestEntity.BioDTO{}, apiError.WrapWithMsg(
 						&pq.Error{Code: "23503", Constraint: "user_id"},
-						common.ErrRefNotFound23503,
+						apiError.ErrRefNotFound23503,
 						"userId is not invalid"),
 					)
 				interestRepo.EXPECT().UpdateInterestBio(gomock.Any()).Times(0)
@@ -518,7 +518,7 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 				})
 				pqErr := pq.Error{Code: "23514", Constraint: "interests_statistics_hobbie_count_chk"}
 				interestRepo.EXPECT().InsertInterestHobbies(gomock.Eq(validId), gomock.Eq(hobbies)).Times(1).
-					Return(common.WrapWithNewError(&pqErr, http.StatusUnprocessableEntity, "hobbies must less than 10"))
+					Return(apiError.WrapWithNewSentinel(&pqErr, http.StatusUnprocessableEntity, "hobbies must less than 10"))
 
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
@@ -612,7 +612,7 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 				})
 				pqErr := pq.Error{Code: "23503", Constraint: "interest_id_ref"}
 				interestRepo.EXPECT().InsertInterestHobbies(gomock.Any(), gomock.Eq(hobbies)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "interestId is invalid"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrRefNotFound23503, "interestId is invalid"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -642,7 +642,7 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 				})
 				pqErr := pq.Error{Code: "23505", Constraint: "hobbie_unique"}
 				interestRepo.EXPECT().InsertInterestHobbies(gomock.Any(), gomock.Eq(hobbies)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "every hobbies must be unique"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrUniqueConstraint23505, "every hobbies must be unique"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -765,7 +765,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 					Constraint: "hobbie_unique",
 				}
 				interestRepo.EXPECT().UpdateInterestHobbies(gomock.Eq(validId), gomock.Eq(hobbies)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "every hobbies must be unique"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrUniqueConstraint23505, "every hobbies must be unique"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -797,7 +797,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 					Constraint: "hobbie_count",
 				}
 				interestRepo.EXPECT().UpdateInterestHobbies(gomock.Eq(validId), gomock.Eq(hobbies)).Times(1).
-					Return(common.WrapWithNewError(&pqErr, http.StatusUnprocessableEntity, "hobbies must less than 10"))
+					Return(apiError.WrapWithNewSentinel(&pqErr, http.StatusUnprocessableEntity, "hobbies must less than 10"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -829,7 +829,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 					Constraint: "interest_id",
 				}
 				interestRepo.EXPECT().UpdateInterestHobbies(gomock.Eq(validId), gomock.Eq(hobbies)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "interestId is invalid"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrRefNotFound23503, "interestId is invalid"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -964,7 +964,7 @@ func Test_deleteInterestHobbiesHandler(t *testing.T) {
 
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				interestRepo.EXPECT().DeleteInterestHobbies(gomock.Eq(validId), gomock.Any()).Times(1).Return(nil, common.ErrResourceNotFound)
+				interestRepo.EXPECT().DeleteInterestHobbies(gomock.Eq(validId), gomock.Any()).Times(1).Return(nil, apiError.ErrResourceNotFound)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -1117,7 +1117,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 				})
 				pqErr := pq.Error{Code: "23514", Constraint: "interests_statistics_movie_serie_count_chk"}
 				interestRepo.EXPECT().InsertInterestMovieSeries(gomock.Eq(validId), gomock.Eq(movieSeries)).Times(1).
-					Return(common.WrapWithNewError(&pqErr, http.StatusUnprocessableEntity, "movieSeries must less than 10"))
+					Return(apiError.WrapWithNewSentinel(&pqErr, http.StatusUnprocessableEntity, "movieSeries must less than 10"))
 
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
@@ -1211,7 +1211,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 				})
 				pqErr := pq.Error{Code: "23503", Constraint: "interest_id_ref"}
 				interestRepo.EXPECT().InsertInterestMovieSeries(gomock.Any(), gomock.Eq(movieSeries)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "interestId is invalid"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrRefNotFound23503, "interestId is invalid"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -1241,7 +1241,7 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 				})
 				pqErr := pq.Error{Code: "23505", Constraint: "movie_serie_unique"}
 				interestRepo.EXPECT().InsertInterestMovieSeries(gomock.Any(), gomock.Eq(movieSeries)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "every moviesSeries must be unique"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrUniqueConstraint23505, "every moviesSeries must be unique"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -1364,7 +1364,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 					Constraint: "movie_serie_unique",
 				}
 				interestRepo.EXPECT().UpdateInterestMovieSeries(gomock.Eq(validId), gomock.Eq(movieSeries)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "every moviesSeries must be unique"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrUniqueConstraint23505, "every moviesSeries must be unique"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -1396,7 +1396,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 					Constraint: "movie_serie_count",
 				}
 				interestRepo.EXPECT().UpdateInterestMovieSeries(gomock.Eq(validId), gomock.Eq(movieSeries)).Times(1).
-					Return(common.WrapWithNewError(&pqErr, http.StatusUnprocessableEntity, "movieSeries must less than 10"))
+					Return(apiError.WrapWithNewSentinel(&pqErr, http.StatusUnprocessableEntity, "movieSeries must less than 10"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -1428,7 +1428,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 					Constraint: "interest_id",
 				}
 				interestRepo.EXPECT().UpdateInterestMovieSeries(gomock.Eq(validId), gomock.Eq(movieSeries)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "interestId is invalid"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrRefNotFound23503, "interestId is invalid"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -1567,7 +1567,7 @@ func Test_deleteInterestMovieSeriesHandler(t *testing.T) {
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().DeleteInterestMovieSeries(gomock.Eq(validId), gomock.Any()).Times(1).
-					Return(nil, common.ErrResourceNotFound)
+					Return(nil, apiError.ErrResourceNotFound)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -1716,7 +1716,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 				})
 				pqErr := pq.Error{Code: "23514", Constraint: "interests_statistics_traveling_count_chk"}
 				interestRepo.EXPECT().InsertInterestTraveling(gomock.Eq(validId), gomock.Eq(travels)).Times(1).
-					Return(common.WrapWithNewError(&pqErr, http.StatusUnprocessableEntity, "travels must less than 10"))
+					Return(apiError.WrapWithNewSentinel(&pqErr, http.StatusUnprocessableEntity, "travels must less than 10"))
 
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
@@ -1810,7 +1810,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 				})
 				pqErr := pq.Error{Code: "23503", Constraint: "interest_id_ref"}
 				interestRepo.EXPECT().InsertInterestTraveling(gomock.Any(), gomock.Eq(travels)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "interestId is invalid"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrRefNotFound23503, "interestId is invalid"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -1840,7 +1840,7 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 				})
 				pqErr := pq.Error{Code: "23505", Constraint: "travel_unique"}
 				interestRepo.EXPECT().InsertInterestTraveling(gomock.Any(), gomock.Eq(travels)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "every travels must be unique"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrUniqueConstraint23505, "every travels must be unique"))
 
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
@@ -1964,7 +1964,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 					Constraint: "travel_unique",
 				}
 				interestRepo.EXPECT().UpdateInterestTraveling(gomock.Eq(validId), gomock.Eq(travels)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "every travels must be unique"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrUniqueConstraint23505, "every travels must be unique"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -1996,7 +1996,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 					Constraint: "traveling_count",
 				}
 				interestRepo.EXPECT().UpdateInterestTraveling(gomock.Eq(validId), gomock.Eq(travels)).Times(1).
-					Return(common.WrapWithNewError(&pqErr, http.StatusUnprocessableEntity, "travels must less than 10"))
+					Return(apiError.WrapWithNewSentinel(&pqErr, http.StatusUnprocessableEntity, "travels must less than 10"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -2028,7 +2028,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 					Constraint: "interest_id",
 				}
 				interestRepo.EXPECT().UpdateInterestTraveling(gomock.Eq(validId), gomock.Eq(travels)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "interestId is invalid"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrRefNotFound23503, "interestId is invalid"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -2172,7 +2172,7 @@ func Test_deleteInterestTravelingHandler(t *testing.T) {
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().DeleteInterestTraveling(gomock.Eq(validId), gomock.Any()).Times(1).
-					Return(nil, common.ErrResourceNotFound)
+					Return(nil, apiError.ErrResourceNotFound)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -2320,7 +2320,7 @@ func Test_postInterestSportsHandler(t *testing.T) {
 				})
 				pqErr := pq.Error{Code: "23514", Constraint: "interests_statistics_sport_count_chk"}
 				interestRepo.EXPECT().InsertInterestSports(gomock.Eq(validId), gomock.Eq(sports)).Times(1).
-					Return(common.WrapWithNewError(&pqErr, http.StatusUnprocessableEntity, "sports must less than 10"))
+					Return(apiError.WrapWithNewSentinel(&pqErr, http.StatusUnprocessableEntity, "sports must less than 10"))
 
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
@@ -2414,7 +2414,7 @@ func Test_postInterestSportsHandler(t *testing.T) {
 				})
 				pqErr := pq.Error{Code: "23503", Constraint: "interest_id_ref"}
 				interestRepo.EXPECT().InsertInterestSports(gomock.Any(), gomock.Eq(sports)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "interestId is invalid"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrRefNotFound23503, "interestId is invalid"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -2444,7 +2444,7 @@ func Test_postInterestSportsHandler(t *testing.T) {
 				})
 				pqErr := pq.Error{Code: "23505", Constraint: "sport_unique"}
 				interestRepo.EXPECT().InsertInterestSports(gomock.Any(), gomock.Eq(sports)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "every sports must be unique"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrUniqueConstraint23505, "every sports must be unique"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -2567,7 +2567,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 					Constraint: "sport_unique",
 				}
 				interestRepo.EXPECT().UpdateInterestSport(gomock.Eq(validId), gomock.Eq(sports)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "every sports must be unique"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrUniqueConstraint23505, "every sports must be unique"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -2599,7 +2599,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 					Constraint: "sport_count",
 				}
 				interestRepo.EXPECT().UpdateInterestSport(gomock.Eq(validId), gomock.Eq(sports)).Times(1).
-					Return(common.WrapWithNewError(&pqErr, http.StatusUnprocessableEntity, "sports must less than 10"))
+					Return(apiError.WrapWithNewSentinel(&pqErr, http.StatusUnprocessableEntity, "sports must less than 10"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -2631,7 +2631,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 					Constraint: "interest_id",
 				}
 				interestRepo.EXPECT().UpdateInterestSport(gomock.Eq(validId), gomock.Eq(sports)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "interestId is invalid"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrRefNotFound23503, "interestId is invalid"))
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -2774,7 +2774,7 @@ func Test_deleteInterestSportsHandler(t *testing.T) {
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 				interestRepo.EXPECT().DeleteInterestSports(gomock.Eq(validId), gomock.Any()).Times(1).
-					Return(nil, common.ErrResourceNotFound)
+					Return(nil, apiError.ErrResourceNotFound)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},

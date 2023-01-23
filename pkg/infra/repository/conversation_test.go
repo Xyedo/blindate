@@ -7,13 +7,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	"github.com/xyedo/blindate/pkg/domain/chat"
 	chatEntity "github.com/xyedo/blindate/pkg/domain/chat/entities"
 	"github.com/xyedo/blindate/pkg/domain/conversation"
 	matchEntity "github.com/xyedo/blindate/pkg/domain/match/entities"
 	"github.com/xyedo/blindate/pkg/infra/repository"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func Test_InsertConversation(t *testing.T) {
@@ -24,7 +24,7 @@ func Test_InsertConversation(t *testing.T) {
 	t.Run("invalid new conv", func(t *testing.T) {
 		id, err := conv.InsertConversation(util.RandomUUID())
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 		require.Empty(t, id)
 
 	})
@@ -35,7 +35,7 @@ func Test_InsertConversation(t *testing.T) {
 		require.NotEmpty(t, id)
 		id, err = conv.InsertConversation(matchId)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
+		assert.ErrorIs(t, err, apiError.ErrUniqueConstraint23505)
 		require.Empty(t, id)
 
 	})
@@ -119,7 +119,7 @@ func Test_SelectConversationById(t *testing.T) {
 		conv, err := conv.SelectConversationById(util.RandomUUID())
 		require.Error(t, err)
 		require.Empty(t, conv)
-		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.ErrorIs(t, err, apiError.ErrResourceNotFound)
 
 	})
 }
@@ -272,7 +272,7 @@ func Test_UpdateChatRow(t *testing.T) {
 	t.Run("invalid convoId", func(t *testing.T) {
 		err := conv.UpdateChatRow(util.RandomUUID())
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 }
 func Test_UpdateDayPass(t *testing.T) {
@@ -285,7 +285,7 @@ func Test_UpdateDayPass(t *testing.T) {
 	t.Run("invalid convoId", func(t *testing.T) {
 		err := conv.UpdateDayPass(util.RandomUUID())
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 }
 
@@ -320,7 +320,7 @@ func Test_DeleteConvoById(t *testing.T) {
 		require.NoError(t, err)
 		convs, err := conv.SelectConversationById(convoId)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.ErrorIs(t, err, apiError.ErrResourceNotFound)
 		assert.Empty(t, convs)
 		chats, err := chatRepo.SelectChat(convoId, chat.Filter{
 			Limit: 10,
@@ -332,7 +332,7 @@ func Test_DeleteConvoById(t *testing.T) {
 	t.Run("invalid convoId", func(t *testing.T) {
 		err := conv.DeleteConversationById(util.RandomUUID())
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 }
 func createNewConvo(conv *repository.ConvConn, t *testing.T) string {

@@ -9,7 +9,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
 	basicInfoEntity "github.com/xyedo/blindate/pkg/domain/basicinfo/entities"
 	interestEntity "github.com/xyedo/blindate/pkg/domain/interest/entities"
 	locationEntity "github.com/xyedo/blindate/pkg/domain/location/entities"
@@ -41,18 +41,18 @@ func (l *LocConn) InsertNewLocation(location *locationEntity.DAO) error {
 	err := l.conn.GetContext(ctx, &retUserId, query, args...)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return common.WrapError(err, common.ErrTooLongAccessingDB)
+			return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return common.WrapError(err, common.ErrResourceNotFound)
+			return apiError.Wrap(err, apiError.ErrResourceNotFound)
 		}
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			if pqErr.Code == "23503" {
-				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid userId")
+				return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "invalid userId")
 			}
 			if pqErr.Code == "23505" {
-				return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "location already created")
+				return apiError.WrapWithMsg(err, apiError.ErrUniqueConstraint23505, "location already created")
 			}
 		}
 		return err
@@ -77,10 +77,10 @@ func (l *LocConn) UpdateLocation(location *locationEntity.DAO) error {
 	err := l.conn.GetContext(ctx, &retUserId, query, args...)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return common.WrapError(err, common.ErrTooLongAccessingDB)
+			return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return common.WrapError(err, common.ErrResourceNotFound)
+			return apiError.Wrap(err, apiError.ErrResourceNotFound)
 		}
 		return err
 	}
@@ -105,10 +105,10 @@ func (l *LocConn) GetLocationByUserId(id string) (locationEntity.DAO, error) {
 	err := l.conn.GetContext(ctx, &location, query, id)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return locationEntity.DAO{}, common.WrapError(err, common.ErrTooLongAccessingDB)
+			return locationEntity.DAO{}, apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return locationEntity.DAO{}, common.WrapError(err, common.ErrResourceNotFound)
+			return locationEntity.DAO{}, apiError.Wrap(err, apiError.ErrResourceNotFound)
 		}
 		return locationEntity.DAO{}, err
 	}
@@ -179,7 +179,7 @@ func (l *LocConn) GetClosestUser(userId, geom string, limit int) ([]matchEntity.
 	rows, err := l.conn.QueryxContext(ctx, query, geom, limit, userId)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return nil, common.WrapError(err, common.ErrTooLongAccessingDB)
+			return nil, apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 
 		return nil, err

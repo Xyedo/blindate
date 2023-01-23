@@ -8,7 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
 	onlineEntities "github.com/xyedo/blindate/pkg/domain/online/entities"
 )
 
@@ -38,18 +38,18 @@ func (o *OnlineCon) InsertNewOnline(on onlineEntities.DTO) error {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			if pqErr.Code == "23503" {
-				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid userId")
+				return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "invalid userId")
 			}
 			if pqErr.Code == "23505" {
-				return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "online already created")
+				return apiError.WrapWithMsg(err, apiError.ErrUniqueConstraint23505, "online already created")
 			}
 			return err
 		}
 		if errors.Is(err, context.Canceled) {
-			return common.WrapError(err, common.ErrTooLongAccessingDB)
+			return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return common.WrapError(err, common.ErrResourceNotFound)
+			return apiError.Wrap(err, apiError.ErrResourceNotFound)
 		}
 		return err
 	}
@@ -69,10 +69,10 @@ func (o *OnlineCon) SelectOnline(userId string) (onlineEntities.DTO, error) {
 	err := o.conn.GetContext(ctx, &userOnline, query, userId)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return onlineEntities.DTO{}, common.WrapError(err, common.ErrTooLongAccessingDB)
+			return onlineEntities.DTO{}, apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return onlineEntities.DTO{}, common.WrapError(err, common.ErrResourceNotFound)
+			return onlineEntities.DTO{}, apiError.Wrap(err, apiError.ErrResourceNotFound)
 		}
 		return onlineEntities.DTO{}, err
 	}
@@ -92,10 +92,10 @@ func (o *OnlineCon) UpdateOnline(userId string, online bool) error {
 		err := o.conn.GetContext(ctx, &id, query, online, pq.NullTime{}, userId)
 		if err != nil {
 			if errors.Is(err, context.Canceled) {
-				return common.WrapError(err, common.ErrTooLongAccessingDB)
+				return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 			}
 			if errors.Is(err, sql.ErrNoRows) {
-				return common.WrapError(err, common.ErrResourceNotFound)
+				return apiError.Wrap(err, apiError.ErrResourceNotFound)
 			}
 			return err
 		}
@@ -103,10 +103,10 @@ func (o *OnlineCon) UpdateOnline(userId string, online bool) error {
 		err := o.conn.GetContext(ctx, &id, query, online, time.Now(), userId)
 		if err != nil {
 			if errors.Is(err, context.Canceled) {
-				return common.WrapError(err, common.ErrTooLongAccessingDB)
+				return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 			}
 			if errors.Is(err, sql.ErrNoRows) {
-				return common.WrapError(err, common.ErrResourceNotFound)
+				return apiError.Wrap(err, apiError.ErrResourceNotFound)
 			}
 			return err
 		}

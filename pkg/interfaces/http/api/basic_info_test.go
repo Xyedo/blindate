@@ -15,10 +15,10 @@ import (
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/xyedo/blindate/pkg/applications/service"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	basicInfoEntity "github.com/xyedo/blindate/pkg/domain/basicinfo/entities"
 	mockrepo "github.com/xyedo/blindate/pkg/infra/repository/mock"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func Test_postBasicInfoHandler(t *testing.T) {
@@ -137,7 +137,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 					Gender:     "Male",
 					LookingFor: "Female",
 				}
-				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(common.ErrUniqueConstraint23505)
+				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).Return(apiError.ErrUniqueConstraint23505)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
@@ -411,7 +411,7 @@ func Test_postBasicInfoHandler(t *testing.T) {
 					Constraint: "basic_info_user_id",
 				}
 				basicInfoRepo.EXPECT().InsertBasicInfo(gomock.Eq(basicInfo)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "userId is invalid"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrRefNotFound23503, "userId is invalid"))
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
@@ -524,7 +524,7 @@ func Test_getBasicInfoHandler(t *testing.T) {
 			id:   validBasicInfo.UserId,
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq(validBasicInfo.UserId)).Times(1).Return(basicInfoEntity.DAO{}, common.ErrResourceNotFound)
+				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq(validBasicInfo.UserId)).Times(1).Return(basicInfoEntity.DAO{}, apiError.ErrResourceNotFound)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
@@ -539,7 +539,7 @@ func Test_getBasicInfoHandler(t *testing.T) {
 			id:   validBasicInfo.UserId,
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
-				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq(validBasicInfo.UserId)).Times(1).Return(basicInfoEntity.DAO{}, common.WrapError(context.Canceled, common.ErrTooLongAccessingDB))
+				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq(validBasicInfo.UserId)).Times(1).Return(basicInfoEntity.DAO{}, apiError.Wrap(context.Canceled, apiError.ErrTooLongAccessingDB))
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)
 			},
@@ -621,7 +621,7 @@ func Test_patchBasicInfoHandler(t *testing.T) {
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *BasicInfo {
 				basicInfoRepo := mockrepo.NewMockBasicInfo(ctrl)
 				basicInfoRepo.EXPECT().GetBasicInfoByUserId(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).
-					Return(basicInfoEntity.DAO{}, common.ErrTooLongAccessingDB)
+					Return(basicInfoEntity.DAO{}, apiError.ErrTooLongAccessingDB)
 				basicInfoRepo.EXPECT().UpdateBasicInfo(gomock.Any()).Times(0)
 				basicInfoSvc := service.NewBasicInfo(basicInfoRepo)
 				return NewBasicInfo(basicInfoSvc)

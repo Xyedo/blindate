@@ -3,7 +3,7 @@ package service
 import (
 	"errors"
 
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
 	"github.com/xyedo/blindate/pkg/domain/authentication"
 	"github.com/xyedo/blindate/pkg/domain/user"
 	"golang.org/x/crypto/bcrypt"
@@ -31,7 +31,7 @@ func (a *Auth) Login(email, password string) (accessToken string, refreshToken s
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-			return "", "", common.WrapError(err, common.ErrNotMatchCredential)
+			return "", "", apiError.Wrap(err, apiError.ErrNotMatchCredential)
 		}
 		return
 	}

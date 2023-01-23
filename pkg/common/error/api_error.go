@@ -1,25 +1,25 @@
-package common
+package apiError
 
 import "errors"
 
-type APIError interface {
+type API interface {
 	APIError() (int, string)
 }
-type sentinelAPIError struct {
+type sentinel struct {
 	status int
 	msg    string
 }
 
-func (e sentinelAPIError) Error() string {
+func (e sentinel) Error() string {
 	return e.msg
 }
-func (e sentinelAPIError) APIError() (int, string) {
+func (e sentinel) APIError() (int, string) {
 	return e.status, e.msg
 }
 
 type sentinelWrappedError struct {
 	error
-	sentinel *sentinelAPIError
+	sentinel *sentinel
 }
 
 func (e sentinelWrappedError) Is(err error) bool {
@@ -29,14 +29,14 @@ func (e sentinelWrappedError) APIError() (int, string) {
 	return e.sentinel.APIError()
 }
 
-func WrapError(err error, sentinel *sentinelAPIError) error {
+func Wrap(err error, sentinel *sentinel) error {
 	return sentinelWrappedError{error: err, sentinel: sentinel}
 }
-func WrapWithNewError(err error, status int, msg string) error {
-	return sentinelWrappedError{error: err, sentinel: &sentinelAPIError{status: status, msg: msg}}
+func WrapWithNewSentinel(err error, status int, msg string) error {
+	return sentinelWrappedError{error: err, sentinel: &sentinel{status: status, msg: msg}}
 }
 
-func WrapErrorWithMsg(err error, sentinel *sentinelAPIError, msg string) error {
+func WrapWithMsg(err error, sentinel *sentinel, msg string) error {
 	wrapedErr := sentinelWrappedError{error: err, sentinel: sentinel}
 	wrapedErr.sentinel.msg = msg
 	return wrapedErr

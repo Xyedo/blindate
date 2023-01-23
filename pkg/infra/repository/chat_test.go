@@ -7,12 +7,12 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	"github.com/xyedo/blindate/pkg/domain/chat"
 	chatEntity "github.com/xyedo/blindate/pkg/domain/chat/entities"
 	matchEntity "github.com/xyedo/blindate/pkg/domain/match/entities"
 	"github.com/xyedo/blindate/pkg/infra/repository"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func Test_InsertNewChat(t *testing.T) {
@@ -76,7 +76,7 @@ func Test_InsertNewChat(t *testing.T) {
 			},
 		})
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 	t.Run("invalid conversationId", func(t *testing.T) {
 		_, fromUsr, _ := setup(t)
@@ -87,7 +87,7 @@ func Test_InsertNewChat(t *testing.T) {
 			SentAt:         time.Now(),
 		})
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 	t.Run("invalid author", func(t *testing.T) {
 		convoId, _, _ := setup(t)
@@ -98,7 +98,7 @@ func Test_InsertNewChat(t *testing.T) {
 			SentAt:         time.Now(),
 		})
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 	t.Run("invalid reply_to", func(t *testing.T) {
 		convoId, fromUsr, _ := setup(t)
@@ -113,7 +113,7 @@ func Test_InsertNewChat(t *testing.T) {
 			SentAt: time.Now(),
 		})
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 }
 
@@ -153,7 +153,7 @@ func Test_UpdateSeenChatById(t *testing.T) {
 	t.Run("invalid chatId", func(t *testing.T) {
 		changedChatIds, err := chat.UpdateSeenChat(util.RandomUUID(), util.RandomUUID())
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.ErrorIs(t, err, apiError.ErrResourceNotFound)
 		assert.Empty(t, changedChatIds)
 	})
 }
@@ -168,7 +168,7 @@ func Test_DeleteChat(t *testing.T) {
 	t.Run("invalid chatId", func(t *testing.T) {
 		err := chat.DeleteChatById(util.RandomUUID())
 		require.Error(t, err)
-		require.ErrorIs(t, err, common.ErrRefNotFound23503)
+		require.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 	t.Run("delete refrenced chat", func(t *testing.T) {
 		conv := repository.NewConversation(testQuery)

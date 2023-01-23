@@ -10,7 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/xyedo/blindate/pkg/applications/service"
-	"github.com/xyedo/blindate/pkg/util"
+	"github.com/xyedo/blindate/pkg/common/util"
 )
 
 // TODO: extends this test to match new middleware

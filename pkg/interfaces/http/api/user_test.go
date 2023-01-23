@@ -25,10 +25,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/xyedo/blindate/pkg/applications/service"
 	mocksvc "github.com/xyedo/blindate/pkg/applications/service/mock"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	userEntity "github.com/xyedo/blindate/pkg/domain/user/entities"
 	mockrepo "github.com/xyedo/blindate/pkg/infra/repository/mock"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func Test_PostUserHandler(t *testing.T) {
@@ -244,7 +244,7 @@ func Test_PostUserHandler(t *testing.T) {
 					Constraint: "users_email_unique",
 				}
 				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).
-					Return("", common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "email already taken"))
+					Return("", apiError.WrapWithMsg(&pqErr, apiError.ErrUniqueConstraint23505, "email already taken"))
 				userService := service.NewUser(userRepo)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				return NewUser(userService, attachSvc)
@@ -325,7 +325,7 @@ func Test_PostUserHandler(t *testing.T) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 
 				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).
-					Return("", common.WrapError(context.Canceled, common.ErrTooLongAccessingDB))
+					Return("", apiError.Wrap(context.Canceled, apiError.ErrTooLongAccessingDB))
 				userService := service.NewUser(userRepo)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				return NewUser(userService, attachSvc)
@@ -402,7 +402,7 @@ func Test_GetUserByIdHandler(t *testing.T) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				users := createNewUser(t)
 				userRepo.EXPECT().GetUserById("d3aa0883-4a29-4a39-8f0e-2413c169bd9d").Times(1).
-					Return(userEntity.FullDTO{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
+					Return(userEntity.FullDTO{}, apiError.Wrap(sql.ErrNoRows, apiError.ErrResourceNotFound))
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				userService := service.NewUser(userRepo)
 				return userService, attachSvc, users
@@ -580,7 +580,7 @@ func Test_PatchUserById(t *testing.T) {
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().GetUserById(gomock.Eq("d3aa0883-4a29-4a39-8f0e-2413c169bd9d")).Times(1).
-					Return(userEntity.FullDTO{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
+					Return(userEntity.FullDTO{}, apiError.Wrap(sql.ErrNoRows, apiError.ErrResourceNotFound))
 				userRepo.EXPECT().UpdateUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)

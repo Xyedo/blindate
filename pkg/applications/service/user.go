@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
 	"github.com/xyedo/blindate/pkg/domain/event"
 	"github.com/xyedo/blindate/pkg/domain/user"
 	userEntity "github.com/xyedo/blindate/pkg/domain/user/entities"
@@ -66,7 +66,7 @@ func (u *User) UpdateUser(userId string, updateUser userEntity.Update) error {
 		err = bcrypt.CompareHashAndPassword([]byte(olduser.Password), []byte(*updateUser.OldPassword))
 		if err != nil {
 			if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
-				return common.WrapError(err, common.ErrNotMatchCredential)
+				return apiError.Wrap(err, apiError.ErrNotMatchCredential)
 			}
 			return err
 		}
@@ -112,7 +112,7 @@ func (u *User) CreateNewProfilePic(profPicParam userEntity.ProfilePic) (string, 
 		return "", err
 	}
 	if len(profPics) >= 5 {
-		return "", common.WrapWithNewError(common.ErrMaxProfilePicture, http.StatusUnprocessableEntity, "maximal profile pics is 5")
+		return "", apiError.WrapWithNewSentinel(user.ErrMaxProfilePicture, http.StatusUnprocessableEntity, "maximal profile pics is 5")
 	}
 	if profPicParam.Selected {
 		_, err := u.userRepository.ProfilePicSelectedToFalse(profPicParam.UserId)

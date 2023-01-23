@@ -2,10 +2,9 @@ package service
 
 import (
 	"database/sql"
-	"net/http"
 	"strings"
 
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
 	"github.com/xyedo/blindate/pkg/domain/chat"
 	chatEntity "github.com/xyedo/blindate/pkg/domain/chat/entities"
 	"github.com/xyedo/blindate/pkg/domain/event"
@@ -31,10 +30,10 @@ func (c *Chat) CreateNewChat(content *chatEntity.DTO) error {
 		return err
 	}
 	if !(content.Author == matchDAO.RequestFrom || content.Author == matchDAO.RequestTo) {
-		return common.WrapWithNewError(common.ErrAuthorNotValid, http.StatusForbidden, "author not in this conversation")
+		return apiError.WrapWithMsg(chat.ErrAuthorNotValid, apiError.ErrForbiddenAccess, "author not in this conversation")
 	}
 	if matchDAO.RequestStatus != string(matchEntity.Accepted) {
-		return ErrInvalidMatchStatus
+		return apiError.WrapWithMsg(match.ErrInvalidMatchStatus, apiError.ErrForbiddenAccess, "not yet match")
 	}
 	chatDAO := c.convertToDAO(*content)
 	cleanChats := c.sanitizeChat(chatDAO)
@@ -60,7 +59,7 @@ func (c *Chat) UpdateSeenChat(convId, userId string) error {
 		return err
 	}
 	if !(matchEntity.RequestFrom == userId || matchEntity.RequestTo == userId) {
-		return common.WrapWithNewError(common.ErrAuthorNotValid, http.StatusForbidden, "users not in this conversation")
+		return apiError.Wrap(chat.ErrAuthorNotValid, apiError.ErrForbiddenAccess)
 	}
 	changedChatIds, err := c.chatRepo.UpdateSeenChat(convId, userId)
 	if err != nil {

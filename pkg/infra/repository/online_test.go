@@ -6,10 +6,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	onlineEntities "github.com/xyedo/blindate/pkg/domain/online/entities"
 	"github.com/xyedo/blindate/pkg/infra/repository"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func Test_InsertNewOnline(t *testing.T) {
@@ -19,7 +19,7 @@ func Test_InsertNewOnline(t *testing.T) {
 		online := createNewOnline(t, user.ID)
 		err := repo.InsertNewOnline(online)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
+		assert.ErrorIs(t, err, apiError.ErrUniqueConstraint23505)
 
 	})
 	t.Run("Invalid user_id", func(t *testing.T) {
@@ -30,7 +30,7 @@ func Test_InsertNewOnline(t *testing.T) {
 		}
 		err := repo.InsertNewOnline(online)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 
 }
@@ -50,7 +50,7 @@ func Test_SelectOnline(t *testing.T) {
 	t.Run("invalid userId", func(t *testing.T) {
 		res, err := repo.SelectOnline(util.RandomUUID())
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.ErrorIs(t, err, apiError.ErrResourceNotFound)
 		require.Zero(t, res)
 	})
 
@@ -75,11 +75,11 @@ func Test_UpdateOnline(t *testing.T) {
 	t.Run("Invalid Id", func(t *testing.T) {
 		t.Run("Online", func(t *testing.T) {
 			err := repo.UpdateOnline(util.RandomUUID(), true)
-			require.ErrorIs(t, err, common.ErrResourceNotFound)
+			require.ErrorIs(t, err, apiError.ErrResourceNotFound)
 		})
 		t.Run("Offline", func(t *testing.T) {
 			err := repo.UpdateOnline(util.RandomUUID(), false)
-			require.ErrorIs(t, err, common.ErrResourceNotFound)
+			require.ErrorIs(t, err, apiError.ErrResourceNotFound)
 		})
 	})
 

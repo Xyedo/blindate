@@ -13,9 +13,9 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"github.com/xyedo/blindate/pkg/applications/service"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	mockrepo "github.com/xyedo/blindate/pkg/infra/repository/mock"
-	"github.com/xyedo/blindate/pkg/util"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -210,7 +210,7 @@ func Test_putAuthHandler(t *testing.T) {
 				token, err := jwt.GenerateRefreshToken(id)
 				assert.NoError(t, err)
 				authRepo.EXPECT().VerifyRefreshToken(gomock.Eq(token)).Times(1).
-					Return(common.WrapError(sql.ErrNoRows, common.ErrNotMatchCredential))
+					Return(apiError.Wrap(sql.ErrNoRows, apiError.ErrNotMatchCredential))
 
 				authSvc := service.NewAuth(authRepo, userRepo, jwt)
 				return NewAuth(authSvc), token
@@ -297,7 +297,7 @@ func Test_deleteAuthHandler(t *testing.T) {
 				token, err := jwt.GenerateRefreshToken(id)
 				assert.NoError(t, err)
 				authRepo.EXPECT().VerifyRefreshToken(gomock.Eq(token)).Times(1).
-					Return(common.WrapError(sql.ErrNoRows, common.ErrNotMatchCredential))
+					Return(apiError.Wrap(sql.ErrNoRows, apiError.ErrNotMatchCredential))
 				authRepo.EXPECT().DeleteRefreshToken(gomock.Any()).Times(0)
 				authSvc := service.NewAuth(authRepo, userRepo, jwt)
 				return NewAuth(authSvc), token

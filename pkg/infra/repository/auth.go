@@ -8,7 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
 )
 
 func NewAuth(conn *sqlx.DB) *AuthConn {
@@ -35,7 +35,7 @@ func (a *AuthConn) AddRefreshToken(token string) error {
 		return err
 	}
 	if ret == int64(0) {
-		return common.ErrResourceNotFound
+		return apiError.ErrResourceNotFound
 	}
 	return nil
 
@@ -70,7 +70,7 @@ func (a *AuthConn) DeleteRefreshToken(token string) error {
 		return a.wrapError(err)
 	}
 	if retInt == int64(0) {
-		return common.ErrResourceNotFound
+		return apiError.ErrResourceNotFound
 	}
 	return nil
 }
@@ -78,11 +78,11 @@ func (AuthConn) wrapError(err error) error {
 	var pqErr *pq.Error
 	switch {
 	case errors.Is(err, context.Canceled):
-		return common.WrapError(err, common.ErrTooLongAccessingDB)
+		return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 	case errors.Is(err, sql.ErrNoRows):
-		return common.WrapError(err, common.ErrNotMatchCredential)
+		return apiError.Wrap(err, apiError.ErrNotMatchCredential)
 	case errors.As(err, &pqErr) && pqErr.Code == "23505":
-		return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "token is already taken, please try again")
+		return apiError.WrapWithMsg(err, apiError.ErrUniqueConstraint23505, "token is already taken, please try again")
 	default:
 		return err
 	}
