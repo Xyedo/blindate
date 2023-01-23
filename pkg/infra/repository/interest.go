@@ -39,7 +39,7 @@ func (i *IntrConn) GetInterest(userId string) (interestEntity.FullDTO, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	var intr interestEntity.FullDTO
-	err := i.conn.GetContext(ctx, &intr.Bio, query, userId)
+	err := i.conn.GetContext(ctx, &intr.BioDTO, query, userId)
 	if err != nil {
 		err = i.parsingError(err)
 		return interestEntity.FullDTO{}, err

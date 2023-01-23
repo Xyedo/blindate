@@ -33,6 +33,7 @@ import (
 
 func Test_PostUserHandler(t *testing.T) {
 	var (
+		validUUID     = util.RandomUUID()
 		validFullName = "Uncle Bob"
 		validAlias    = "bobbies"
 		validEmail    = "bob23@gmail.com"
@@ -59,7 +60,7 @@ func Test_PostUserHandler(t *testing.T) {
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 
-				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).Return(nil)
+				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).Return(validUUID, nil)
 				userService := service.NewUser(userRepo)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				return NewUser(userService, attachSvc)
@@ -72,7 +73,7 @@ func Test_PostUserHandler(t *testing.T) {
 				"status":  "success",
 				"message": "confirmation email sent, check your email!",
 				"data": map[string]string{
-					"id": "",
+					"id": validUUID,
 				},
 			},
 		},
@@ -210,7 +211,7 @@ func Test_PostUserHandler(t *testing.T) {
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 
-				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).Return(nil)
+				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).Return(validUUID, nil)
 				userService := service.NewUser(userRepo)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				return NewUser(userService, attachSvc)
@@ -218,6 +219,13 @@ func Test_PostUserHandler(t *testing.T) {
 			wantCode: http.StatusCreated,
 			wantHeader: map[string]string{
 				"Content-Type": "application/json",
+			},
+			wantResp: map[string]any{
+				"status":  "success",
+				"message": "confirmation email sent, check your email!",
+				"data": map[string]string{
+					"id": validUUID,
+				},
 			},
 		},
 		{
@@ -236,7 +244,7 @@ func Test_PostUserHandler(t *testing.T) {
 					Constraint: "users_email_unique",
 				}
 				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "email already taken"))
+					Return("", common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "email already taken"))
 				userService := service.NewUser(userRepo)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				return NewUser(userService, attachSvc)
@@ -317,7 +325,7 @@ func Test_PostUserHandler(t *testing.T) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 
 				userRepo.EXPECT().InsertUser(gomock.Not(nil)).Times(1).
-					Return(common.WrapError(context.Canceled, common.ErrTooLongAccessingDB))
+					Return("", common.WrapError(context.Canceled, common.ErrTooLongAccessingDB))
 				userService := service.NewUser(userRepo)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				return NewUser(userService, attachSvc)
