@@ -1,5 +1,5 @@
 
-MG_PATH=./pkg/migrations
+MG_PATH=./migrations
 
 migrate-up: 
 	migrate -path $(MG_PATH) -database $(DB_DSN) up
