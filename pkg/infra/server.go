@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/xyedo/blindate/pkg/api"
+	"github.com/xyedo/blindate/pkg/interfaces/http/api"
 )
 
 type Config struct {

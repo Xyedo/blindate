@@ -7,7 +7,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/xyedo/blindate/pkg/event"
+	"github.com/xyedo/blindate/pkg/domain/event"
 	"github.com/xyedo/blindate/pkg/infra"
 )
 
@@ -48,7 +48,9 @@ func main() {
 	event.ChatCreated.Register(&eventDeps)
 
 	go wsDeps.ListenToWsChan()
-
-	log.Fatal(cfg.NewServer(routes))
+	err = cfg.NewServer(routes)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 }

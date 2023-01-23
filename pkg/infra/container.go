@@ -2,13 +2,13 @@ package infra
 
 import (
 	"github.com/jmoiron/sqlx"
-	"github.com/xyedo/blindate/pkg/api"
-	"github.com/xyedo/blindate/pkg/gateway"
-	"github.com/xyedo/blindate/pkg/repository"
-	"github.com/xyedo/blindate/pkg/service"
+	"github.com/xyedo/blindate/pkg/applications/gateway"
+	"github.com/xyedo/blindate/pkg/applications/service"
+	"github.com/xyedo/blindate/pkg/infra/repository"
+	"github.com/xyedo/blindate/pkg/interfaces/http/api"
 )
 
-func (cfg *Config) Container(db *sqlx.DB) (api.Route, service.EventDeps, gateway.WsDeps) {
+func (cfg *Config) Container(db *sqlx.DB) (api.Route, service.EventDeps, gateway.Deps) {
 	attachmentSvc := service.NewS3(cfg.BucketName)
 
 	userRepo := repository.NewUser(db)
@@ -72,7 +72,7 @@ func (cfg *Config) Container(db *sqlx.DB) (api.Route, service.EventDeps, gateway
 			MatchSvc: matchSvc,
 			Online:   onlineSvc,
 			Ws:       wsSvc,
-		}, gateway.WsDeps{
+		}, gateway.Deps{
 			Ws:         wsSvc,
 			ChatSvc:    chatSvc,
 			MatchSvc:   matchSvc,
