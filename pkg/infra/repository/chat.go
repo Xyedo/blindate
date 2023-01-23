@@ -9,7 +9,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
 	"github.com/xyedo/blindate/pkg/domain/chat"
 	chatEntity "github.com/xyedo/blindate/pkg/domain/chat/entities"
 )
@@ -47,19 +47,19 @@ func (c *ChatConn) InsertNewChat(content *chatEntity.DAO) error {
 		err := q.GetContext(ctx, &content.Id, chatQ, contentArgs...)
 		if err != nil {
 			if errors.Is(err, context.Canceled) {
-				return common.WrapError(err, common.ErrTooLongAccessingDB)
+				return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 			}
 			var pqErr *pq.Error
 			if errors.As(err, &pqErr) {
 				if pqErr.Code == "23503" {
 					if strings.Contains(pqErr.Constraint, "conversation_id") {
-						return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "chat with this conversationId is invalid")
+						return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "chat with this conversationId is invalid")
 					}
 					if strings.Contains(pqErr.Constraint, "author") {
-						return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "author is invalid")
+						return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "author is invalid")
 					}
 					if strings.Contains(pqErr.Constraint, "reply_to") {
-						return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "replyTo is invalid")
+						return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "replyTo is invalid")
 					}
 				}
 				return pqErr
@@ -71,16 +71,16 @@ func (c *ChatConn) InsertNewChat(content *chatEntity.DAO) error {
 			_, err = q.ExecContext(ctx, attachmentQ, attachmentArgs...)
 			if err != nil {
 				if errors.Is(err, context.Canceled) {
-					return common.WrapError(err, common.ErrTooLongAccessingDB)
+					return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 				}
 				var pqErr *pq.Error
 				if errors.As(err, &pqErr) {
 					if pqErr.Code == "23503" {
 						if strings.Contains(pqErr.Constraint, "media_type") {
-							return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "provided media type is invalid")
+							return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "provided media type is invalid")
 						}
 						if strings.Contains(pqErr.Constraint, "chat_id") {
-							return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid provided chatId")
+							return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "invalid provided chatId")
 						}
 					}
 					return pqErr
@@ -107,10 +107,10 @@ func (c *ChatConn) DeleteChatById(chatId string) error {
 	err := c.conn.GetContext(ctx, &retChatId, query, chatId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return common.WrapError(err, common.ErrRefNotFound23503)
+			return apiError.Wrap(err, apiError.ErrRefNotFound23503)
 		}
 		if errors.Is(err, context.Canceled) {
-			return common.WrapError(err, common.ErrTooLongAccessingDB)
+			return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		return err
 	}
@@ -154,15 +154,15 @@ func (c *ChatConn) UpdateSeenChat(convId, authorId string) ([]string, error) {
 	if err != nil {
 
 		if errors.Is(err, context.Canceled) {
-			return nil, common.WrapError(err, common.ErrTooLongAccessingDB)
+			return nil, apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, common.WrapError(err, common.ErrRefNotFound23503)
+			return nil, apiError.Wrap(err, apiError.ErrRefNotFound23503)
 		}
 		return nil, err
 	}
 	if len(retIds) == 0 {
-		return nil, common.ErrResourceNotFound
+		return nil, apiError.ErrResourceNotFound
 	}
 	return retIds, nil
 }
@@ -209,7 +209,7 @@ func (c *ChatConn) SelectChat(convoId string, filter chat.Filter) ([]chatEntity.
 	rows, err := c.conn.QueryxContext(ctx, query, args...)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return nil, common.WrapError(err, common.ErrTooLongAccessingDB)
+			return nil, apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 
 		return nil, err

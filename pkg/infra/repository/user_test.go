@@ -5,11 +5,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	"github.com/xyedo/blindate/pkg/domain/user"
 	userEntity "github.com/xyedo/blindate/pkg/domain/user/entities"
 	"github.com/xyedo/blindate/pkg/infra/repository"
-	"github.com/xyedo/blindate/pkg/util"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -28,7 +28,7 @@ func Test_InsertUser(t *testing.T) {
 			Dob:      user.Dob,
 		})
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
+		assert.ErrorIs(t, err, apiError.ErrUniqueConstraint23505)
 
 	})
 
@@ -43,7 +43,7 @@ func Test_UpdateUser(t *testing.T) {
 		user.Email = util.RandomEmail(12)
 		user.Active = true
 		err := repo.UpdateUser(user)
-		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.ErrorIs(t, err, apiError.ErrResourceNotFound)
 	})
 	t.Run("Success Updating", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -60,7 +60,7 @@ func Test_UpdateUser(t *testing.T) {
 		user2.Email = user1.Email
 		err := repo.UpdateUser(user2)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
+		assert.ErrorIs(t, err, apiError.ErrUniqueConstraint23505)
 	})
 }
 
@@ -81,7 +81,7 @@ func Test_GetUserById(t *testing.T) {
 	t.Run("Invalid Id", func(t *testing.T) {
 		user, err := repo.GetUserById("e590666c-3ea8-4fda-958c-c2dc6c2599b5")
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.ErrorIs(t, err, apiError.ErrResourceNotFound)
 		assert.Zero(t, user)
 	})
 
@@ -98,7 +98,7 @@ func Test_GetUserByEmail(t *testing.T) {
 	})
 	t.Run("Invalid Id", func(t *testing.T) {
 		user, err := repo.GetUserByEmail(util.RandomEmail(12))
-		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.ErrorIs(t, err, apiError.ErrResourceNotFound)
 		assert.Zero(t, user)
 
 	})
@@ -130,7 +130,7 @@ func Test_CreateProfilePicture(t *testing.T) {
 		id, err := repo.CreateProfilePicture(util.RandomUUID(), util.RandomUUID()+".png", false)
 		require.Error(t, err)
 		assert.Empty(t, id)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 
 }

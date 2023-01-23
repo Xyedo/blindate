@@ -15,10 +15,10 @@ import (
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/xyedo/blindate/pkg/applications/service"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	locationEntity "github.com/xyedo/blindate/pkg/domain/location/entities"
 	mockrepo "github.com/xyedo/blindate/pkg/infra/repository/mock"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func Test_PostLocationByUserIdHandler(t *testing.T) {
@@ -70,7 +70,7 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 					Code: "23503",
 				}
 				locationRepo.EXPECT().InsertNewLocation(gomock.Eq(location)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "invalid userId"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrRefNotFound23503, "invalid userId"))
 				locationSvc := service.NewLocation(locationRepo)
 				return NewLocation(locationSvc)
 			},
@@ -97,7 +97,7 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 					Code: "23505",
 				}
 				locationRepo.EXPECT().InsertNewLocation(gomock.Eq(location)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "location already created"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrUniqueConstraint23505, "location already created"))
 				locationSvc := service.NewLocation(locationRepo)
 				return NewLocation(locationSvc)
 			},
@@ -214,7 +214,7 @@ func Test_getLocationByUserIdHandler(t *testing.T) {
 				location := createNewLocation(t)
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
 				locationRepo.EXPECT().GetLocationByUserId(gomock.Eq(location.UserId)).Times(1).
-					Return(locationEntity.DAO{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
+					Return(locationEntity.DAO{}, apiError.Wrap(sql.ErrNoRows, apiError.ErrResourceNotFound))
 				locationSvc := service.NewLocation(locationRepo)
 				return NewLocation(locationSvc)
 			},
@@ -412,7 +412,7 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 				location := createNewLocation(t)
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
 				locationRepo.EXPECT().GetLocationByUserId(gomock.Eq(location.UserId)).Times(1).
-					Return(locationEntity.DAO{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
+					Return(locationEntity.DAO{}, apiError.Wrap(sql.ErrNoRows, apiError.ErrResourceNotFound))
 				locationSvc := service.NewLocation(locationRepo)
 				return NewLocation(locationSvc)
 			},

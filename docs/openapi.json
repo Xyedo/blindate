@@ -270,6 +270,9 @@
           "404": {
             "$ref": "#/components/responses/not_found_user_id"
           },
+          "403": {
+            "$ref": "#/components/responses/forbidden_access"
+          },
           "409": {
             "$ref": "#/components/responses/resource_conflict"
           }
@@ -313,6 +316,9 @@
           },
           "404": {
             "$ref": "#/components/responses/not_found_user_id"
+          },
+          "403": {
+            "$ref": "#/components/responses/forbidden_access"
           },
           "422": {
             "$ref": "#/components/responses/error_validation_user"
@@ -394,6 +400,9 @@
           },
           "422": {
             "$ref": "#/components/responses/invalid_mime_type"
+          },
+          "403": {
+            "$ref": "#/components/responses/forbidden_access"
           },
           "200": {
             "description": "valid put profile image",
@@ -710,6 +719,9 @@
           "400": {
             "$ref": "#/components/responses/bad_request_json"
           },
+          "403": {
+            "$ref": "#/components/responses/forbidden_access"
+          },
           "409": {
             "description": "error validation",
             "content": {
@@ -831,6 +843,9 @@
               }
             }
           },
+          "403": {
+            "$ref": "#/components/responses/forbidden_access"
+          },
           "400": {
             "$ref": "#/components/responses/bad_request_json"
           },
@@ -920,6 +935,9 @@
               }
             }
           },
+          "403": {
+            "$ref": "#/components/responses/forbidden_access"
+          },
           "409": {
             "description": "error on validation",
             "content": {
@@ -955,9 +973,16 @@
         }
       },
       "get": {
+        "security": [
+          {
+            "loginAuth": []
+          }
+        ],
         "summary": "get conversation by userId",
         "description": "get all conversation  by userId",
-        "tags": ["Conversation"],
+        "tags": [
+          "Conversation"
+        ],
         "responses": {
           "200": {
             "description": "success getter",
@@ -965,12 +990,79 @@
               "application/json": {
                 "schema": {
                   "type": "array",
-                  "items":{
+                  "items": {
                     "$ref": "#/components/schemas/conversation"
                   }
                 }
               }
             }
+          },
+          "404": {
+            "$ref": "#/components/responses/not_found_response"
+          }
+        }
+      }
+    },
+    "/conversation/{conversationId}": {
+      "get": {
+        "tags": [
+          "Conversation"
+        ],
+        "summary": "get conversation by Id",
+        "security": [
+          {
+            "loginAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#components/schemas/conversation"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/not_found_response"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Conversation"
+        ],
+        "summary": "delete conversation by Id",
+        "security": [
+          {
+            "loginAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "deletion success",
+            "content": {
+              "application/json":{
+                "schema":{
+                  "type": "object",
+                  "properties": {
+                    "status":{
+                      "type": "string",
+                      "example":"success"
+                    },
+                    "message":{
+                      "type": "string",
+                      "example":"deleting conversationId success"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/not_found_response"
           }
         }
       }
@@ -978,6 +1070,26 @@
   },
   "components": {
     "responses": {
+      "not_found_response": {
+        "description": "not found any resource",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "fail"
+                },
+                "message": {
+                  "type": "string",
+                  "example": "resource not found"
+                }
+              }
+            }
+          }
+        }
+      },
       "invalid_mime_type": {
         "description": "invalid mime type",
         "content": {
@@ -1140,6 +1252,26 @@
                 "message": {
                   "type": "string",
                   "example": "userId is not found"
+                }
+              }
+            }
+          }
+        }
+      },
+      "forbidden_access": {
+        "description": "forbidden access",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "example": "fail"
+                },
+                "message": {
+                  "type": "string",
+                  "example": "you shouldnt access this resource"
                 }
               }
             }
@@ -1349,23 +1481,23 @@
           },
           "lastMessage": {
             "type": "string",
-            "example":"gatau njir"
+            "example": "gatau njir"
           },
           "lastMessageSentAt": {
             "type": "string",
             "format": "date"
           },
-          "lastMessageSeenAt":{
+          "lastMessageSeenAt": {
             "type": "string",
             "format": "date"
           },
-          "chatRows":{
+          "chatRows": {
             "type": "integer",
-            "example":"200"
+            "example": "200"
           },
           "dayPass": {
             "type": "integer",
-            "example":"200"
+            "example": "200"
           }
         }
       },

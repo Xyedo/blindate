@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
 	basicInfoEntity "github.com/xyedo/blindate/pkg/domain/basicinfo/entities"
 	"github.com/xyedo/blindate/pkg/infra/repository"
 )
@@ -37,7 +37,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
+				assert.ErrorIs(t, err, apiError.ErrUniqueConstraint23505)
 			},
 		},
 		{
@@ -49,7 +49,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+				assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 			},
 		},
 		{
@@ -61,7 +61,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+				assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 			},
 		},
 		{
@@ -76,7 +76,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+				assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 			},
 		},
 		{
@@ -91,7 +91,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+				assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 			},
 		},
 		{
@@ -106,7 +106,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+				assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 			},
 		},
 		{
@@ -121,7 +121,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+				assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 			},
 		},
 		{
@@ -133,7 +133,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+				assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 			},
 		},
 		{
@@ -148,7 +148,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+				assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 			},
 		},
 	}
@@ -183,7 +183,7 @@ func Test_GetBasicInfoByUserId(t *testing.T) {
 	t.Run("Invalid UseriD", func(t *testing.T) {
 		resc, err := repo.GetBasicInfoByUserId("e590666c-3ea8-4fda-958c-c2dc6c2599b5")
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.ErrorIs(t, err, apiError.ErrResourceNotFound)
 		assert.Zero(t, resc)
 	})
 }
@@ -230,7 +230,7 @@ func Test_UpdateBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+				assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 			},
 		},
 		{
@@ -244,7 +244,7 @@ func Test_UpdateBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrResourceNotFound)
+				assert.ErrorIs(t, err, apiError.ErrResourceNotFound)
 			},
 		},
 		{
@@ -261,7 +261,7 @@ func Test_UpdateBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+				assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 			},
 		},
 		{
@@ -278,7 +278,7 @@ func Test_UpdateBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+				assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 			},
 		},
 		{
@@ -295,7 +295,7 @@ func Test_UpdateBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+				assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 			},
 		},
 		{
@@ -312,7 +312,7 @@ func Test_UpdateBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+				assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 			},
 		},
 		{
@@ -329,7 +329,7 @@ func Test_UpdateBasicInfo(t *testing.T) {
 			},
 			expectedFunc: func(t *testing.T, err error) {
 				require.Error(t, err)
-				assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+				assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 			},
 		},
 	}

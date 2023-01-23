@@ -11,9 +11,9 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	interestEntity "github.com/xyedo/blindate/pkg/domain/interest/entities"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func NewInterest(db *sqlx.DB) *IntrConn {
@@ -252,7 +252,7 @@ func (i *IntrConn) UpdateInterestHobbies(interestId string, hobbies []interestEn
 			return err
 		}
 		if ro == int64(0) {
-			return common.WrapWithNewError(fmt.Errorf("no rows affected by delete"), http.StatusUnprocessableEntity, "invalid Id in one of hobbies")
+			return apiError.WrapWithNewSentinel(fmt.Errorf("no rows affected by delete"), http.StatusUnprocessableEntity, "invalid Id in one of hobbies")
 		}
 
 		_, err = q.ExecContext(ctx, statsHobbiesPlusQ, newHobbies, interestId)
@@ -405,7 +405,7 @@ func (i *IntrConn) UpdateInterestMovieSeries(interestId string, movieSeries []in
 			return err
 		}
 		if int(row) == 0 {
-			return common.WrapWithNewError(fmt.Errorf("no rows affected by delete"), http.StatusUnprocessableEntity, "invalid Id in one of movieSeries")
+			return apiError.WrapWithNewSentinel(fmt.Errorf("no rows affected by delete"), http.StatusUnprocessableEntity, "invalid Id in one of movieSeries")
 		}
 		_, err = q.ExecContext(ctx, statsMovieSeriesPlusQ, newMovies, interestId)
 		if err != nil {
@@ -552,7 +552,7 @@ func (i *IntrConn) UpdateInterestTraveling(interestId string, travels []interest
 			return err
 		}
 		if int(row) == 0 {
-			return common.WrapWithNewError(fmt.Errorf("no rows affected by delete"), http.StatusUnprocessableEntity, "invalid Id in one of travels")
+			return apiError.WrapWithNewSentinel(fmt.Errorf("no rows affected by delete"), http.StatusUnprocessableEntity, "invalid Id in one of travels")
 		}
 
 		_, err = q.ExecContext(ctx, statsTravelingPlusQ, newTravel, interestId)
@@ -705,7 +705,7 @@ func (i *IntrConn) UpdateInterestSport(interestId string, sports []interestEntit
 			return err
 		}
 		if int(row) == 0 {
-			return common.WrapWithNewError(fmt.Errorf("no rows affected by delete"), http.StatusUnprocessableEntity, "invalid Id in one of sports")
+			return apiError.WrapWithNewSentinel(fmt.Errorf("no rows affected by delete"), http.StatusUnprocessableEntity, "invalid Id in one of sports")
 		}
 
 		_, err = q.ExecContext(ctx, statsSportsPlusQ, newSport, interestId)
@@ -758,50 +758,50 @@ func (*IntrConn) parsingError(err error) error {
 	var pqErr *pq.Error
 	switch {
 	case errors.Is(err, context.Canceled):
-		return common.WrapError(err, common.ErrTooLongAccessingDB)
+		return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 	case errors.Is(err, sql.ErrNoRows):
-		return common.WrapError(err, common.ErrResourceNotFound)
+		return apiError.Wrap(err, apiError.ErrResourceNotFound)
 	case errors.As(err, &pqErr):
 		switch pqErr.Code {
 		case "23503":
 			if strings.Contains(pqErr.Constraint, "interest_id") {
-				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "interestId is invalid")
+				return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "interestId is invalid")
 			}
 			if strings.Contains(pqErr.Constraint, "user_id") {
-				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "userId is not invalid")
+				return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "userId is not invalid")
 			}
 		case "23505":
 			if strings.Contains(pqErr.Constraint, "interests_user_id_key") {
-				return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "interest with this user id is already created")
+				return apiError.WrapWithMsg(err, apiError.ErrUniqueConstraint23505, "interest with this user id is already created")
 			}
 			if strings.Contains(pqErr.Constraint, "hobbie_unique") {
-				return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "every hobbies must be unique")
+				return apiError.WrapWithMsg(err, apiError.ErrUniqueConstraint23505, "every hobbies must be unique")
 			}
 			if strings.Contains(pqErr.Constraint, "movie_serie_unique") {
-				return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "every moviesSeries must be unique")
+				return apiError.WrapWithMsg(err, apiError.ErrUniqueConstraint23505, "every moviesSeries must be unique")
 			}
 			if strings.Contains(pqErr.Constraint, "travel_unique") {
-				return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "every travels must be unique")
+				return apiError.WrapWithMsg(err, apiError.ErrUniqueConstraint23505, "every travels must be unique")
 			}
 			if strings.Contains(pqErr.Constraint, "sport_unique") {
-				return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "every sports must be unique")
+				return apiError.WrapWithMsg(err, apiError.ErrUniqueConstraint23505, "every sports must be unique")
 			}
 			if strings.Contains(pqErr.Constraint, "user_id") {
-				return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "interest already created")
+				return apiError.WrapWithMsg(err, apiError.ErrUniqueConstraint23505, "interest already created")
 			}
 
 		case "23514":
 			if strings.Contains(pqErr.Constraint, "hobbie_count") {
-				return common.WrapWithNewError(err, http.StatusUnprocessableEntity, "hobbies must less than 10")
+				return apiError.WrapWithNewSentinel(err, http.StatusUnprocessableEntity, "hobbies must less than 10")
 			}
 			if strings.Contains(pqErr.Constraint, "movie_serie_count") {
-				return common.WrapWithNewError(err, http.StatusUnprocessableEntity, "movieSeries must less than 10")
+				return apiError.WrapWithNewSentinel(err, http.StatusUnprocessableEntity, "movieSeries must less than 10")
 			}
 			if strings.Contains(pqErr.Constraint, "traveling_count") {
-				return common.WrapWithNewError(err, http.StatusUnprocessableEntity, "travels must less than 10")
+				return apiError.WrapWithNewSentinel(err, http.StatusUnprocessableEntity, "travels must less than 10")
 			}
 			if strings.Contains(pqErr.Constraint, "sport_count") {
-				return common.WrapWithNewError(err, http.StatusUnprocessableEntity, "sports must less than 10")
+				return apiError.WrapWithNewSentinel(err, http.StatusUnprocessableEntity, "sports must less than 10")
 			}
 		default:
 			return pqErr

@@ -1,10 +1,9 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
 	"github.com/xyedo/blindate/pkg/domain/conversation"
 	convEntity "github.com/xyedo/blindate/pkg/domain/conversation/entities"
 	"github.com/xyedo/blindate/pkg/domain/match"
@@ -12,8 +11,7 @@ import (
 )
 
 var (
-	ErrRefMatchId         = fmt.Errorf("%w:invalid matchId", common.ErrRefNotFound23503)
-	ErrInvalidMatchStatus = errors.New("not yet accepted/revealed in matchId")
+	ErrRefMatchId = fmt.Errorf("%w:invalid matchId", apiError.ErrRefNotFound23503)
 )
 
 func NewConversation(convRepo conversation.Repository, matchRepo match.Repository) *Conversation {
@@ -34,7 +32,7 @@ func (c *Conversation) CreateConversation(matchId string) (string, error) {
 		return "", err
 	}
 	if matchDAO.RequestStatus != string(matchEntity.Accepted) {
-		return "", ErrInvalidMatchStatus
+		return "", apiError.Wrap(match.ErrInvalidMatchStatus, apiError.ErrForbiddenAccess)
 	}
 	id, err := c.convRepo.InsertConversation(matchId)
 	if err != nil {

@@ -7,10 +7,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	locationEntity "github.com/xyedo/blindate/pkg/domain/location/entities"
 	"github.com/xyedo/blindate/pkg/infra/repository"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func Test_InsertNewLocation(t *testing.T) {
@@ -24,7 +24,7 @@ func Test_InsertNewLocation(t *testing.T) {
 		location := createNewLocation(t, user.ID)
 		err := repo.InsertNewLocation(location)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
+		assert.ErrorIs(t, err, apiError.ErrUniqueConstraint23505)
 
 	})
 	t.Run("Invalid user_id", func(t *testing.T) {
@@ -33,7 +33,7 @@ func Test_InsertNewLocation(t *testing.T) {
 		location.UserId = "e590666c-3ea8-4fda-958c-c2dc6c2599b6"
 		err := repo.InsertNewLocation(location)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 }
 
@@ -52,7 +52,7 @@ func Test_UpdateLocation(t *testing.T) {
 		location.UserId = "e590666c-3ea8-4fda-958c-c2dc6c2599b6"
 		err := repo.UpdateLocation(location)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.ErrorIs(t, err, apiError.ErrResourceNotFound)
 
 	})
 }
@@ -70,7 +70,7 @@ func Test_GetLocationByUserId(t *testing.T) {
 	t.Run("Invalid User_id", func(t *testing.T) {
 		location, err := repo.GetLocationByUserId("e590666c-3ea8-4fda-958c-c2dc6c2599b6")
 		require.Error(t, err)
-		require.ErrorIs(t, err, common.ErrResourceNotFound)
+		require.ErrorIs(t, err, apiError.ErrResourceNotFound)
 		assert.Zero(t, location)
 	})
 

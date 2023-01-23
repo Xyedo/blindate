@@ -9,7 +9,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
 	"github.com/xyedo/blindate/pkg/domain/conversation"
 	convEntity "github.com/xyedo/blindate/pkg/domain/conversation/entities"
 )
@@ -37,15 +37,15 @@ func (c *ConvConn) InsertConversation(matchId string) (string, error) {
 	err := c.conn.GetContext(ctx, &convoId, query, matchId)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return "", common.WrapError(err, common.ErrTooLongAccessingDB)
+			return "", apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			if pqErr.Code == "23503" {
-				return "", common.WrapError(err, common.ErrRefNotFound23503)
+				return "", apiError.Wrap(err, apiError.ErrRefNotFound23503)
 			}
 			if pqErr.Code == "23505" {
-				return "", common.WrapError(err, common.ErrUniqueConstraint23505)
+				return "", apiError.Wrap(err, apiError.ErrUniqueConstraint23505)
 			}
 			return "", pqErr
 		}
@@ -113,10 +113,10 @@ func (c *ConvConn) SelectConversationById(matchId string) (convEntity.DTO, error
 	newConv, err := c.createNewChat(row)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return convEntity.DTO{}, common.WrapError(err, common.ErrResourceNotFound)
+			return convEntity.DTO{}, apiError.Wrap(err, apiError.ErrResourceNotFound)
 		}
 		if errors.Is(err, context.Canceled) {
-			return convEntity.DTO{}, common.WrapError(err, common.ErrTooLongAccessingDB)
+			return convEntity.DTO{}, apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		return convEntity.DTO{}, err
 	}
@@ -146,8 +146,11 @@ func (c *ConvConn) SelectConversationByUserId(UserId string, filter *conversatio
 
 	rows, err := c.conn.QueryxContext(ctx, convQuery, args...)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, apiError.Wrap(err, apiError.ErrResourceNotFound)
+		}
 		if errors.Is(err, context.Canceled) {
-			return nil, common.WrapError(err, common.ErrTooLongAccessingDB)
+			return nil, apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		return nil, err
 	}
@@ -184,10 +187,10 @@ func (c *ConvConn) UpdateChatRow(convoId string) error {
 	err := c.conn.GetContext(ctx, &id, query, convoId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return common.WrapError(err, common.ErrRefNotFound23503)
+			return apiError.Wrap(err, apiError.ErrRefNotFound23503)
 		}
 		if errors.Is(err, context.Canceled) {
-			return common.WrapError(err, common.ErrTooLongAccessingDB)
+			return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		return err
 	}
@@ -207,10 +210,10 @@ func (c *ConvConn) UpdateDayPass(convoId string) error {
 	err := c.conn.GetContext(ctx, &id, query, convoId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return common.WrapError(err, common.ErrRefNotFound23503)
+			return apiError.Wrap(err, apiError.ErrRefNotFound23503)
 		}
 		if errors.Is(err, context.Canceled) {
-			return common.WrapError(err, common.ErrTooLongAccessingDB)
+			return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		return err
 	}
@@ -225,10 +228,10 @@ func (c *ConvConn) DeleteConversationById(convoId string) error {
 	err := c.conn.GetContext(ctx, &id, query, convoId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return common.WrapError(err, common.ErrRefNotFound23503)
+			return apiError.Wrap(err, apiError.ErrRefNotFound23503)
 		}
 		if errors.Is(err, context.Canceled) {
-			return common.WrapError(err, common.ErrTooLongAccessingDB)
+			return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		return err
 	}

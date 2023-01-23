@@ -10,7 +10,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
 	basicInfoEntity "github.com/xyedo/blindate/pkg/domain/basicinfo/entities"
 	interestEntity "github.com/xyedo/blindate/pkg/domain/interest/entities"
 	matchEntity "github.com/xyedo/blindate/pkg/domain/match/entities"
@@ -45,22 +45,22 @@ func (m *MatchConn) InsertNewMatch(fromUserId, toUserId string, reqStatus matchE
 		var pqErr *pq.Error
 		switch {
 		case errors.Is(err, context.Canceled):
-			return "", common.WrapError(err, common.ErrTooLongAccessingDB)
+			return "", apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		case errors.As(err, &pqErr):
 			switch pqErr.Code {
 			case "23503":
 				switch {
 				case strings.Contains(pqErr.Constraint, "request_from"):
-					return "", common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid user on requestFrom")
+					return "", apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "invalid user on requestFrom")
 				case strings.Contains(pqErr.Constraint, "request_to"):
-					return "", common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid user on requestTo")
+					return "", apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "invalid user on requestTo")
 				case strings.Contains(pqErr.Constraint, "request_status"):
-					return "", common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid enums on requestStatus")
+					return "", apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "invalid enums on requestStatus")
 				case strings.Contains(pqErr.Constraint, "reveal_status"):
-					return "", common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid enums on revealStatus")
+					return "", apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "invalid enums on revealStatus")
 				}
 			case "23505":
-				return "", common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "match already created")
+				return "", apiError.WrapWithMsg(err, apiError.ErrUniqueConstraint23505, "match already created")
 			default:
 				return "", pqErr
 			}
@@ -129,7 +129,7 @@ func (m *MatchConn) SelectMatchReqToUserId(userId string) ([]matchEntity.FullUse
 	rows, err := m.conn.QueryxContext(ctx, query, userId)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return nil, common.WrapError(err, common.ErrTooLongAccessingDB)
+			return nil, apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 
 		return nil, err
@@ -176,10 +176,10 @@ func (m *MatchConn) GetMatchById(matchId string) (matchEntity.MatchDAO, error) {
 	err := m.conn.GetContext(ctx, &matchDAO, query, matchId)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return matchEntity.MatchDAO{}, common.WrapError(err, common.ErrTooLongAccessingDB)
+			return matchEntity.MatchDAO{}, apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return matchEntity.MatchDAO{}, common.WrapError(err, common.ErrResourceNotFound)
+			return matchEntity.MatchDAO{}, apiError.Wrap(err, apiError.ErrResourceNotFound)
 		}
 		return matchEntity.MatchDAO{}, err
 	}
@@ -208,17 +208,17 @@ func (m *MatchConn) UpdateMatchById(matchDAO matchEntity.MatchDAO) error {
 		var pqErr *pq.Error
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
-			return common.WrapError(err, common.ErrResourceNotFound)
+			return apiError.Wrap(err, apiError.ErrResourceNotFound)
 		case errors.Is(err, context.Canceled):
-			return common.WrapError(err, common.ErrTooLongAccessingDB)
+			return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		case errors.As(err, &pqErr):
 			switch pqErr.Code {
 			case "23503":
 				switch {
 				case strings.Contains(pqErr.Constraint, "request_status"):
-					return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid enums on requestStatus")
+					return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "invalid enums on requestStatus")
 				case strings.Contains(pqErr.Constraint, "reveal_status"):
-					return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "invalid enums on revealStatus")
+					return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "invalid enums on revealStatus")
 				}
 			}
 		default:

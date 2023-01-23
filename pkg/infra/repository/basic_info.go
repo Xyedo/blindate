@@ -10,7 +10,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
 	basicInfoEntity "github.com/xyedo/blindate/pkg/domain/basicinfo/entities"
 )
 
@@ -64,10 +64,10 @@ func (b *BInfoConn) InsertBasicInfo(basicinfo basicInfoEntity.DAO) error {
 	err := b.conn.GetContext(ctx, &retUserId, query, args...)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return common.WrapError(err, common.ErrTooLongAccessingDB)
+			return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return common.WrapError(err, common.ErrResourceNotFound)
+			return apiError.Wrap(err, apiError.ErrResourceNotFound)
 		}
 		if err := b.parsingPostgreError(err); err != nil {
 			return err
@@ -103,10 +103,10 @@ func (b *BInfoConn) GetBasicInfoByUserId(userId string) (basicInfoEntity.DAO, er
 	err := b.conn.GetContext(ctx, &basicinfo, query, userId)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return basicInfoEntity.DAO{}, common.WrapError(err, common.ErrTooLongAccessingDB)
+			return basicInfoEntity.DAO{}, apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return basicInfoEntity.DAO{}, common.WrapError(err, common.ErrResourceNotFound)
+			return basicInfoEntity.DAO{}, apiError.Wrap(err, apiError.ErrResourceNotFound)
 		}
 		return basicInfoEntity.DAO{}, err
 	}
@@ -154,13 +154,13 @@ func (b *BInfoConn) UpdateBasicInfo(bInfo basicInfoEntity.DAO) error {
 	err := b.conn.GetContext(ctx, &retUserId, query, args...)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return common.WrapError(err, common.ErrTooLongAccessingDB)
+			return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return common.WrapError(err, common.ErrResourceNotFound)
+			return apiError.Wrap(err, apiError.ErrResourceNotFound)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return common.WrapError(err, common.ErrResourceNotFound)
+			return apiError.Wrap(err, apiError.ErrResourceNotFound)
 		}
 		if err := b.parsingPostgreError(err); err != nil {
 			return err
@@ -175,25 +175,25 @@ func (*BInfoConn) parsingPostgreError(err error) error {
 		if pqErr.Code == "23503" {
 			switch {
 			case strings.Contains(pqErr.Constraint, "user_id"):
-				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "userId is invalid")
+				return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "userId is invalid")
 			case strings.Contains(pqErr.Constraint, "gender"):
-				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "gender value is not valid enums")
+				return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "gender value is not valid enums")
 			case strings.Contains(pqErr.Constraint, "education_level"):
-				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "educationLevel value is not valid enums")
+				return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "educationLevel value is not valid enums")
 			case strings.Contains(pqErr.Constraint, "drinking"):
-				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "drinking value is not valid enums")
+				return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "drinking value is not valid enums")
 			case strings.Contains(pqErr.Constraint, "smoking"):
-				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "smoking value is not valid enums")
+				return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "smoking value is not valid enums")
 			case strings.Contains(pqErr.Constraint, "relationship_pref"):
-				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "relationshipPref value is not valid enums")
+				return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "relationshipPref value is not valid enums")
 			case strings.Contains(pqErr.Constraint, "looking_for"):
-				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "lookingFor value is not valid enums")
+				return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "lookingFor value is not valid enums")
 			case strings.Contains(pqErr.Constraint, "zodiac"):
-				return common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "zodiac value is not valid enums")
+				return apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "zodiac value is not valid enums")
 			}
 		}
 		if pqErr.Code == "23505" {
-			return common.WrapError(err, common.ErrUniqueConstraint23505)
+			return apiError.Wrap(err, apiError.ErrUniqueConstraint23505)
 		}
 		return pqErr
 	}

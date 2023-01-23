@@ -16,10 +16,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/xyedo/blindate/pkg/applications/service"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	onlineEntity "github.com/xyedo/blindate/pkg/domain/online/entities"
 	mockrepo "github.com/xyedo/blindate/pkg/infra/repository/mock"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 type onlineUserMatcher struct {
@@ -88,7 +88,7 @@ func Test_postUserOnlineHandler(t *testing.T) {
 					Constraint: "user_id",
 				}
 				onlineRepo.EXPECT().InsertNewOnline(EqOnlineUser(online)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrRefNotFound23503, "invalid userId"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrRefNotFound23503, "invalid userId"))
 				onlineSvc := service.NewOnline(onlineRepo)
 				return NewOnline(onlineSvc)
 			},
@@ -113,7 +113,7 @@ func Test_postUserOnlineHandler(t *testing.T) {
 					Constraint: "user_id",
 				}
 				onlineRepo.EXPECT().InsertNewOnline(EqOnlineUser(online)).Times(1).
-					Return(common.WrapErrorWithMsg(&pqErr, common.ErrUniqueConstraint23505, "online already created"))
+					Return(apiError.WrapWithMsg(&pqErr, apiError.ErrUniqueConstraint23505, "online already created"))
 				onlineSvc := service.NewOnline(onlineRepo)
 				return NewOnline(onlineSvc)
 			},
@@ -184,7 +184,7 @@ func Test_getUserOnlineHandler(t *testing.T) {
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
 				onlineRepo.EXPECT().SelectOnline(gomock.Eq(validUserId)).Times(1).
-					Return(onlineEntity.DTO{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
+					Return(onlineEntity.DTO{}, apiError.Wrap(sql.ErrNoRows, apiError.ErrResourceNotFound))
 				onlineSvc := service.NewOnline(onlineRepo)
 				return NewOnline(onlineSvc)
 			},
@@ -280,7 +280,7 @@ func Test_putsUserOnlineHandler(t *testing.T) {
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
 				onlineRepo.EXPECT().UpdateOnline(gomock.Eq(validUserId), gomock.Eq(true)).Times(1).
-					Return(common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
+					Return(apiError.Wrap(sql.ErrNoRows, apiError.ErrResourceNotFound))
 				onlineSvc := service.NewOnline(onlineRepo)
 				return NewOnline(onlineSvc)
 			},

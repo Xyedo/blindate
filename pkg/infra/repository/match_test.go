@@ -9,10 +9,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	matchEntity "github.com/xyedo/blindate/pkg/domain/match/entities"
 	"github.com/xyedo/blindate/pkg/infra/repository"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func Test_InsertNewMatch(t *testing.T) {
@@ -25,13 +25,13 @@ func Test_InsertNewMatch(t *testing.T) {
 		toUsr := createNewAccount(t)
 		_, err := matchRepo.InsertNewMatch(util.RandomUUID(), toUsr.ID, matchEntity.Accepted)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 	t.Run("invalid newMatch requestTo", func(t *testing.T) {
 		fromUsr := createNewAccount(t)
 		_, err := matchRepo.InsertNewMatch(fromUsr.ID, util.RandomUUID(), matchEntity.Declined)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 
 	})
 	t.Run("double on requestFrom and requestTo", func(t *testing.T) {
@@ -45,7 +45,7 @@ func Test_InsertNewMatch(t *testing.T) {
 		matchId, err = matchRepo.InsertNewMatch(fromUsr.ID, toUsr.ID, matchEntity.Accepted)
 		require.Error(t, err)
 		assert.Empty(t, matchId)
-		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
+		assert.ErrorIs(t, err, apiError.ErrUniqueConstraint23505)
 	})
 	t.Run("invalid requestTo", func(t *testing.T) {
 		matchRepo := repository.NewMatch(testQuery)
@@ -54,7 +54,7 @@ func Test_InsertNewMatch(t *testing.T) {
 		matchId, err := matchRepo.InsertNewMatch(fromUsr.ID, util.RandomUUID(), matchEntity.Unknown)
 		require.Error(t, err)
 		require.Zero(t, matchId)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 	t.Run("invalid requestFrom", func(t *testing.T) {
 		matchRepo := repository.NewMatch(testQuery)
@@ -62,7 +62,7 @@ func Test_InsertNewMatch(t *testing.T) {
 		matchId, err := matchRepo.InsertNewMatch(util.RandomUUID(), toUsr.ID, matchEntity.Unknown)
 		require.Error(t, err)
 		require.Zero(t, matchId)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 }
 
@@ -126,7 +126,7 @@ func Test_GetMatchById(t *testing.T) {
 	t.Run("invalid userId", func(t *testing.T) {
 		matchRes, err := matchRepo.GetMatchById(util.RandomUUID())
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.ErrorIs(t, err, apiError.ErrResourceNotFound)
 		assert.Empty(t, matchRes)
 	})
 }
@@ -178,7 +178,7 @@ func Test_UpdateMatchById(t *testing.T) {
 		newMatch.Id = util.RandomUUID()
 		err := matchRepo.UpdateMatchById(newMatch)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.ErrorIs(t, err, apiError.ErrResourceNotFound)
 	})
 
 }

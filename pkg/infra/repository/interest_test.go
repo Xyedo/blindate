@@ -5,10 +5,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	interestEntity "github.com/xyedo/blindate/pkg/domain/interest/entities"
 	"github.com/xyedo/blindate/pkg/infra/repository"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 func Test_InsertBio(t *testing.T) {
@@ -23,14 +23,14 @@ func Test_InsertBio(t *testing.T) {
 		bio.UserId = util.RandomUUID()
 		err := repo.InsertInterestBio(bio)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 	t.Run("invalid on unique constraint", func(t *testing.T) {
 		user := createNewAccount(t)
 		bio := createNewInterestBio(t, user.ID)
 		err := repo.InsertInterestBio(bio)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
+		assert.ErrorIs(t, err, apiError.ErrUniqueConstraint23505)
 	})
 }
 func Test_SelectBio(t *testing.T) {
@@ -50,7 +50,7 @@ func Test_SelectBio(t *testing.T) {
 		bio.UserId = util.RandomUUID()
 		err := repo.InsertInterestBio(bio)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 }
 func Test_UpdateInterestBio(t *testing.T) {
@@ -70,7 +70,7 @@ func Test_UpdateInterestBio(t *testing.T) {
 		bio.Bio = util.RandomString(12)
 		err := repo.UpdateInterestBio(*bio)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.ErrorIs(t, err, apiError.ErrResourceNotFound)
 	})
 }
 
@@ -94,7 +94,7 @@ func Test_InsertHobbies(t *testing.T) {
 
 		err := repo.InsertInterestHobbies(util.RandomUUID(), hobbies)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 	t.Run("Invalid Unique", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -104,7 +104,7 @@ func Test_InsertHobbies(t *testing.T) {
 		hobbie := createNewInterestHobbie(t, intr.Id)
 		err = repo.InsertInterestHobbies(intr.Id, hobbie)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
+		assert.ErrorIs(t, err, apiError.ErrUniqueConstraint23505)
 	})
 	t.Run("Too much bio", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -119,7 +119,7 @@ func Test_InsertHobbies(t *testing.T) {
 		}
 		err = repo.InsertInterestHobbies(bio.Id, hobbies)
 		require.Error(t, err)
-		require.Implements(t, (*common.APIError)(nil), err)
+		require.Implements(t, (*apiError.API)(nil), err)
 	})
 }
 func Test_UpdateHobbies(t *testing.T) {
@@ -157,7 +157,7 @@ func Test_UpdateHobbies(t *testing.T) {
 		}
 		err = repo.UpdateInterestHobbies(intr.Id, hobbies)
 		require.Error(t, err)
-		require.Implements(t, (*common.APIError)(nil), err)
+		require.Implements(t, (*apiError.API)(nil), err)
 	})
 }
 func Test_DeleteHobbies(t *testing.T) {
@@ -196,7 +196,7 @@ func Test_InsertMovieSeries(t *testing.T) {
 		}
 		err := repo.InsertInterestMovieSeries(util.RandomUUID(), movieSeries)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 	t.Run("Invalid Unique", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -206,7 +206,7 @@ func Test_InsertMovieSeries(t *testing.T) {
 		movieSeries := createNewInterestMovieSeries(t, intr.Id)
 		err = repo.InsertInterestMovieSeries(intr.Id, movieSeries)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
+		assert.ErrorIs(t, err, apiError.ErrUniqueConstraint23505)
 	})
 	t.Run("Too much movies", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -221,7 +221,7 @@ func Test_InsertMovieSeries(t *testing.T) {
 		}
 		err = repo.InsertInterestMovieSeries(bio.Id, movieSeries)
 		require.Error(t, err)
-		require.Implements(t, (*common.APIError)(nil), err)
+		require.Implements(t, (*apiError.API)(nil), err)
 	})
 }
 func Test_UpdateMovieSeries(t *testing.T) {
@@ -259,7 +259,7 @@ func Test_UpdateMovieSeries(t *testing.T) {
 		}
 		err = repo.UpdateInterestMovieSeries(intr.Id, movieSeries)
 		require.Error(t, err)
-		require.Implements(t, (*common.APIError)(nil), err)
+		require.Implements(t, (*apiError.API)(nil), err)
 	})
 }
 func Test_DeleteMovieSeries(t *testing.T) {
@@ -299,7 +299,7 @@ func Test_InsertTraveling(t *testing.T) {
 		}
 		err := repo.InsertInterestTraveling(util.RandomUUID(), travels)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 	t.Run("Invalid Unique", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -309,7 +309,7 @@ func Test_InsertTraveling(t *testing.T) {
 		travels := createNewInterestTraveling(t, intr.Id)
 		err = repo.InsertInterestTraveling(intr.Id, travels)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
+		assert.ErrorIs(t, err, apiError.ErrUniqueConstraint23505)
 	})
 	t.Run("Too much travels", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -324,7 +324,7 @@ func Test_InsertTraveling(t *testing.T) {
 		}
 		err = repo.InsertInterestTraveling(bio.Id, travels)
 		require.Error(t, err)
-		require.Implements(t, (*common.APIError)(nil), err)
+		require.Implements(t, (*apiError.API)(nil), err)
 	})
 }
 func Test_UpdateTraveling(t *testing.T) {
@@ -362,7 +362,7 @@ func Test_UpdateTraveling(t *testing.T) {
 		}
 		err = repo.UpdateInterestTraveling(intr.Id, travels)
 		require.Error(t, err)
-		require.Implements(t, (*common.APIError)(nil), err)
+		require.Implements(t, (*apiError.API)(nil), err)
 	})
 }
 func Test_DeleteTraveling(t *testing.T) {
@@ -401,7 +401,7 @@ func Test_InsertSports(t *testing.T) {
 		}
 		err := repo.InsertInterestSports(util.RandomUUID(), sports)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrRefNotFound23503)
+		assert.ErrorIs(t, err, apiError.ErrRefNotFound23503)
 	})
 	t.Run("Invalid Unique", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -411,7 +411,7 @@ func Test_InsertSports(t *testing.T) {
 		sports := createNewInterestSport(t, intr.Id)
 		err = repo.InsertInterestSports(intr.Id, sports)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrUniqueConstraint23505)
+		assert.ErrorIs(t, err, apiError.ErrUniqueConstraint23505)
 	})
 	t.Run("Too much sports", func(t *testing.T) {
 		user := createNewAccount(t)
@@ -426,7 +426,7 @@ func Test_InsertSports(t *testing.T) {
 		}
 		err = repo.InsertInterestSports(bio.Id, sports)
 		require.Error(t, err)
-		require.Implements(t, (*common.APIError)(nil), err)
+		require.Implements(t, (*apiError.API)(nil), err)
 	})
 }
 func Test_UpdateSports(t *testing.T) {
@@ -464,7 +464,7 @@ func Test_UpdateSports(t *testing.T) {
 		}
 		err = repo.UpdateInterestSport(intr.Id, sports)
 		require.Error(t, err)
-		require.Implements(t, (*common.APIError)(nil), err)
+		require.Implements(t, (*apiError.API)(nil), err)
 	})
 }
 func Test_DeleteSports(t *testing.T) {
@@ -611,7 +611,7 @@ func Test_GetInterest(t *testing.T) {
 	t.Run("Invalid Id", func(t *testing.T) {
 		res, err := repo.GetInterest(util.RandomUUID())
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.ErrorIs(t, err, apiError.ErrResourceNotFound)
 		assert.Zero(t, res)
 	})
 }

@@ -8,7 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
 	"github.com/xyedo/blindate/pkg/domain/user"
 	userEntity "github.com/xyedo/blindate/pkg/domain/user/entities"
 )
@@ -45,12 +45,12 @@ func (u *UserCon) InsertUser(user userEntity.Register) (string, error) {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			if pqErr.Code == "23505" {
-				return "", common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "email already taken")
+				return "", apiError.WrapWithMsg(err, apiError.ErrUniqueConstraint23505, "email already taken")
 			}
 			return "", pqErr
 		}
 		if errors.Is(err, context.Canceled) {
-			return "", common.WrapError(err, common.ErrTooLongAccessingDB)
+			return "", apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		return "", err
 	}
@@ -78,15 +78,15 @@ func (u *UserCon) UpdateUser(user userEntity.FullDTO) error {
 	err := u.conn.GetContext(ctx, &retId, query, args...)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return common.WrapError(err, common.ErrTooLongAccessingDB)
+			return apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return common.WrapError(err, common.ErrResourceNotFound)
+			return apiError.Wrap(err, apiError.ErrResourceNotFound)
 		}
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			if pqErr.Code == "23505" {
-				return common.WrapErrorWithMsg(err, common.ErrUniqueConstraint23505, "email already taken")
+				return apiError.WrapWithMsg(err, apiError.ErrUniqueConstraint23505, "email already taken")
 			}
 		}
 		return err
@@ -108,10 +108,10 @@ func (u *UserCon) GetUserById(id string) (userEntity.FullDTO, error) {
 	err := u.conn.GetContext(ctx, &user, query, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return userEntity.FullDTO{}, common.WrapError(err, common.ErrResourceNotFound)
+			return userEntity.FullDTO{}, apiError.Wrap(err, apiError.ErrResourceNotFound)
 		}
 		if errors.Is(err, context.Canceled) {
-			return userEntity.FullDTO{}, common.WrapError(err, common.ErrTooLongAccessingDB)
+			return userEntity.FullDTO{}, apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		return userEntity.FullDTO{}, err
 	}
@@ -130,10 +130,10 @@ func (u *UserCon) GetUserByEmail(email string) (userEntity.FullDTO, error) {
 	err := u.conn.GetContext(ctx, &user, query, email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return userEntity.FullDTO{}, common.WrapError(err, common.ErrResourceNotFound)
+			return userEntity.FullDTO{}, apiError.Wrap(err, apiError.ErrResourceNotFound)
 		}
 		if errors.Is(err, context.Canceled) {
-			return userEntity.FullDTO{}, common.WrapError(err, common.ErrTooLongAccessingDB)
+			return userEntity.FullDTO{}, apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		return userEntity.FullDTO{}, err
 	}
@@ -151,12 +151,12 @@ func (u *UserCon) CreateProfilePicture(userId, pictureRef string, selected bool)
 	err := u.conn.GetContext(ctx, &id, query, userId, selected, pictureRef)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return "", common.WrapError(err, common.ErrTooLongAccessingDB)
+			return "", apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			if pqErr.Code == "23503" {
-				return "", common.WrapErrorWithMsg(err, common.ErrRefNotFound23503, "profile picture not found")
+				return "", apiError.WrapWithMsg(err, apiError.ErrRefNotFound23503, "profile picture not found")
 			}
 			return "", pqErr
 		}
@@ -189,10 +189,10 @@ func (u *UserCon) SelectProfilePicture(userId string, params *user.ProfilePicQue
 	err := u.conn.SelectContext(ctx, &profilePics, query, args...)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, common.WrapError(err, common.ErrResourceNotFound)
+			return nil, apiError.Wrap(err, apiError.ErrResourceNotFound)
 		}
 		if errors.Is(err, context.Canceled) {
-			return nil, common.WrapError(err, common.ErrTooLongAccessingDB)
+			return nil, apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		return nil, err
 	}
@@ -209,7 +209,7 @@ func (u *UserCon) ProfilePicSelectedToFalse(userId string) (int64, error) {
 	res, err := u.conn.ExecContext(ctx, query, userId)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return 0, common.WrapError(err, common.ErrTooLongAccessingDB)
+			return 0, apiError.Wrap(err, apiError.ErrTooLongAccessingDB)
 		}
 		return 0, err
 	}

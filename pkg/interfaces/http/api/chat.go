@@ -6,10 +6,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	"github.com/xyedo/blindate/pkg/domain/chat"
 	chatEntity "github.com/xyedo/blindate/pkg/domain/chat/entities"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 // TODO: Create chat_test.go
@@ -163,7 +163,7 @@ func (cha *Chat) getMessagesHandler(c *gin.Context) {
 	convoId := c.GetString("convId")
 	dtoChats, err := cha.chatSvc.GetMessages(convoId, chatQueryFilter)
 	if err != nil {
-		if errors.Is(err, common.ErrTooLongAccessingDB) {
+		if errors.Is(err, apiError.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)
 			return
 		}
@@ -194,9 +194,9 @@ func (chat *Chat) deleteMessagesByIdHandler(c *gin.Context) {
 	chatId := c.GetString("chatId")
 	if err := chat.chatSvc.DeleteMessagesById(chatId); err != nil {
 		switch {
-		case errors.Is(err, common.ErrRefNotFound23503):
+		case errors.Is(err, apiError.ErrRefNotFound23503):
 			errNotFoundResp(c, "provided chatId in url is not found!")
-		case errors.Is(err, common.ErrTooLongAccessingDB):
+		case errors.Is(err, apiError.ErrTooLongAccessingDB):
 			errResourceConflictResp(c)
 		default:
 			errServerResp(c, err)

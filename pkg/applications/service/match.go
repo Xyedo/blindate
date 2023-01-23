@@ -1,11 +1,12 @@
 package service
 
 import (
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
 	"github.com/xyedo/blindate/pkg/domain/event"
 	"github.com/xyedo/blindate/pkg/domain/location"
 	"github.com/xyedo/blindate/pkg/domain/match"
 	matchEntity "github.com/xyedo/blindate/pkg/domain/match/entities"
+	"github.com/xyedo/blindate/pkg/domain/user"
 )
 
 func NewMatch(matchRepo match.Repository, locationRepo location.Repository) *Match {
@@ -30,7 +31,7 @@ func (m *Match) FindUserToMatch(userId string) ([]matchEntity.UserDTO, error) {
 		return nil, err
 	}
 	if len(toUsers) == 0 {
-		return nil, common.ErrResourceNotFound
+		return nil, apiError.Wrap(user.ErrNoUserToMatch, apiError.ErrResourceNotFound)
 	}
 
 	return toUsers, nil
@@ -60,14 +61,14 @@ func (m *Match) RequestChange(matchId string, matchStatus matchEntity.Status) er
 	switch matchStatus {
 	case matchEntity.Requested:
 		if matchDAO.RequestStatus != string(matchEntity.Unknown) {
-			return ErrInvalidMatchStatus
+			return apiError.Wrap(match.ErrInvalidMatchStatus, apiError.ErrForbiddenAccess)
 		}
 		matchDAO.RequestStatus = string(matchEntity.Requested)
 	case matchEntity.Declined:
 		matchDAO.RequestStatus = string(matchEntity.Declined)
 	case matchEntity.Accepted:
 		if matchDAO.RequestStatus != string(matchEntity.Requested) {
-			return ErrInvalidMatchStatus
+			return apiError.Wrap(match.ErrInvalidMatchStatus, apiError.ErrForbiddenAccess)
 		}
 		matchDAO.RequestStatus = string(matchEntity.Accepted)
 	}
@@ -84,12 +85,12 @@ func (m *Match) RevealChange(matchId string, matchStatus matchEntity.Status) err
 		return err
 	}
 	if matchDAO.RequestStatus != string(matchEntity.Accepted) {
-		return ErrInvalidMatchStatus
+		return apiError.Wrap(match.ErrInvalidMatchStatus, apiError.ErrForbiddenAccess)
 	}
 	switch matchStatus {
 	case matchEntity.Requested:
 		if matchDAO.RevealStatus != string(matchEntity.Unknown) {
-			return ErrInvalidMatchStatus
+			return apiError.Wrap(match.ErrInvalidMatchStatus, apiError.ErrForbiddenAccess)
 		}
 		matchDAO.RevealStatus = string(matchEntity.Requested)
 		event.MatchRevealed.Trigger(event.MatchRevealedPayload{
@@ -98,7 +99,7 @@ func (m *Match) RevealChange(matchId string, matchStatus matchEntity.Status) err
 		})
 	case matchEntity.Declined:
 		if matchDAO.RevealStatus == string(matchEntity.Unknown) {
-			return ErrInvalidMatchStatus
+			return apiError.Wrap(match.ErrInvalidMatchStatus, apiError.ErrForbiddenAccess)
 		}
 		matchDAO.RevealStatus = string(matchEntity.Declined)
 		event.MatchRevealed.Trigger(event.MatchRevealedPayload{
@@ -107,7 +108,7 @@ func (m *Match) RevealChange(matchId string, matchStatus matchEntity.Status) err
 		})
 	case matchEntity.Accepted:
 		if matchDAO.RevealStatus != string(matchEntity.Requested) {
-			return ErrInvalidMatchStatus
+			return apiError.Wrap(match.ErrInvalidMatchStatus, apiError.ErrForbiddenAccess)
 		}
 		matchDAO.RevealStatus = string(matchEntity.Accepted)
 		event.MatchRevealed.Trigger(event.MatchRevealedPayload{

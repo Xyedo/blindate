@@ -2,11 +2,11 @@ package service
 
 import (
 	"errors"
-	"net/http"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/domain/authentication"
 )
 
 type customClaims struct {
@@ -64,7 +64,7 @@ func generateToken(id, secret string, expires string) (string, error) {
 func validateToken(token, secret string) (string, error) {
 	decodedToken, err := jwt.ParseWithClaims(token, &customClaims{}, func(t *jwt.Token) (interface{}, error) {
 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, common.ErrNotMatchCredential
+			return nil, apiError.Wrap(authentication.ErrInvalidCred, apiError.ErrNotMatchCredential)
 		}
 		return []byte(secret), nil
 	})
@@ -72,14 +72,14 @@ func validateToken(token, secret string) (string, error) {
 		var jwtErr *jwt.ValidationError
 		if errors.As(err, &jwtErr) {
 			if jwtErr.Errors == jwt.ValidationErrorExpired {
-				return "", common.WrapWithNewError(err, http.StatusUnauthorized, "token is expired, please auth again!")
+				return "", apiError.WrapWithMsg(err, apiError.ErrNotMatchCredential, "token is expired, please auth again!")
 			}
 		}
-		return "", common.WrapError(err, common.ErrNotMatchCredential)
+		return "", apiError.Wrap(err, apiError.ErrNotMatchCredential)
 	}
 	claims, ok := decodedToken.Claims.(*customClaims)
 	if !ok || !decodedToken.Valid {
-		return "", common.ErrNotMatchCredential
+		return "", apiError.ErrNotMatchCredential
 	}
 
 	return claims.CredentialId, nil

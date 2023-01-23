@@ -6,9 +6,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/xyedo/blindate/pkg/common"
+	apiError "github.com/xyedo/blindate/pkg/common/error"
+	"github.com/xyedo/blindate/pkg/common/util"
 	"github.com/xyedo/blindate/pkg/infra/repository"
-	"github.com/xyedo/blindate/pkg/util"
 )
 
 var (
@@ -32,7 +32,7 @@ func Test_VerifyRefreshToken(t *testing.T) {
 		assert.NoError(t, err)
 		err = auth.VerifyRefreshToken(token)
 		assert.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrNotMatchCredential)
+		assert.ErrorIs(t, err, apiError.ErrNotMatchCredential)
 	})
 }
 
@@ -48,7 +48,7 @@ func Test_DeleteRefreshToken(t *testing.T) {
 		assert.NoError(t, err)
 		err = auth.DeleteRefreshToken(token)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, common.ErrResourceNotFound)
+		assert.ErrorIs(t, err, apiError.ErrResourceNotFound)
 	})
 }
 
