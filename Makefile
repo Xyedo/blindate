@@ -1,5 +1,5 @@
 
-MG_PATH=./pkg/infra/repository/migrations
+MG_PATH=./pkg/migrations
 
 migrate-up: 
 	migrate -path $(MG_PATH) -database $(DB_DSN) up
