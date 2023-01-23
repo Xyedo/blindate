@@ -15,19 +15,19 @@ import (
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xyedo/blindate/pkg/applications/service"
 	"github.com/xyedo/blindate/pkg/common"
-	"github.com/xyedo/blindate/pkg/domain"
-	mockrepo "github.com/xyedo/blindate/pkg/repository/mock"
-	"github.com/xyedo/blindate/pkg/service"
+	onlineEntity "github.com/xyedo/blindate/pkg/domain/online/entities"
+	mockrepo "github.com/xyedo/blindate/pkg/infra/repository/mock"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
 type onlineUserMatcher struct {
-	arg domain.Online
+	arg onlineEntity.DTO
 }
 
 func (e onlineUserMatcher) Matches(x any) bool {
-	arg, ok := x.(domain.Online)
+	arg, ok := x.(onlineEntity.DTO)
 	if !ok {
 		return false
 	}
@@ -38,7 +38,7 @@ func (e onlineUserMatcher) String() string {
 	return fmt.Sprintf("matches arg %v", e.arg)
 }
 
-func EqOnlineUser(arg domain.Online) gomock.Matcher {
+func EqOnlineUser(arg onlineEntity.DTO) gomock.Matcher {
 	return onlineUserMatcher{
 		arg: arg,
 	}
@@ -58,7 +58,7 @@ func Test_postUserOnlineHandler(t *testing.T) {
 			userId: validUserId,
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
-				online := domain.Online{
+				online := onlineEntity.DTO{
 					UserId:     validUserId,
 					LastOnline: time.Now(),
 					IsOnline:   false,
@@ -78,7 +78,7 @@ func Test_postUserOnlineHandler(t *testing.T) {
 			userId: validUserId,
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
-				online := domain.Online{
+				online := onlineEntity.DTO{
 					UserId:     validUserId,
 					LastOnline: time.Now(),
 					IsOnline:   false,
@@ -103,7 +103,7 @@ func Test_postUserOnlineHandler(t *testing.T) {
 			userId: validUserId,
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
-				online := domain.Online{
+				online := onlineEntity.DTO{
 					UserId:     validUserId,
 					LastOnline: time.Now(),
 					IsOnline:   false,
@@ -167,7 +167,7 @@ func Test_getUserOnlineHandler(t *testing.T) {
 			userId: validUserId,
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
-				online := domain.Online{
+				online := onlineEntity.DTO{
 					UserId:     validUserId,
 					LastOnline: time.Now(),
 					IsOnline:   false,
@@ -184,7 +184,7 @@ func Test_getUserOnlineHandler(t *testing.T) {
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Online {
 				onlineRepo := mockrepo.NewMockOnline(ctrl)
 				onlineRepo.EXPECT().SelectOnline(gomock.Eq(validUserId)).Times(1).
-					Return(domain.Online{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
+					Return(onlineEntity.DTO{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
 				onlineSvc := service.NewOnline(onlineRepo)
 				return NewOnline(onlineSvc)
 			},

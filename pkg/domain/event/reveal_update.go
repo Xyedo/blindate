@@ -1,12 +1,14 @@
 package event
 
-import "github.com/xyedo/blindate/pkg/domain"
+import (
+	matchEntity "github.com/xyedo/blindate/pkg/domain/match/entities"
+)
 
 var MatchRevealed matchRevealed
 
 type MatchRevealedPayload struct {
 	MatchId     string
-	MatchStatus domain.MatchStatus
+	MatchStatus matchEntity.Status
 }
 
 type matchRevealed struct {

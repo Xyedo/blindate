@@ -17,7 +17,7 @@ type BasicInfo struct {
 	basicInfoRepo basicinfo.Repository
 }
 
-func (b *BasicInfo) CreateBasicInfo(bInfo basicInfoEntity.FullDTO) error {
+func (b *BasicInfo) CreateBasicInfo(bInfo basicInfoEntity.DTO) error {
 	err := b.basicInfoRepo.InsertBasicInfo(b.domainToEntity(bInfo))
 	if err != nil {
 		return err
@@ -25,10 +25,10 @@ func (b *BasicInfo) CreateBasicInfo(bInfo basicInfoEntity.FullDTO) error {
 	return nil
 }
 
-func (b *BasicInfo) GetBasicInfoByUserId(id string) (basicInfoEntity.FullDTO, error) {
+func (b *BasicInfo) GetBasicInfoByUserId(id string) (basicInfoEntity.DTO, error) {
 	basicInfo, err := b.basicInfoRepo.GetBasicInfoByUserId(id)
 	if err != nil {
-		return basicInfoEntity.FullDTO{}, err
+		return basicInfoEntity.DTO{}, err
 	}
 
 	return b.entityToDomain(basicInfo), nil
@@ -80,8 +80,8 @@ func (b *BasicInfo) UpdateBasicInfo(userId string, newBasicInfo basicInfoEntity.
 	return nil
 }
 
-func (BasicInfo) entityToDomain(basicInfo basicInfoEntity.Dao) basicInfoEntity.FullDTO {
-	return basicInfoEntity.FullDTO{
+func (BasicInfo) entityToDomain(basicInfo basicInfoEntity.DAO) basicInfoEntity.DTO {
+	return basicInfoEntity.DTO{
 		UserId:           basicInfo.UserId,
 		Gender:           basicInfo.Gender,
 		FromLoc:          newString(basicInfo.FromLoc),
@@ -98,8 +98,8 @@ func (BasicInfo) entityToDomain(basicInfo basicInfoEntity.Dao) basicInfoEntity.F
 		UpdatedAt:        basicInfo.UpdatedAt,
 	}
 }
-func (BasicInfo) domainToEntity(basicInfo basicInfoEntity.FullDTO) basicInfoEntity.Dao {
-	return basicInfoEntity.Dao{
+func (BasicInfo) domainToEntity(basicInfo basicInfoEntity.DTO) basicInfoEntity.DAO {
+	return basicInfoEntity.DAO{
 		UserId:           basicInfo.UserId,
 		Gender:           basicInfo.Gender,
 		FromLoc:          newNullString(basicInfo.FromLoc),

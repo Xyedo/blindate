@@ -3,18 +3,18 @@ package gateway
 import (
 	"log"
 
-	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/service"
+	"github.com/xyedo/blindate/pkg/applications/service"
+	websocketEntity "github.com/xyedo/blindate/pkg/domain/ws"
 )
 
-type WsDeps struct {
+type Deps struct {
 	Ws         *service.Ws
 	ChatSvc    *service.Chat
 	MatchSvc   *service.Match
 	OnlinceSvc *service.Online
 }
 
-func (d *WsDeps) ListenToWsChan() {
+func (d *Deps) ListenToWsChan() {
 	for {
 		event := <-d.Ws.WsChan
 		switch event.Action {
@@ -36,7 +36,7 @@ func (d *WsDeps) ListenToWsChan() {
 	}
 
 }
-func (d *WsDeps) OnLeaving(event domain.WsPayload) {
+func (d *Deps) OnLeaving(event websocketEntity.Payload) {
 	userId, ok := d.Ws.Clients.Get(event.Conn)
 	if !ok {
 		return
@@ -45,13 +45,13 @@ func (d *WsDeps) OnLeaving(event domain.WsPayload) {
 
 }
 
-func (d *WsDeps) OnSimpleAction(event domain.WsPayload, action string) {
+func (d *Deps) OnSimpleAction(event websocketEntity.Payload, action string) {
 	sendToConversation := func(toUserId, convId string) {
 		socket, ok := d.Ws.ReverseClient.Get(toUserId)
 		if !ok {
 			return
 		}
-		err := socket.WriteJSON(domain.WsResponse{
+		err := socket.WriteJSON(websocketEntity.Response{
 			Action: action,
 			Data: map[string]any{
 				"convId": convId,
@@ -71,7 +71,7 @@ func (d *WsDeps) OnSimpleAction(event domain.WsPayload, action string) {
 	sendToConversation(match.RequestFrom, convId)
 	sendToConversation(match.RequestTo, convId)
 }
-func (d *WsDeps) removingUser(socket domain.WsConn, userId string) {
+func (d *Deps) removingUser(socket websocketEntity.Conn, userId string) {
 	_ = socket.Close()
 	d.Ws.Clients.Delete(socket)
 	d.Ws.ReverseClient.Delete(userId)

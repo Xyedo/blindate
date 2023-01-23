@@ -30,8 +30,8 @@ type Auth struct {
 }
 
 func (a *Auth) postAuthHandler(c *gin.Context) {
-	var input authEntity.Login
-	err := c.ShouldBindJSON(&input)
+	var loginPayload authEntity.Login
+	err := c.ShouldBindJSON(&loginPayload)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"email":    "required and must be valid email",
@@ -43,7 +43,7 @@ func (a *Auth) postAuthHandler(c *gin.Context) {
 		}
 		return
 	}
-	accessToken, refreshToken, err := a.authService.Login(input.Email, input.Password)
+	accessToken, refreshToken, err := a.authService.Login(loginPayload.Email, loginPayload.Password)
 	if err != nil {
 		jsonHandleError(c, err)
 		return

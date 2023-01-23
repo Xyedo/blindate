@@ -1,11 +1,13 @@
 package event
 
-import "github.com/xyedo/blindate/pkg/domain"
+import (
+	chatEntity "github.com/xyedo/blindate/pkg/domain/chat/entities"
+)
 
 var ChatCreated chatCreated
 
 type ChatCreatedPayload struct {
-	Chat   []domain.Chat
+	Chat   []chatEntity.DTO
 	ConvId string
 }
 

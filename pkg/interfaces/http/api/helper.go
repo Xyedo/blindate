@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/xyedo/blindate/pkg/common"
-	"github.com/xyedo/blindate/pkg/domain"
+	attachmentEntity "github.com/xyedo/blindate/pkg/domain/attachment"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
@@ -98,7 +98,7 @@ func uploadFile(c *gin.Context, uploader attachmentManager, validMimeTypes []str
 		errUnprocessableEntityResp(c, "not valid mime-type")
 		return "", ""
 	}
-	key, err = uploader.UploadBlob(file, domain.Uploader{
+	key, err = uploader.UploadBlob(file, attachmentEntity.Uploader{
 		Length:      fileHeader.Size,
 		ContentType: contentType,
 		Prefix:      prefix,

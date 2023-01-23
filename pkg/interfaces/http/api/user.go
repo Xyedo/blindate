@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xyedo/blindate/pkg/domain"
+	attachmentEntity "github.com/xyedo/blindate/pkg/domain/attachment"
 	userEntity "github.com/xyedo/blindate/pkg/domain/user/entities"
 )
 
@@ -18,7 +18,7 @@ type userSvc interface {
 }
 
 type attachmentManager interface {
-	UploadBlob(file io.Reader, attach domain.Uploader) (string, error)
+	UploadBlob(file io.Reader, attach attachmentEntity.Uploader) (string, error)
 }
 
 func NewUser(userSvc userSvc, attachmentSvc attachmentManager) *User {

@@ -1,4 +1,4 @@
-package domain
+package attachmentEntity
 
 type Uploader struct {
 	Length      int64

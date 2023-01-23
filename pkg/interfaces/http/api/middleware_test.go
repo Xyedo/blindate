@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
-	"github.com/xyedo/blindate/pkg/service"
+	"github.com/xyedo/blindate/pkg/applications/service"
 	"github.com/xyedo/blindate/pkg/util"
 )
 

@@ -35,10 +35,10 @@ func (m *MockBasicInfo) EXPECT() *MockBasicInfoMockRecorder {
 }
 
 // GetBasicInfoByUserId mocks base method.
-func (m *MockBasicInfo) GetBasicInfoByUserId(arg0 string) (basicInfoEntity.Dao, error) {
+func (m *MockBasicInfo) GetBasicInfoByUserId(arg0 string) (basicInfoEntity.DAO, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetBasicInfoByUserId", arg0)
-	ret0, _ := ret[0].(basicInfoEntity.Dao)
+	ret0, _ := ret[0].(basicInfoEntity.DAO)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -50,7 +50,7 @@ func (mr *MockBasicInfoMockRecorder) GetBasicInfoByUserId(arg0 interface{}) *gom
 }
 
 // InsertBasicInfo mocks base method.
-func (m *MockBasicInfo) InsertBasicInfo(arg0 basicInfoEntity.Dao) error {
+func (m *MockBasicInfo) InsertBasicInfo(arg0 basicInfoEntity.DAO) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "InsertBasicInfo", arg0)
 	ret0, _ := ret[0].(error)
@@ -64,7 +64,7 @@ func (mr *MockBasicInfoMockRecorder) InsertBasicInfo(arg0 interface{}) *gomock.C
 }
 
 // UpdateBasicInfo mocks base method.
-func (m *MockBasicInfo) UpdateBasicInfo(arg0 basicInfoEntity.Dao) error {
+func (m *MockBasicInfo) UpdateBasicInfo(arg0 basicInfoEntity.DAO) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateBasicInfo", arg0)
 	ret0, _ := ret[0].(error)

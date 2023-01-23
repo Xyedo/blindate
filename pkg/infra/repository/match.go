@@ -229,7 +229,7 @@ func (m *MatchConn) UpdateMatchById(matchDAO matchEntity.MatchDAO) error {
 }
 func (*MatchConn) createCandidatematch(row sqlx.ColScanner) (matchEntity.FullUserDTO, error) {
 	var newMatch matchEntity.FullUserDTO
-	var newBasicInfo basicInfoEntity.Dao
+	var newBasicInfo basicInfoEntity.DAO
 	var newBasicInfoGender sql.NullString
 	var newBasicInfoLookingFor sql.NullString
 	var newMatchBioId sql.NullString

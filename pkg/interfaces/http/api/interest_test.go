@@ -14,10 +14,10 @@ import (
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xyedo/blindate/pkg/applications/service"
 	"github.com/xyedo/blindate/pkg/common"
-	"github.com/xyedo/blindate/pkg/domain"
-	mockrepo "github.com/xyedo/blindate/pkg/repository/mock"
-	"github.com/xyedo/blindate/pkg/service"
+	interestEntity "github.com/xyedo/blindate/pkg/domain/interest/entities"
+	mockrepo "github.com/xyedo/blindate/pkg/infra/repository/mock"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
@@ -39,7 +39,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 			}`, "alah lo"),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				interest := &domain.Bio{
+				interest := &interestEntity.BioDTO{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Bio:    "alah lo",
 				}
@@ -66,7 +66,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 			}`, "alah lo"),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				interest := &domain.Bio{
+				interest := &interestEntity.BioDTO{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Bio:    "alah lo",
 				}
@@ -106,7 +106,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				interest := &domain.Bio{
+				interest := &interestEntity.BioDTO{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Bio:    "",
 				}
@@ -130,7 +130,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				interest := &domain.Bio{
+				interest := &interestEntity.BioDTO{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Bio:    "alah lo",
 				}
@@ -154,7 +154,7 @@ func Test_postInterestBioHandler(t *testing.T) {
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				interest := &domain.Bio{
+				interest := &interestEntity.BioDTO{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Bio:    "alah lo",
 				}
@@ -201,8 +201,8 @@ func Test_postInterestBioHandler(t *testing.T) {
 
 func Test_getInterestBioHandler(t *testing.T) {
 	validId := util.RandomUUID()
-	validBio := domain.Interest{
-		Bio: domain.Bio{
+	validBio := interestEntity.FullDTO{
+		BioDTO: interestEntity.BioDTO{
 			Id:     util.RandomUUID(),
 			UserId: validId,
 			Bio:    "apa sih loe",
@@ -239,7 +239,7 @@ func Test_getInterestBioHandler(t *testing.T) {
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 
-				interestRepo.EXPECT().GetInterest(gomock.Eq(validId)).Times(1).Return(domain.Interest{}, common.ErrResourceNotFound)
+				interestRepo.EXPECT().GetInterest(gomock.Eq(validId)).Times(1).Return(interestEntity.FullDTO{}, common.ErrResourceNotFound)
 				interestSvc := service.NewInterest(interestRepo)
 				return NewInterest(interestSvc)
 			},
@@ -294,7 +294,7 @@ func Test_putInterestBioHandler(t *testing.T) {
 			}`,
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				validBio := domain.Bio{
+				validBio := interestEntity.BioDTO{
 					Id:     util.RandomUUID(),
 					UserId: validId,
 					Bio:    "old bio",
@@ -342,7 +342,7 @@ func Test_putInterestBioHandler(t *testing.T) {
 			}`,
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				validBio := domain.Bio{
+				validBio := interestEntity.BioDTO{
 					Id:     util.RandomUUID(),
 					UserId: validId,
 					Bio:    "old bio",
@@ -390,7 +390,7 @@ func Test_putInterestBioHandler(t *testing.T) {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
 
 				interestRepo.EXPECT().SelectInterestBio(gomock.Any()).Times(1).
-					Return(domain.Bio{}, common.WrapErrorWithMsg(
+					Return(interestEntity.BioDTO{}, common.WrapErrorWithMsg(
 						&pq.Error{Code: "23503", Constraint: "user_id"},
 						common.ErrRefNotFound23503,
 						"userId is not invalid"),
@@ -450,14 +450,14 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 			}`, validHobbies),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				hobbies := make([]domain.Hobbie, 0)
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies := make([]interestEntity.HobbieDTO, 0)
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "main",
 				})
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "mendaki",
 				})
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "coding",
 				})
 				interestRepo.EXPECT().InsertInterestHobbies(gomock.Eq(validId), gomock.Eq(hobbies)).Times(1).Return(nil)
@@ -491,29 +491,29 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 			}`, `["main", "mendaki","coding", "gatau", "pengen", "lebih", "dari", "sepuluh"]`),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				hobbies := make([]domain.Hobbie, 0, 11)
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies := make([]interestEntity.HobbieDTO, 0, 11)
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "main",
 				})
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "mendaki",
 				})
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "coding",
 				})
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "gatau",
 				})
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "pengen",
 				})
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "lebih",
 				})
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "dari",
 				})
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "sepuluh",
 				})
 				pqErr := pq.Error{Code: "23514", Constraint: "interests_statistics_hobbie_count_chk"}
@@ -600,14 +600,14 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 			}`, validHobbies),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				hobbies := make([]domain.Hobbie, 0)
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies := make([]interestEntity.HobbieDTO, 0)
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "main",
 				})
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "mendaki",
 				})
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "coding",
 				})
 				pqErr := pq.Error{Code: "23503", Constraint: "interest_id_ref"}
@@ -630,14 +630,14 @@ func Test_postInterestHobbiesHandler(t *testing.T) {
 			}`, validHobbies),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				hobbies := make([]domain.Hobbie, 0)
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies := make([]interestEntity.HobbieDTO, 0)
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "main",
 				})
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "mendaki",
 				})
-				hobbies = append(hobbies, domain.Hobbie{
+				hobbies = append(hobbies, interestEntity.HobbieDTO{
 					Hobbie: "coding",
 				})
 				pqErr := pq.Error{Code: "23505", Constraint: "hobbie_unique"}
@@ -714,7 +714,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 			name:       "valid Body",
 			interestId: validId,
 			reqBody: map[string]any{
-				"hobbies": []domain.Hobbie{
+				"hobbies": []interestEntity.HobbieDTO{
 					{
 						Hobbie: "playing",
 					},
@@ -722,7 +722,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				hobbies := []domain.Hobbie{
+				hobbies := []interestEntity.HobbieDTO{
 					{
 						Hobbie: "playing",
 					},
@@ -747,7 +747,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 			name:       "duplicate hobbie in db level",
 			interestId: validId,
 			reqBody: map[string]any{
-				"hobbies": []domain.Hobbie{
+				"hobbies": []interestEntity.HobbieDTO{
 					{
 						Hobbie: "playing",
 					},
@@ -755,7 +755,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				hobbies := []domain.Hobbie{
+				hobbies := []interestEntity.HobbieDTO{
 					{
 						Hobbie: "playing",
 					},
@@ -779,7 +779,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 			name:       "hobbies more than 10",
 			interestId: validId,
 			reqBody: map[string]any{
-				"hobbies": []domain.Hobbie{
+				"hobbies": []interestEntity.HobbieDTO{
 					{
 						Hobbie: "playing",
 					},
@@ -787,7 +787,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				hobbies := []domain.Hobbie{
+				hobbies := []interestEntity.HobbieDTO{
 					{
 						Hobbie: "playing",
 					},
@@ -811,7 +811,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 			name:       "invalid Ref Id",
 			interestId: validId,
 			reqBody: map[string]any{
-				"hobbies": []domain.Hobbie{
+				"hobbies": []interestEntity.HobbieDTO{
 					{
 						Hobbie: "playing",
 					},
@@ -819,7 +819,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				hobbies := []domain.Hobbie{
+				hobbies := []interestEntity.HobbieDTO{
 					{
 						Hobbie: "playing",
 					},
@@ -839,7 +839,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 			name:       "non-unique hobbies",
 			interestId: validId,
 			reqBody: map[string]any{
-				"hobbies": []domain.Hobbie{
+				"hobbies": []interestEntity.HobbieDTO{
 					{
 						Hobbie: "playing",
 					},
@@ -850,7 +850,7 @@ func Test_putInterestHobbiesHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				hobbies := []domain.Hobbie{
+				hobbies := []interestEntity.HobbieDTO{
 					{
 						Hobbie: "playing",
 					},
@@ -1049,14 +1049,14 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 			}`, validMovieSeries),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				movieSeries := make([]domain.MovieSerie, 0)
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries := make([]interestEntity.MovieSerieDTO, 0)
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "main",
 				})
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "mendaki",
 				})
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "coding",
 				})
 				interestRepo.EXPECT().InsertInterestMovieSeries(gomock.Eq(validId), gomock.Eq(movieSeries)).Times(1).Return(nil)
@@ -1090,29 +1090,29 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 			}`, `["main", "mendaki","coding", "gatau", "pengen", "lebih", "dari", "sepuluh"]`),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				movieSeries := make([]domain.MovieSerie, 0, 11)
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries := make([]interestEntity.MovieSerieDTO, 0, 11)
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "main",
 				})
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "mendaki",
 				})
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "coding",
 				})
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "gatau",
 				})
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "pengen",
 				})
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "lebih",
 				})
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "dari",
 				})
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "sepuluh",
 				})
 				pqErr := pq.Error{Code: "23514", Constraint: "interests_statistics_movie_serie_count_chk"}
@@ -1199,14 +1199,14 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 			}`, validMovieSeries),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				movieSeries := make([]domain.MovieSerie, 0)
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries := make([]interestEntity.MovieSerieDTO, 0)
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "main",
 				})
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "mendaki",
 				})
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "coding",
 				})
 				pqErr := pq.Error{Code: "23503", Constraint: "interest_id_ref"}
@@ -1229,14 +1229,14 @@ func Test_postInterestMovieSeriesHandler(t *testing.T) {
 			}`, validMovieSeries),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				movieSeries := make([]domain.MovieSerie, 0)
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries := make([]interestEntity.MovieSerieDTO, 0)
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "main",
 				})
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "mendaki",
 				})
-				movieSeries = append(movieSeries, domain.MovieSerie{
+				movieSeries = append(movieSeries, interestEntity.MovieSerieDTO{
 					MovieSerie: "coding",
 				})
 				pqErr := pq.Error{Code: "23505", Constraint: "movie_serie_unique"}
@@ -1313,7 +1313,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 			name:       "valid Body",
 			interestId: validId,
 			reqBody: map[string]any{
-				"movieSeries": []domain.MovieSerie{
+				"movieSeries": []interestEntity.MovieSerieDTO{
 					{
 						MovieSerie: "playing",
 					},
@@ -1321,7 +1321,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				movieSeries := []domain.MovieSerie{
+				movieSeries := []interestEntity.MovieSerieDTO{
 					{
 						MovieSerie: "playing",
 					},
@@ -1346,7 +1346,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 			name:       "duplicate movieSeries in db level",
 			interestId: validId,
 			reqBody: map[string]any{
-				"movieSeries": []domain.MovieSerie{
+				"movieSeries": []interestEntity.MovieSerieDTO{
 					{
 						MovieSerie: "playing",
 					},
@@ -1354,7 +1354,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				movieSeries := []domain.MovieSerie{
+				movieSeries := []interestEntity.MovieSerieDTO{
 					{
 						MovieSerie: "playing",
 					},
@@ -1378,7 +1378,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 			name:       "movieSeries more than 10",
 			interestId: validId,
 			reqBody: map[string]any{
-				"movieSeries": []domain.MovieSerie{
+				"movieSeries": []interestEntity.MovieSerieDTO{
 					{
 						MovieSerie: "playing",
 					},
@@ -1386,7 +1386,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				movieSeries := []domain.MovieSerie{
+				movieSeries := []interestEntity.MovieSerieDTO{
 					{
 						MovieSerie: "playing",
 					},
@@ -1410,7 +1410,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 			name:       "invalid Ref Id",
 			interestId: validId,
 			reqBody: map[string]any{
-				"movieSeries": []domain.MovieSerie{
+				"movieSeries": []interestEntity.MovieSerieDTO{
 					{
 						MovieSerie: "playing",
 					},
@@ -1418,7 +1418,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				movieSeries := []domain.MovieSerie{
+				movieSeries := []interestEntity.MovieSerieDTO{
 					{
 						MovieSerie: "playing",
 					},
@@ -1438,7 +1438,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 			name:       "non-unique hobbies",
 			interestId: validId,
 			reqBody: map[string]any{
-				"movieSeries": []domain.MovieSerie{
+				"movieSeries": []interestEntity.MovieSerieDTO{
 					{
 						MovieSerie: "playing",
 					},
@@ -1449,7 +1449,7 @@ func Test_putInterestMovieSeriesHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				movieSeries := []domain.MovieSerie{
+				movieSeries := []interestEntity.MovieSerieDTO{
 					{
 						MovieSerie: "playing",
 					},
@@ -1648,14 +1648,14 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 			}`, validTravels),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				travels := make([]domain.Travel, 0)
-				travels = append(travels, domain.Travel{
+				travels := make([]interestEntity.TravelDTO, 0)
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "main",
 				})
-				travels = append(travels, domain.Travel{
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "mendaki",
 				})
-				travels = append(travels, domain.Travel{
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "coding",
 				})
 				interestRepo.EXPECT().InsertInterestTraveling(gomock.Eq(validId), gomock.Eq(travels)).Times(1).Return(nil)
@@ -1689,29 +1689,29 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 			}`, `["main", "mendaki","coding", "gatau", "pengen", "lebih", "dari", "sepuluh"]`),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				travels := make([]domain.Travel, 0, 11)
-				travels = append(travels, domain.Travel{
+				travels := make([]interestEntity.TravelDTO, 0, 11)
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "main",
 				})
-				travels = append(travels, domain.Travel{
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "mendaki",
 				})
-				travels = append(travels, domain.Travel{
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "coding",
 				})
-				travels = append(travels, domain.Travel{
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "gatau",
 				})
-				travels = append(travels, domain.Travel{
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "pengen",
 				})
-				travels = append(travels, domain.Travel{
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "lebih",
 				})
-				travels = append(travels, domain.Travel{
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "dari",
 				})
-				travels = append(travels, domain.Travel{
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "sepuluh",
 				})
 				pqErr := pq.Error{Code: "23514", Constraint: "interests_statistics_traveling_count_chk"}
@@ -1798,14 +1798,14 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 			}`, validTravels),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				travels := make([]domain.Travel, 0)
-				travels = append(travels, domain.Travel{
+				travels := make([]interestEntity.TravelDTO, 0)
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "main",
 				})
-				travels = append(travels, domain.Travel{
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "mendaki",
 				})
-				travels = append(travels, domain.Travel{
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "coding",
 				})
 				pqErr := pq.Error{Code: "23503", Constraint: "interest_id_ref"}
@@ -1828,14 +1828,14 @@ func Test_postInterestTravelingHandler(t *testing.T) {
 			}`, validTravels),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				travels := make([]domain.Travel, 0)
-				travels = append(travels, domain.Travel{
+				travels := make([]interestEntity.TravelDTO, 0)
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "main",
 				})
-				travels = append(travels, domain.Travel{
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "mendaki",
 				})
-				travels = append(travels, domain.Travel{
+				travels = append(travels, interestEntity.TravelDTO{
 					Travel: "coding",
 				})
 				pqErr := pq.Error{Code: "23505", Constraint: "travel_unique"}
@@ -1913,7 +1913,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 			name:       "valid Body",
 			interestId: validId,
 			reqBody: map[string]any{
-				"travels": []domain.Travel{
+				"travels": []interestEntity.TravelDTO{
 					{
 						Travel: "playing",
 					},
@@ -1921,7 +1921,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				travels := []domain.Travel{
+				travels := []interestEntity.TravelDTO{
 					{
 						Travel: "playing",
 					},
@@ -1946,7 +1946,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 			name:       "duplicate travels in db level",
 			interestId: validId,
 			reqBody: map[string]any{
-				"travels": []domain.Travel{
+				"travels": []interestEntity.TravelDTO{
 					{
 						Travel: "playing",
 					},
@@ -1954,7 +1954,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				travels := []domain.Travel{
+				travels := []interestEntity.TravelDTO{
 					{
 						Travel: "playing",
 					},
@@ -1978,7 +1978,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 			name:       "travels more than 10",
 			interestId: validId,
 			reqBody: map[string]any{
-				"travels": []domain.Travel{
+				"travels": []interestEntity.TravelDTO{
 					{
 						Travel: "playing",
 					},
@@ -1986,7 +1986,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				travels := []domain.Travel{
+				travels := []interestEntity.TravelDTO{
 					{
 						Travel: "playing",
 					},
@@ -2010,7 +2010,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 			name:       "invalid Ref Id",
 			interestId: validId,
 			reqBody: map[string]any{
-				"travels": []domain.Travel{
+				"travels": []interestEntity.TravelDTO{
 					{
 						Travel: "playing",
 					},
@@ -2018,7 +2018,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				travels := []domain.Travel{
+				travels := []interestEntity.TravelDTO{
 					{
 						Travel: "playing",
 					},
@@ -2042,7 +2042,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 			name:       "non-unique hobbies",
 			interestId: validId,
 			reqBody: map[string]any{
-				"travels": []domain.Travel{
+				"travels": []interestEntity.TravelDTO{
 					{
 						Travel: "playing",
 					},
@@ -2053,7 +2053,7 @@ func Test_putInterestTravelingHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				travels := []domain.Travel{
+				travels := []interestEntity.TravelDTO{
 					{
 						Travel: "playing",
 					},
@@ -2252,14 +2252,14 @@ func Test_postInterestSportsHandler(t *testing.T) {
 			}`, validSports),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				sports := make([]domain.Sport, 0)
-				sports = append(sports, domain.Sport{
+				sports := make([]interestEntity.SportDTO, 0)
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "main",
 				})
-				sports = append(sports, domain.Sport{
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "mendaki",
 				})
-				sports = append(sports, domain.Sport{
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "coding",
 				})
 				interestRepo.EXPECT().InsertInterestSports(gomock.Eq(validId), gomock.Eq(sports)).Times(1).Return(nil)
@@ -2293,29 +2293,29 @@ func Test_postInterestSportsHandler(t *testing.T) {
 			}`, `["main", "mendaki","coding", "gatau", "pengen", "lebih", "dari", "sepuluh"]`),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				sports := make([]domain.Sport, 0, 11)
-				sports = append(sports, domain.Sport{
+				sports := make([]interestEntity.SportDTO, 0, 11)
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "main",
 				})
-				sports = append(sports, domain.Sport{
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "mendaki",
 				})
-				sports = append(sports, domain.Sport{
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "coding",
 				})
-				sports = append(sports, domain.Sport{
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "gatau",
 				})
-				sports = append(sports, domain.Sport{
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "pengen",
 				})
-				sports = append(sports, domain.Sport{
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "lebih",
 				})
-				sports = append(sports, domain.Sport{
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "dari",
 				})
-				sports = append(sports, domain.Sport{
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "sepuluh",
 				})
 				pqErr := pq.Error{Code: "23514", Constraint: "interests_statistics_sport_count_chk"}
@@ -2402,14 +2402,14 @@ func Test_postInterestSportsHandler(t *testing.T) {
 			}`, validSports),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				sports := make([]domain.Sport, 0)
-				sports = append(sports, domain.Sport{
+				sports := make([]interestEntity.SportDTO, 0)
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "main",
 				})
-				sports = append(sports, domain.Sport{
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "mendaki",
 				})
-				sports = append(sports, domain.Sport{
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "coding",
 				})
 				pqErr := pq.Error{Code: "23503", Constraint: "interest_id_ref"}
@@ -2432,14 +2432,14 @@ func Test_postInterestSportsHandler(t *testing.T) {
 			}`, validSports),
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				sports := make([]domain.Sport, 0)
-				sports = append(sports, domain.Sport{
+				sports := make([]interestEntity.SportDTO, 0)
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "main",
 				})
-				sports = append(sports, domain.Sport{
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "mendaki",
 				})
-				sports = append(sports, domain.Sport{
+				sports = append(sports, interestEntity.SportDTO{
 					Sport: "coding",
 				})
 				pqErr := pq.Error{Code: "23505", Constraint: "sport_unique"}
@@ -2516,7 +2516,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 			name:       "valid Body",
 			interestId: validId,
 			reqBody: map[string]any{
-				"sports": []domain.Sport{
+				"sports": []interestEntity.SportDTO{
 					{
 						Sport: "playing",
 					},
@@ -2524,7 +2524,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				sports := []domain.Sport{
+				sports := []interestEntity.SportDTO{
 					{
 						Sport: "playing",
 					},
@@ -2549,7 +2549,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 			name:       "duplicate sports in db level",
 			interestId: validId,
 			reqBody: map[string]any{
-				"sports": []domain.Sport{
+				"sports": []interestEntity.SportDTO{
 					{
 						Sport: "playing",
 					},
@@ -2557,7 +2557,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				sports := []domain.Sport{
+				sports := []interestEntity.SportDTO{
 					{
 						Sport: "playing",
 					},
@@ -2581,7 +2581,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 			name:       "sports more than 10",
 			interestId: validId,
 			reqBody: map[string]any{
-				"sports": []domain.Sport{
+				"sports": []interestEntity.SportDTO{
 					{
 						Sport: "playing",
 					},
@@ -2589,7 +2589,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				sports := []domain.Sport{
+				sports := []interestEntity.SportDTO{
 					{
 						Sport: "playing",
 					},
@@ -2613,7 +2613,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 			name:       "invalid Ref Id",
 			interestId: validId,
 			reqBody: map[string]any{
-				"sports": []domain.Sport{
+				"sports": []interestEntity.SportDTO{
 					{
 						Sport: "playing",
 					},
@@ -2621,7 +2621,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				sports := []domain.Sport{
+				sports := []interestEntity.SportDTO{
 					{
 						Sport: "playing",
 					},
@@ -2645,7 +2645,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 			name:       "non-unique sports",
 			interestId: validId,
 			reqBody: map[string]any{
-				"sports": []domain.Sport{
+				"sports": []interestEntity.SportDTO{
 					{
 						Sport: "playing",
 					},
@@ -2656,7 +2656,7 @@ func Test_putInterestSportsHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Interest {
 				interestRepo := mockrepo.NewMockInterest(ctrl)
-				sports := []domain.Sport{
+				sports := []interestEntity.SportDTO{
 					{
 						Sport: "playing",
 					},

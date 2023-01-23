@@ -5,8 +5,10 @@ import (
 	"fmt"
 
 	"github.com/xyedo/blindate/pkg/common"
-	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/repository"
+	"github.com/xyedo/blindate/pkg/domain/conversation"
+	convEntity "github.com/xyedo/blindate/pkg/domain/conversation/entities"
+	"github.com/xyedo/blindate/pkg/domain/match"
+	matchEntity "github.com/xyedo/blindate/pkg/domain/match/entities"
 )
 
 var (
@@ -14,7 +16,7 @@ var (
 	ErrInvalidMatchStatus = errors.New("not yet accepted/revealed in matchId")
 )
 
-func NewConversation(convRepo repository.Conversation, matchRepo repository.Match) *Conversation {
+func NewConversation(convRepo conversation.Repository, matchRepo match.Repository) *Conversation {
 	return &Conversation{
 		convRepo:  convRepo,
 		matchRepo: matchRepo,
@@ -22,16 +24,16 @@ func NewConversation(convRepo repository.Conversation, matchRepo repository.Matc
 }
 
 type Conversation struct {
-	convRepo  repository.Conversation
-	matchRepo repository.Match
+	convRepo  conversation.Repository
+	matchRepo match.Repository
 }
 
 func (c *Conversation) CreateConversation(matchId string) (string, error) {
-	matchEntity, err := c.matchRepo.GetMatchById(matchId)
+	matchDAO, err := c.matchRepo.GetMatchById(matchId)
 	if err != nil {
 		return "", err
 	}
-	if matchEntity.RequestStatus != string(domain.Accepted) {
+	if matchDAO.RequestStatus != string(matchEntity.Accepted) {
 		return "", ErrInvalidMatchStatus
 	}
 	id, err := c.convRepo.InsertConversation(matchId)
@@ -41,13 +43,13 @@ func (c *Conversation) CreateConversation(matchId string) (string, error) {
 	return id, nil
 }
 
-func (c *Conversation) FindConversationById(matchId string) (domain.Conversation, error) {
+func (c *Conversation) FindConversationById(matchId string) (convEntity.DTO, error) {
 	conv, err := c.convRepo.SelectConversationById(matchId)
 	if err != nil {
-		return domain.Conversation{}, err
+		return convEntity.DTO{}, err
 	}
 
-	if conv.RevealStatus != string(domain.Accepted) {
+	if conv.RevealStatus != string(matchEntity.Accepted) {
 		conv.FromUser.FullName = ""
 		conv.FromUser.ProfilePic = ""
 		conv.ToUser.FullName = ""
@@ -57,13 +59,13 @@ func (c *Conversation) FindConversationById(matchId string) (domain.Conversation
 	return conv, nil
 }
 
-func (c *Conversation) GetConversationByUserId(userId string) ([]domain.Conversation, error) {
+func (c *Conversation) GetConversationByUserId(userId string) ([]convEntity.DTO, error) {
 	convs, err := c.convRepo.SelectConversationByUserId(userId, nil)
 	if err != nil {
 		return nil, err
 	}
 	for i := range convs {
-		if convs[i].RevealStatus != string(domain.Accepted) {
+		if convs[i].RevealStatus != string(matchEntity.Accepted) {
 			convs[i].FromUser.FullName = ""
 			convs[i].FromUser.ProfilePic = ""
 			convs[i].ToUser.FullName = ""

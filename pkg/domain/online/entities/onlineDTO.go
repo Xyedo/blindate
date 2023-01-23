@@ -1,4 +1,4 @@
-package onlineEntities
+package onlineEntity
 
 import "time"
 

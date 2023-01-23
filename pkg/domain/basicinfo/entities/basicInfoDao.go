@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-type Dao struct {
+type DAO struct {
 	UserId           string         `db:"user_id"`
 	Gender           string         `db:"gender"`
 	FromLoc          sql.NullString `db:"from_loc"`

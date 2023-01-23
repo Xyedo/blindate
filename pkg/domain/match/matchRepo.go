@@ -1,4 +1,4 @@
-package Match
+package match
 
 import (
 	matchEntity "github.com/xyedo/blindate/pkg/domain/match/entities"

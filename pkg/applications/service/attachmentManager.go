@@ -10,12 +10,12 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/xyedo/blindate/pkg/domain"
+	attachmentEntity "github.com/xyedo/blindate/pkg/domain/attachment"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
 type Attachment interface {
-	UploadBlob(file io.Reader, attach domain.Uploader) (string, error)
+	UploadBlob(file io.Reader, attach attachmentEntity.Uploader) (string, error)
 	DeleteBlob(key string) error
 	GetPresignedUrl(key string) (string, error)
 }
@@ -45,7 +45,7 @@ type attachment struct {
 	bucketName    string
 }
 
-func (a *attachment) UploadBlob(file io.Reader, attach domain.Uploader) (string, error) {
+func (a *attachment) UploadBlob(file io.Reader, attach attachmentEntity.Uploader) (string, error) {
 	//TODO: better error handling
 	key := attach.Prefix + "/" + util.RandomUUID() + attach.Ext
 

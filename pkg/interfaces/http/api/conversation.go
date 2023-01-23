@@ -4,14 +4,14 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xyedo/blindate/pkg/domain"
+	convEntity "github.com/xyedo/blindate/pkg/domain/conversation/entities"
 )
 
 // TODO: Create conversation_test.go
 type conversationSvc interface {
 	CreateConversation(matchId string) (string, error)
-	FindConversationById(convoId string) (domain.Conversation, error)
-	GetConversationByUserId(userId string) ([]domain.Conversation, error)
+	FindConversationById(convoId string) (convEntity.DTO, error)
+	GetConversationByUserId(userId string) ([]convEntity.DTO, error)
 	DeleteConversationById(convoId string) error
 }
 

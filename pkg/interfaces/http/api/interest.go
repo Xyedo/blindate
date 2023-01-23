@@ -5,30 +5,30 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xyedo/blindate/pkg/domain"
+	interestEntity "github.com/xyedo/blindate/pkg/domain/interest/entities"
 )
 
 type interestSvc interface {
-	GetInterest(userId string) (domain.Interest, error)
+	GetInterest(userId string) (interestEntity.FullDTO, error)
 
-	CreateNewBio(intr *domain.Bio) error
-	GetBio(userId string) (domain.Bio, error)
-	PutBio(bio domain.Bio) error
+	CreateNewBio(intr *interestEntity.BioDTO) error
+	GetBio(userId string) (interestEntity.BioDTO, error)
+	PutBio(bio interestEntity.BioDTO) error
 
-	CreateNewHobbies(interestId string, hobbies []string) ([]domain.Hobbie, error)
-	PutHobbies(interestId string, hobbies []domain.Hobbie) error
+	CreateNewHobbies(interestId string, hobbies []string) ([]interestEntity.HobbieDTO, error)
+	PutHobbies(interestId string, hobbies []interestEntity.HobbieDTO) error
 	DeleteHobbies(interestId string, ids []string) ([]string, error)
 
-	CreateNewMovieSeries(interestId string, movieSeries []string) ([]domain.MovieSerie, error)
-	PutMovieSeries(interestId string, movieSeries []domain.MovieSerie) error
+	CreateNewMovieSeries(interestId string, movieSeries []string) ([]interestEntity.MovieSerieDTO, error)
+	PutMovieSeries(interestId string, movieSeries []interestEntity.MovieSerieDTO) error
 	DeleteMovieSeries(interestId string, ids []string) ([]string, error)
 
-	CreateNewTraveling(interestId string, travels []string) ([]domain.Travel, error)
-	PutTraveling(interestId string, travels []domain.Travel) error
+	CreateNewTraveling(interestId string, travels []string) ([]interestEntity.TravelDTO, error)
+	PutTraveling(interestId string, travels []interestEntity.TravelDTO) error
 	DeleteTravels(interestId string, ids []string) ([]string, error)
 
-	CreateNewSports(interestId string, sports []string) ([]domain.Sport, error)
-	PutSports(interestId string, sports []domain.Sport) error
+	CreateNewSports(interestId string, sports []string) ([]interestEntity.SportDTO, error)
+	PutSports(interestId string, sports []interestEntity.SportDTO) error
 	DeleteSports(interestId string, ids []string) ([]string, error)
 }
 
@@ -74,7 +74,7 @@ func (i *Interest) postInterestBioHandler(c *gin.Context) {
 		return
 	}
 	userId := c.GetString(keyUserId)
-	bio := domain.Bio{
+	bio := interestEntity.BioDTO{
 		UserId: userId,
 		Bio:    *input.Bio,
 	}
@@ -169,7 +169,7 @@ func (i *Interest) postInterestHobbiesHandler(c *gin.Context) {
 
 func (i *Interest) putInterestHobbiesHandler(c *gin.Context) {
 	var input struct {
-		Hobbies []domain.Hobbie `json:"hobbies" binding:"required,max=10,unique=Hobbie"`
+		Hobbies []interestEntity.HobbieDTO `json:"hobbies" binding:"required,max=10,unique=Hobbie"`
 	}
 	interestId := c.GetString(keyInterestId)
 	err := c.ShouldBindJSON(&input)
@@ -259,7 +259,7 @@ func (i *Interest) postInterestMovieSeriesHandler(c *gin.Context) {
 }
 func (i *Interest) putInterestMovieSeriesHandler(c *gin.Context) {
 	var input struct {
-		MovieSeries []domain.MovieSerie `json:"movieSeries" binding:"required,max=10,unique=MovieSerie"`
+		MovieSeries []interestEntity.MovieSerieDTO `json:"movieSeries" binding:"required,max=10,unique=MovieSerie"`
 	}
 	interestId := c.GetString(keyInterestId)
 	err := c.ShouldBindJSON(&input)
@@ -351,7 +351,7 @@ func (i *Interest) postInterestTravelingHandler(c *gin.Context) {
 
 func (i *Interest) putInterestTravelingHandler(c *gin.Context) {
 	var input struct {
-		Travels []domain.Travel `json:"travels" binding:"required,max=10,unique=Travel"`
+		Travels []interestEntity.TravelDTO `json:"travels" binding:"required,max=10,unique=Travel"`
 	}
 	interestId := c.GetString(keyInterestId)
 	err := c.ShouldBindJSON(&input)
@@ -441,7 +441,7 @@ func (i *Interest) postInterestSportHandler(c *gin.Context) {
 }
 func (i *Interest) putInterestSportHandler(c *gin.Context) {
 	var input struct {
-		Sports []domain.Sport `json:"sports" binding:"required,max=10,unique=Sport"`
+		Sports []interestEntity.SportDTO `json:"sports" binding:"required,max=10,unique=Sport"`
 	}
 	interestId := c.GetString(keyInterestId)
 	err := c.ShouldBindJSON(&input)

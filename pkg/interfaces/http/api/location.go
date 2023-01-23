@@ -4,13 +4,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xyedo/blindate/pkg/domain"
+	locationEntity "github.com/xyedo/blindate/pkg/domain/location/entities"
 )
 
 type locationSvc interface {
-	CreateNewLocation(location *domain.Location) error
+	CreateNewLocation(location *locationEntity.DTO) error
 	UpdateLocation(userId string, changeLat, changeLng *string) error
-	GetLocation(id string) (domain.Location, error)
+	GetLocation(id string) (locationEntity.DTO, error)
 }
 
 func NewLocation(locationService locationSvc) *Location {
@@ -41,7 +41,7 @@ func (l *Location) postLocationByUserIdHandler(c *gin.Context) {
 		}
 		return
 	}
-	err = l.locationService.CreateNewLocation(&domain.Location{UserId: userId, Lat: input.Lat, Lng: input.Lng})
+	err = l.locationService.CreateNewLocation(&locationEntity.DTO{UserId: userId, Lat: input.Lat, Lng: input.Lng})
 	if err != nil {
 		jsonHandleError(c, err)
 		return

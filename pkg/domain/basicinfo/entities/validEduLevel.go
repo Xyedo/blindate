@@ -1,4 +1,4 @@
-package validation
+package basicInfoEntity
 
 import "github.com/go-playground/validator/v10"
 

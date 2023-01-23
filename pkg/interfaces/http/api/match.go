@@ -4,16 +4,16 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xyedo/blindate/pkg/domain"
+	matchEntity "github.com/xyedo/blindate/pkg/domain/match/entities"
 )
 
 // TODO: Create match_test.go
 type matchSvc interface {
-	FindUserToMatch(userId string) ([]domain.BigUser, error)
-	PostNewMatch(fromUserId, toUserId string, matchStatus domain.MatchStatus) (string, error)
-	GetMatchReqToUserId(userId string) ([]domain.MatchUser, error)
-	RequestChange(matchId string, matchStatus domain.MatchStatus) error
-	RevealChange(matchId string, matchStatus domain.MatchStatus) error
+	FindUserToMatch(userId string) ([]matchEntity.UserDTO, error)
+	PostNewMatch(fromUserId, toUserId string, matchStatus matchEntity.Status) (string, error)
+	GetMatchReqToUserId(userId string) ([]matchEntity.FullUserDTO, error)
+	RequestChange(matchId string, matchStatus matchEntity.Status) error
+	RevealChange(matchId string, matchStatus matchEntity.Status) error
 }
 
 func NewMatch(matchSvc matchSvc) *Match {
@@ -58,7 +58,7 @@ func (m *Match) postNewMatchHandler(c *gin.Context) {
 		return
 	}
 	userId := c.GetString(keyUserId)
-	matchId, err := m.matchSvc.PostNewMatch(userId, input.ToUserId, domain.MatchStatus(input.MatchStatus))
+	matchId, err := m.matchSvc.PostNewMatch(userId, input.ToUserId, matchEntity.Status(input.MatchStatus))
 	if err != nil {
 		jsonHandleError(c, err)
 		return
@@ -101,7 +101,7 @@ func (m *Match) putRequestHandler(c *gin.Context) {
 
 	}
 	matchId := c.GetString(keyMatchId)
-	err := m.matchSvc.RequestChange(matchId, domain.MatchStatus(input.Request))
+	err := m.matchSvc.RequestChange(matchId, matchEntity.Status(input.Request))
 	if err != nil {
 		jsonHandleError(c, err)
 		return
@@ -127,7 +127,7 @@ func (m *Match) putRevealHandler(c *gin.Context) {
 	}
 	matchId := c.GetString(keyMatchId)
 
-	err := m.matchSvc.RevealChange(matchId, domain.MatchStatus(input.Reveal))
+	err := m.matchSvc.RevealChange(matchId, matchEntity.Status(input.Reveal))
 	if err != nil {
 		jsonHandleError(c, err)
 		return

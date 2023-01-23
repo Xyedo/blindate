@@ -6,13 +6,14 @@ import (
 	"strings"
 
 	"github.com/xyedo/blindate/pkg/common"
-	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/domain/entity"
-	"github.com/xyedo/blindate/pkg/event"
-	"github.com/xyedo/blindate/pkg/repository"
+	"github.com/xyedo/blindate/pkg/domain/chat"
+	chatEntity "github.com/xyedo/blindate/pkg/domain/chat/entities"
+	"github.com/xyedo/blindate/pkg/domain/event"
+	"github.com/xyedo/blindate/pkg/domain/match"
+	matchEntity "github.com/xyedo/blindate/pkg/domain/match/entities"
 )
 
-func NewChat(chatRepo repository.Chat, matchRepo repository.Match) *Chat {
+func NewChat(chatRepo chat.Repository, matchRepo match.Repository) *Chat {
 	return &Chat{
 		chatRepo:  chatRepo,
 		matchRepo: matchRepo,
@@ -20,32 +21,32 @@ func NewChat(chatRepo repository.Chat, matchRepo repository.Match) *Chat {
 }
 
 type Chat struct {
-	chatRepo  repository.Chat
-	matchRepo repository.Match
+	chatRepo  chat.Repository
+	matchRepo match.Repository
 }
 
-func (c *Chat) CreateNewChat(content *domain.Chat) error {
-	chatEntity := c.convertToEntity(content)
-	matchEntity, err := c.matchRepo.GetMatchById(chatEntity.ConversationId)
+func (c *Chat) CreateNewChat(content *chatEntity.DTO) error {
+	matchDAO, err := c.matchRepo.GetMatchById(content.ConversationId)
 	if err != nil {
 		return err
 	}
-	if !(chatEntity.Author == matchEntity.RequestFrom || chatEntity.Author == matchEntity.RequestTo) {
+	if !(content.Author == matchDAO.RequestFrom || content.Author == matchDAO.RequestTo) {
 		return common.WrapWithNewError(common.ErrAuthorNotValid, http.StatusForbidden, "author not in this conversation")
 	}
-	if matchEntity.RequestStatus != string(domain.Accepted) {
+	if matchDAO.RequestStatus != string(matchEntity.Accepted) {
 		return ErrInvalidMatchStatus
 	}
-	cleanChats := c.sanitizeChat(chatEntity)
+	chatDAO := c.convertToDAO(*content)
+	cleanChats := c.sanitizeChat(chatDAO)
 	for _, cleanChat := range cleanChats {
-		err = c.chatRepo.InsertNewChat(cleanChat)
+		err = c.chatRepo.InsertNewChat(&cleanChat)
 		if err != nil {
 			return err
 		}
 	}
-	cleanChatDTO := make([]domain.Chat, 0, len(cleanChats))
-	for i := range cleanChats {
-		cleanChatDTO = append(cleanChatDTO, *c.convertToDomain(cleanChats[i]))
+	cleanChatDTO := make([]chatEntity.DTO, 0, len(cleanChats))
+	for _, cleanChat := range cleanChats {
+		cleanChatDTO = append(cleanChatDTO, c.convertToDTO(cleanChat))
 	}
 	event.ChatCreated.Trigger(event.ChatCreatedPayload{
 		Chat:   cleanChatDTO,
@@ -73,17 +74,17 @@ func (c *Chat) UpdateSeenChat(convId, userId string) error {
 	})
 	return nil
 }
-func (c *Chat) GetMessages(convoId string, filter entity.ChatFilter) ([]domain.Chat, error) {
+func (c *Chat) GetMessages(convoId string, filter chat.Filter) ([]chatEntity.DTO, error) {
 	chats, err := c.chatRepo.SelectChat(convoId, filter)
 	if err != nil {
 		return nil, err
 	}
 
-	chatDomain := make([]domain.Chat, 0, len(chats))
+	chatsDTO := make([]chatEntity.DTO, 0, len(chats))
 	for _, chat := range chats {
-		chatDomain = append(chatDomain, *c.convertToDomain(&chat))
+		chatsDTO = append(chatsDTO, c.convertToDTO(chat))
 	}
-	return chatDomain, nil
+	return chatsDTO, nil
 }
 
 func (c *Chat) DeleteMessagesById(chatId string) error {
@@ -93,19 +94,19 @@ func (c *Chat) DeleteMessagesById(chatId string) error {
 	}
 	return nil
 }
-func (*Chat) sanitizeChat(chat *entity.Chat) []*entity.Chat {
+func (*Chat) sanitizeChat(chat chatEntity.DAO) []chatEntity.DAO {
 	chat.Messages = strings.TrimSpace(chat.Messages)
 	if chat.Attachment != nil && chat.Messages != "" {
-		chatWAttach := *chat
-		chatWAttach.Messages = ""
-		chatWoAttach := *chat
-		chatWoAttach.Attachment = nil
-		return []*entity.Chat{&chatWAttach, &chatWoAttach}
+		chatWithoutAttachment := chat
+		chatWithoutAttachment.Attachment = nil
+		chatWithAttachment := chat
+		chatWithAttachment.Messages = ""
+		return []chatEntity.DAO{chatWithoutAttachment, chatWithAttachment}
 	}
-	return []*entity.Chat{chat}
+	return []chatEntity.DAO{chat}
 }
-func (*Chat) convertToEntity(content *domain.Chat) *entity.Chat {
-	chatEntity := &entity.Chat{
+func (*Chat) convertToDAO(content chatEntity.DTO) chatEntity.DAO {
+	chatDAO := chatEntity.DAO{
 		Id:             content.Id,
 		ConversationId: content.ConversationId,
 		Author:         content.Author,
@@ -114,23 +115,23 @@ func (*Chat) convertToEntity(content *domain.Chat) *entity.Chat {
 		Attachment:     content.Attachment,
 	}
 	if content.ReplyTo != nil {
-		chatEntity.ReplyTo = sql.NullString{
+		chatDAO.ReplyTo = sql.NullString{
 			Valid:  true,
 			String: *content.ReplyTo,
 		}
 	}
 	if content.SeenAt != nil {
-		chatEntity.SeenAt = sql.NullTime{
+		chatDAO.SeenAt = sql.NullTime{
 			Valid: true,
 			Time:  *content.SeenAt,
 		}
 	}
 
-	return chatEntity
+	return chatDAO
 }
 
-func (*Chat) convertToDomain(content *entity.Chat) *domain.Chat {
-	chatDomain := &domain.Chat{
+func (*Chat) convertToDTO(content chatEntity.DAO) chatEntity.DTO {
+	chatDomain := chatEntity.DTO{
 		Id:             content.Id,
 		ConversationId: content.ConversationId,
 		Author:         content.Author,

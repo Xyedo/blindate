@@ -14,10 +14,10 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
+	"github.com/xyedo/blindate/pkg/applications/service"
 	"github.com/xyedo/blindate/pkg/common"
-	"github.com/xyedo/blindate/pkg/domain/entity"
-	mockrepo "github.com/xyedo/blindate/pkg/repository/mock"
-	"github.com/xyedo/blindate/pkg/service"
+	locationEntity "github.com/xyedo/blindate/pkg/domain/location/entities"
+	mockrepo "github.com/xyedo/blindate/pkg/infra/repository/mock"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
@@ -39,7 +39,7 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
-				location := entity.Location{
+				location := locationEntity.DAO{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68619",
 					Geog:   "POINT(80.23231 170.12112)",
 				}
@@ -62,7 +62,7 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
-				location := &entity.Location{
+				location := &locationEntity.DAO{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68618",
 					Geog:   "POINT(80.23231 170.12112)",
 				}
@@ -89,7 +89,7 @@ func Test_PostLocationByUserIdHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
-				location := &entity.Location{
+				location := &locationEntity.DAO{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68618",
 					Geog:   "POINT(80.23231 170.12112)",
 				}
@@ -214,7 +214,7 @@ func Test_getLocationByUserIdHandler(t *testing.T) {
 				location := createNewLocation(t)
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
 				locationRepo.EXPECT().GetLocationByUserId(gomock.Eq(location.UserId)).Times(1).
-					Return(entity.Location{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
+					Return(locationEntity.DAO{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
 				locationSvc := service.NewLocation(locationRepo)
 				return NewLocation(locationSvc)
 			},
@@ -286,7 +286,7 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
-				location := entity.Location{
+				location := locationEntity.DAO{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc6861",
 					Geog:   "POINT(20.1818 85.1291)",
 				}
@@ -311,12 +311,12 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 			},
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Location {
 				locationRepo := mockrepo.NewMockLocation(ctrl)
-				oldlocation := entity.Location{
+				oldlocation := locationEntity.DAO{
 					UserId: "8c540e20-75d1-4513-a8e3-72dc4bc68618",
 					Geog:   "POINT(20.1818 80.1291)",
 				}
 				locationRepo.EXPECT().GetLocationByUserId(gomock.Eq(oldlocation.UserId)).Times(1).Return(oldlocation, nil)
-				newLocation := entity.Location{
+				newLocation := locationEntity.DAO{
 					UserId: oldlocation.UserId,
 					Geog:   "POINT(70.1891 80.1291)",
 				}
@@ -412,7 +412,7 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 				location := createNewLocation(t)
 				location.UserId = "8c540e20-75d1-4513-a8e3-72dc4bc68618"
 				locationRepo.EXPECT().GetLocationByUserId(gomock.Eq(location.UserId)).Times(1).
-					Return(entity.Location{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
+					Return(locationEntity.DAO{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
 				locationSvc := service.NewLocation(locationRepo)
 				return NewLocation(locationSvc)
 			},
@@ -452,8 +452,8 @@ func Test_patchLocationByUserIdHandler(t *testing.T) {
 	}
 }
 
-func createNewLocation(t *testing.T) entity.Location {
-	return entity.Location{
+func createNewLocation(t *testing.T) locationEntity.DAO {
+	return locationEntity.DAO{
 		UserId: util.RandomUUID(),
 		Geog:   util.RandomPoint(5),
 	}

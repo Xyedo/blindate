@@ -5,8 +5,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/event"
+	"github.com/xyedo/blindate/pkg/domain/event"
+	websocketEntity "github.com/xyedo/blindate/pkg/domain/ws"
 )
 
 type EventDeps struct {
@@ -18,7 +18,7 @@ type EventDeps struct {
 }
 
 func (d *EventDeps) HandleSeenAtevent(payload event.ChatSeenPayload) {
-	var response domain.WsResponse
+	var response websocketEntity.Response
 	response.Action = "update.chat.seenAt"
 	response.Data = map[string]any{
 		"seenChatIds": payload.SeenChatIds,
@@ -43,7 +43,7 @@ func (d *EventDeps) HandleProfileUpdateEvent(payload event.ProfileUpdatedPayload
 			continue
 		}
 
-		var response domain.WsResponse
+		var response websocketEntity.Response
 		response.Action = "update.conversation.profile"
 		response.Data = map[string]any{"updatedUser": updatedUser}
 
@@ -58,7 +58,7 @@ func (d *EventDeps) HandleRevealUpdateEvent(payload event.MatchRevealedPayload) 
 		log.Println(err)
 		return
 	}
-	response := domain.WsResponse{
+	response := websocketEntity.Response{
 		Action: fmt.Sprintf("reveal.%s", payload.MatchStatus),
 		Data: map[string]any{
 			"match": matchEntity,
@@ -74,7 +74,7 @@ func (d *EventDeps) HandleCreateChatEvent(payload event.ChatCreatedPayload) {
 		log.Println(err)
 		return
 	}
-	resp := domain.WsResponse{
+	resp := websocketEntity.Response{
 		Action: "OnMessage",
 		Data: map[string]any{
 			"chats": payload.Chat,
@@ -85,7 +85,7 @@ func (d *EventDeps) HandleCreateChatEvent(payload event.ChatCreatedPayload) {
 	d.eventWriteJSON(conv.ToUser.ID, resp)
 }
 
-func (d *EventDeps) eventWriteJSON(userId string, resp domain.WsResponse) {
+func (d *EventDeps) eventWriteJSON(userId string, resp websocketEntity.Response) {
 	socket, ok := d.Ws.ReverseClient.Get(userId)
 	if !ok {
 		return

@@ -3,7 +3,7 @@ package basicInfoEntity
 import "time"
 
 // BasicInfo one to one with user
-type FullDTO struct {
+type DTO struct {
 	UserId           string    `json:"userId"`
 	Gender           string    `json:"gender" binding:"required,oneof=Female Male Other"`
 	FromLoc          *string   `json:"fromLoc" binding:"omitempty,max=99"`

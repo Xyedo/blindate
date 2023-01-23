@@ -4,13 +4,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xyedo/blindate/pkg/domain"
+	onlineEntity "github.com/xyedo/blindate/pkg/domain/online/entities"
 )
 
 type onlineSvc interface {
 	CreateNewOnline(userId string) error
 	PutOnline(userId string, online bool) error
-	GetOnline(userId string) (domain.Online, error)
+	GetOnline(userId string) (onlineEntity.DTO, error)
 }
 
 func NewOnline(onlineSvc onlineSvc) *Online {

@@ -15,12 +15,12 @@ func Test_InsertBasicInfo(t *testing.T) {
 	repo := repository.NewBasicInfo(testQuery)
 	tests := []struct {
 		name         string
-		setupFunc    func() basicInfoEntity.Dao
+		setupFunc    func() basicInfoEntity.DAO
 		expectedFunc func(t *testing.T, err error)
 	}{
 		{
 			name: "Valid BasicInfo",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				return createBasicInfo(t)
 			},
 			expectedFunc: func(t *testing.T, err error) {
@@ -29,7 +29,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Valid BasicInfo But Twice",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				repo := repository.NewBasicInfo(testQuery)
 				basicInfo := createBasicInfo(t)
 				repo.InsertBasicInfo(basicInfo)
@@ -42,7 +42,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Invalid Gender Columns",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				validBasicInfo := createBasicInfo(t)
 				validBasicInfo.Gender = "Non-binary"
 				return validBasicInfo
@@ -54,7 +54,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Invalid User_Id Columns",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				validBasicInfo := createBasicInfo(t)
 				validBasicInfo.UserId = "e590666c-3ea8-4fda-958c-c2dc6c2599b5"
 				return validBasicInfo
@@ -66,7 +66,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Invalid Education_level Columns",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				validBasicInfo := createBasicInfo(t)
 				validBasicInfo.EducationLevel = sql.NullString{
 					Valid:  true,
@@ -81,7 +81,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Invalid Drinking Columns",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				validBasicInfo := createBasicInfo(t)
 				validBasicInfo.Drinking = sql.NullString{
 					Valid:  true,
@@ -96,7 +96,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Invalid Smoking Columns",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				validBasicInfo := createBasicInfo(t)
 				validBasicInfo.Smoking = sql.NullString{
 					Valid:  true,
@@ -111,7 +111,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Invalid relationship_pref Columns",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				validBasicInfo := createBasicInfo(t)
 				validBasicInfo.RelationshipPref = sql.NullString{
 					Valid:  true,
@@ -126,7 +126,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Invalid looking_for Columns",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				validBasicInfo := createBasicInfo(t)
 				validBasicInfo.LookingFor = "Non-Binary"
 				return validBasicInfo
@@ -138,7 +138,7 @@ func Test_InsertBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Invalid Zodiac Columns",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				validBasicInfo := createBasicInfo(t)
 				validBasicInfo.Zodiac = sql.NullString{
 					Valid:  true,
@@ -192,12 +192,12 @@ func Test_UpdateBasicInfo(t *testing.T) {
 	repo := repository.NewBasicInfo(testQuery)
 	tests := []struct {
 		name         string
-		setupFunc    func() basicInfoEntity.Dao
+		setupFunc    func() basicInfoEntity.DAO
 		expectedFunc func(t *testing.T, err error)
 	}{
 		{
 			name: "Valid but Not Change Basic Info",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				repo := repository.NewBasicInfo(testQuery)
 				basicInfo := createBasicInfo(t)
 				repo.InsertBasicInfo(basicInfo)
@@ -209,7 +209,7 @@ func Test_UpdateBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Valid BasicInfo",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				repo := repository.NewBasicInfo(testQuery)
 				basicInfo := createBasicInfo(t)
 				repo.InsertBasicInfo(basicInfo)
@@ -221,7 +221,7 @@ func Test_UpdateBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Invalid Gender Columns",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				repo := repository.NewBasicInfo(testQuery)
 				basicInfo := createBasicInfo(t)
 				repo.InsertBasicInfo(basicInfo)
@@ -235,7 +235,7 @@ func Test_UpdateBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Invalid User_Id Columns",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				repo := repository.NewBasicInfo(testQuery)
 				basicInfo := createBasicInfo(t)
 				repo.InsertBasicInfo(basicInfo)
@@ -249,7 +249,7 @@ func Test_UpdateBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Invalid Education_level Columns",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				repo := repository.NewBasicInfo(testQuery)
 				basicInfo := createBasicInfo(t)
 				repo.InsertBasicInfo(basicInfo)
@@ -266,7 +266,7 @@ func Test_UpdateBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Invalid Drinking Columns",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				repo := repository.NewBasicInfo(testQuery)
 				basicInfo := createBasicInfo(t)
 				repo.InsertBasicInfo(basicInfo)
@@ -283,7 +283,7 @@ func Test_UpdateBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Invalid Smoking Columns",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				repo := repository.NewBasicInfo(testQuery)
 				basicInfo := createBasicInfo(t)
 				repo.InsertBasicInfo(basicInfo)
@@ -300,7 +300,7 @@ func Test_UpdateBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Invalid relationship_pref Columns",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				repo := repository.NewBasicInfo(testQuery)
 				basicInfo := createBasicInfo(t)
 				repo.InsertBasicInfo(basicInfo)
@@ -317,7 +317,7 @@ func Test_UpdateBasicInfo(t *testing.T) {
 		},
 		{
 			name: "Invalid zodiac Columns",
-			setupFunc: func() basicInfoEntity.Dao {
+			setupFunc: func() basicInfoEntity.DAO {
 				repo := repository.NewBasicInfo(testQuery)
 				basicInfo := createBasicInfo(t)
 				repo.InsertBasicInfo(basicInfo)
@@ -342,9 +342,9 @@ func Test_UpdateBasicInfo(t *testing.T) {
 	}
 }
 
-func createBasicInfo(t *testing.T) basicInfoEntity.Dao {
+func createBasicInfo(t *testing.T) basicInfoEntity.DAO {
 	user := createNewAccount(t)
-	basicInfo := basicInfoEntity.Dao{
+	basicInfo := basicInfoEntity.DAO{
 		UserId: user.ID,
 		Gender: "Male",
 		FromLoc: sql.NullString{

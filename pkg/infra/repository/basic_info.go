@@ -24,7 +24,7 @@ type BInfoConn struct {
 	conn *sqlx.DB
 }
 
-func (b *BInfoConn) InsertBasicInfo(basicinfo basicInfoEntity.Dao) error {
+func (b *BInfoConn) InsertBasicInfo(basicinfo basicInfoEntity.DAO) error {
 	query := `
 	INSERT INTO basic_info(
 		user_id, 
@@ -77,7 +77,7 @@ func (b *BInfoConn) InsertBasicInfo(basicinfo basicInfoEntity.Dao) error {
 	return nil
 }
 
-func (b *BInfoConn) GetBasicInfoByUserId(userId string) (basicInfoEntity.Dao, error) {
+func (b *BInfoConn) GetBasicInfoByUserId(userId string) (basicInfoEntity.DAO, error) {
 	query := `
 		SELECT
 			user_id, 
@@ -99,21 +99,21 @@ func (b *BInfoConn) GetBasicInfoByUserId(userId string) (basicInfoEntity.Dao, er
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	var basicinfo basicInfoEntity.Dao
+	var basicinfo basicInfoEntity.DAO
 	err := b.conn.GetContext(ctx, &basicinfo, query, userId)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
-			return basicInfoEntity.Dao{}, common.WrapError(err, common.ErrTooLongAccessingDB)
+			return basicInfoEntity.DAO{}, common.WrapError(err, common.ErrTooLongAccessingDB)
 		}
 		if errors.Is(err, sql.ErrNoRows) {
-			return basicInfoEntity.Dao{}, common.WrapError(err, common.ErrResourceNotFound)
+			return basicInfoEntity.DAO{}, common.WrapError(err, common.ErrResourceNotFound)
 		}
-		return basicInfoEntity.Dao{}, err
+		return basicInfoEntity.DAO{}, err
 	}
 	return basicinfo, nil
 }
 
-func (b *BInfoConn) UpdateBasicInfo(bInfo basicInfoEntity.Dao) error {
+func (b *BInfoConn) UpdateBasicInfo(bInfo basicInfoEntity.DAO) error {
 	query := `
 	UPDATE basic_info SET
 		gender =$1, 

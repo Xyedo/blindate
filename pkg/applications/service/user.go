@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 
 	"github.com/xyedo/blindate/pkg/common"
+	"github.com/xyedo/blindate/pkg/domain/event"
 	"github.com/xyedo/blindate/pkg/domain/user"
 	userEntity "github.com/xyedo/blindate/pkg/domain/user/entities"
-	"github.com/xyedo/blindate/pkg/event"
 	"golang.org/x/crypto/bcrypt"
 )
 

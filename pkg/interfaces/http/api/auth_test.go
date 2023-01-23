@@ -12,9 +12,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
+	"github.com/xyedo/blindate/pkg/applications/service"
 	"github.com/xyedo/blindate/pkg/common"
 	mockrepo "github.com/xyedo/blindate/pkg/infra/repository/mock"
-	"github.com/xyedo/blindate/pkg/service"
 	"github.com/xyedo/blindate/pkg/util"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -37,12 +37,12 @@ func Test_postAuthHandler(t *testing.T) {
 			}`,
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *Auth {
 				authRepo := mockrepo.NewMockAuth(ctrl)
-				userRepo := mockrepo.NewMockRepository(ctrl)
+				userRepo := mockrepo.NewMockUser(ctrl)
 
 				validUser := createNewUser(t)
 				hashed, err := bcrypt.GenerateFromPassword([]byte("pa55word"), 12)
 				assert.NoError(t, err)
-				validUser.HashedPassword = string(hashed)
+				validUser.Password = string(hashed)
 
 				userRepo.EXPECT().GetUserByEmail(gomock.Eq("uncleBob23@cool.com")).Times(1).Return(validUser, nil)
 				authRepo.EXPECT().AddRefreshToken(gomock.Any()).Times(1).Return(nil)

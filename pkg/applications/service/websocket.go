@@ -6,7 +6,7 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/xyedo/blindate/internal/rwmap"
-	"github.com/xyedo/blindate/pkg/domain"
+	websocketEntity "github.com/xyedo/blindate/pkg/domain/ws"
 )
 
 const (
@@ -17,19 +17,19 @@ const (
 
 func NewWs() *Ws {
 	return &Ws{
-		Clients:       rwmap.New[domain.WsConn, string](),
-		ReverseClient: rwmap.New[string, domain.WsConn](),
-		WsChan:        make(chan domain.WsPayload),
+		Clients:       rwmap.New[websocketEntity.Conn, string](),
+		ReverseClient: rwmap.New[string, websocketEntity.Conn](),
+		WsChan:        make(chan websocketEntity.Payload),
 	}
 }
 
 type Ws struct {
-	Clients       *rwmap.RwMap[domain.WsConn, string]
-	ReverseClient *rwmap.RwMap[string, domain.WsConn]
-	WsChan        chan domain.WsPayload
+	Clients       *rwmap.RwMap[websocketEntity.Conn, string]
+	ReverseClient *rwmap.RwMap[string, websocketEntity.Conn]
+	WsChan        chan websocketEntity.Payload
 }
 
-func (ws *Ws) ListenForWsPayload(conn *domain.WsConn) {
+func (ws *Ws) ListenForWsPayload(conn *websocketEntity.Conn) {
 	defer func() {
 		if err := recover(); err != nil {
 			log.Println("Error panic", err)
@@ -44,7 +44,7 @@ func (ws *Ws) ListenForWsPayload(conn *domain.WsConn) {
 		return nil
 	})
 
-	var payload domain.WsPayload
+	var payload websocketEntity.Payload
 	for {
 		err := conn.ReadJSON(&payload)
 		if err != nil {
@@ -58,7 +58,7 @@ func (ws *Ws) ListenForWsPayload(conn *domain.WsConn) {
 	}
 }
 
-func (ws *Ws) PingTicker(conn *domain.WsConn) {
+func (ws *Ws) PingTicker(conn *websocketEntity.Conn) {
 	pingTicker := time.NewTicker(pingPeriod)
 	defer func() {
 		pingTicker.Stop()
@@ -73,7 +73,7 @@ func (ws *Ws) PingTicker(conn *domain.WsConn) {
 	}
 }
 
-func (ws *Ws) cleanUp(conn *domain.WsConn) {
+func (ws *Ws) cleanUp(conn *websocketEntity.Conn) {
 	conn.Close()
 
 	userId, ok := ws.Clients.Get(*conn)

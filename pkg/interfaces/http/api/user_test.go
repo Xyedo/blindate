@@ -23,11 +23,11 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/xyedo/blindate/pkg/applications/service"
+	mocksvc "github.com/xyedo/blindate/pkg/applications/service/mock"
 	"github.com/xyedo/blindate/pkg/common"
-	"github.com/xyedo/blindate/pkg/domain"
-	mockrepo "github.com/xyedo/blindate/pkg/repository/mock"
-	"github.com/xyedo/blindate/pkg/service"
-	mocksvc "github.com/xyedo/blindate/pkg/service/mock"
+	userEntity "github.com/xyedo/blindate/pkg/domain/user/entities"
+	mockrepo "github.com/xyedo/blindate/pkg/infra/repository/mock"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
@@ -357,14 +357,14 @@ func Test_GetUserByIdHandler(t *testing.T) {
 	tests := []struct {
 		name      string
 		id        string
-		setupFunc func(t *testing.T, ctrl *gomock.Controller) (userSvc, service.Attachment, domain.User)
-		respFunc  func(t *testing.T, user domain.User, resp *httptest.ResponseRecorder)
+		setupFunc func(t *testing.T, ctrl *gomock.Controller) (userSvc, service.Attachment, userEntity.FullDTO)
+		respFunc  func(t *testing.T, user userEntity.FullDTO, resp *httptest.ResponseRecorder)
 	}{
 
 		{
 			name: "Valid Submission",
 			id:   "8c540e20-75d1-4513-a8e3-72dc4bc68619",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (userSvc, service.Attachment, domain.User) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (userSvc, service.Attachment, userEntity.FullDTO) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				users := createNewUser(t)
 				userRepo.EXPECT().GetUserById(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(users, nil)
@@ -373,7 +373,7 @@ func Test_GetUserByIdHandler(t *testing.T) {
 				userService := service.NewUser(userRepo)
 				return userService, attachSvc, users
 			},
-			respFunc: func(t *testing.T, user domain.User, resp *httptest.ResponseRecorder) {
+			respFunc: func(t *testing.T, user userEntity.FullDTO, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusOK, resp.Code)
 				assert.Contains(t, resp.Header().Get("Content-Type"), "application/json")
 
@@ -390,16 +390,16 @@ func Test_GetUserByIdHandler(t *testing.T) {
 		{
 			name: "Valid URL Params but User Not Found",
 			id:   "d3aa0883-4a29-4a39-8f0e-2413c169bd9d",
-			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (userSvc, service.Attachment, domain.User) {
+			setupFunc: func(t *testing.T, ctrl *gomock.Controller) (userSvc, service.Attachment, userEntity.FullDTO) {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				users := createNewUser(t)
 				userRepo.EXPECT().GetUserById("d3aa0883-4a29-4a39-8f0e-2413c169bd9d").Times(1).
-					Return(domain.User{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
+					Return(userEntity.FullDTO{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
 				userService := service.NewUser(userRepo)
 				return userService, attachSvc, users
 			},
-			respFunc: func(t *testing.T, user domain.User, resp *httptest.ResponseRecorder) {
+			respFunc: func(t *testing.T, user userEntity.FullDTO, resp *httptest.ResponseRecorder) {
 				assert.Equal(t, http.StatusNotFound, resp.Code)
 				assert.Contains(t, resp.Header().Get("Content-Type"), "application/json")
 
@@ -490,7 +490,7 @@ func Test_PatchUserById(t *testing.T) {
 				user := createNewUser(t)
 				hashed, err := bcrypt.GenerateFromPassword([]byte("pa55word"), 12)
 				assert.NoError(t, err)
-				user.HashedPassword = string(hashed)
+				user.Password = string(hashed)
 				userRepo.EXPECT().GetUserById(gomock.Eq("8c540e20-75d1-4513-a8e3-72dc4bc68619")).Times(1).Return(user, nil)
 				user.Password = "newPa55word"
 				userRepo.EXPECT().UpdateUser(gomock.Not(nil)).Times(1).Return(nil)
@@ -572,7 +572,7 @@ func Test_PatchUserById(t *testing.T) {
 			setupFunc: func(t *testing.T, ctrl *gomock.Controller) *User {
 				userRepo := mockrepo.NewMockUser(ctrl)
 				userRepo.EXPECT().GetUserById(gomock.Eq("d3aa0883-4a29-4a39-8f0e-2413c169bd9d")).Times(1).
-					Return(domain.User{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
+					Return(userEntity.FullDTO{}, common.WrapError(sql.ErrNoRows, common.ErrResourceNotFound))
 				userRepo.EXPECT().UpdateUser(gomock.Any()).Times(0)
 				userService := service.NewUser(userRepo)
 				attachSvc := mocksvc.NewMockAttachment(ctrl)
@@ -676,7 +676,7 @@ func Test_PutUserImageProfile(t *testing.T) {
 				user.ID = validUserId
 				attachSvc.EXPECT().UploadBlob(uploadValid(), gomock.Any()).Return(validKey, nil).Times(1)
 
-				profPic := make([]domain.ProfilePicture, 0, 4)
+				profPic := make([]userEntity.ProfilePic, 0, 4)
 				for i := 0; i < 3; i++ {
 					profPic = append(profPic, createRandomProfPic(user.ID))
 				}
@@ -718,7 +718,7 @@ func Test_PutUserImageProfile(t *testing.T) {
 				user.ID = validUserId
 				attachSvc.EXPECT().UploadBlob(uploadValid(), gomock.Any()).Return(validKey, nil).Times(1)
 
-				profPic := make([]domain.ProfilePicture, 0, 4)
+				profPic := make([]userEntity.ProfilePic, 0, 4)
 				for i := 0; i < 3; i++ {
 					profPic = append(profPic, createRandomProfPic(user.ID))
 				}
@@ -904,24 +904,23 @@ func Test_PutUserImageProfile(t *testing.T) {
 	})
 }
 
-func createNewUser(t *testing.T) domain.User {
+func createNewUser(t *testing.T) userEntity.FullDTO {
 	pass := util.RandomString(10)
 	hashed, err := bcrypt.GenerateFromPassword([]byte(pass), 12)
 	assert.NoError(t, err)
-	return domain.User{
-		ID:             util.RandomUUID(),
-		FullName:       util.RandomString(12),
-		Email:          util.RandomEmail(12),
-		Password:       pass,
-		HashedPassword: string(hashed),
-		Dob:            util.RandDOB(1980, 2000),
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
+	return userEntity.FullDTO{
+		ID:        util.RandomUUID(),
+		FullName:  util.RandomString(12),
+		Email:     util.RandomEmail(12),
+		Password:  string(hashed),
+		Dob:       util.RandDOB(1980, 2000),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
 	}
 }
 
-func createRandomProfPic(userId string) domain.ProfilePicture {
-	return domain.ProfilePicture{
+func createRandomProfPic(userId string) userEntity.ProfilePic {
+	return userEntity.ProfilePic{
 		Id:          util.RandomUUID(),
 		UserId:      userId,
 		PictureLink: util.RandomUUID() + ".png",

@@ -1,17 +1,17 @@
-package domain
+package websocketEntity
 
 import "github.com/gorilla/websocket"
 
-type WsResponse struct {
+type Response struct {
 	Action string         `json:"action"`
 	Data   map[string]any `json:"data"`
 }
 
-type WsPayload struct {
+type Payload struct {
 	Action  string `json:"action"`
 	Payload string `json:"payload"`
-	Conn    WsConn `json:"-"`
+	Conn    Conn   `json:"-"`
 }
-type WsConn struct {
+type Conn struct {
 	*websocket.Conn
 }

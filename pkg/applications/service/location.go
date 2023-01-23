@@ -4,30 +4,30 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/domain/entity"
-	"github.com/xyedo/blindate/pkg/repository"
+	"github.com/xyedo/blindate/pkg/domain/location"
+	locationEntity "github.com/xyedo/blindate/pkg/domain/location/entities"
 )
 
-func NewLocation(locationRepo repository.Location) *Location {
+func NewLocation(locationRepo location.Repository) *Location {
 	return &Location{
 		locationRepo: locationRepo,
 	}
 }
 
 type Location struct {
-	locationRepo repository.Location
+	locationRepo location.Repository
 }
 
-func (l *Location) CreateNewLocation(location *domain.Location) error {
-	locationEntity := &entity.Location{
+func (l *Location) CreateNewLocation(location *locationEntity.DTO) error {
+	locationDAO := &locationEntity.DAO{
 		UserId: location.UserId,
 		Geog:   latLngToGeog(location.Lat, location.Lng),
 	}
-	err := l.locationRepo.InsertNewLocation(locationEntity)
+	err := l.locationRepo.InsertNewLocation(locationDAO)
 	if err != nil {
 		return err
 	}
+
 	return nil
 
 }
@@ -43,27 +43,27 @@ func (l *Location) UpdateLocation(userId string, changeLat, changeLng *string) e
 	if changeLng != nil {
 		location.Lng = *changeLng
 	}
-	locationEntity := &entity.Location{
+	locationDAO := &locationEntity.DAO{
 		UserId: location.UserId,
 		Geog:   latLngToGeog(location.Lat, location.Lng),
 	}
-	err = l.locationRepo.UpdateLocation(locationEntity)
+	err = l.locationRepo.UpdateLocation(locationDAO)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (l *Location) GetLocation(id string) (domain.Location, error) {
+func (l *Location) GetLocation(id string) (locationEntity.DTO, error) {
 	location, err := l.locationRepo.GetLocationByUserId(id)
 	if err != nil {
-		return domain.Location{}, err
+		return locationEntity.DTO{}, err
 	}
 	latlng := strings.TrimPrefix(location.Geog, "POINT(")
 	latlng = strings.TrimSuffix(latlng, ")")
 	res := strings.Fields(latlng)
 
-	return domain.Location{
+	return locationEntity.DTO{
 		UserId: location.UserId,
 		Lat:    res[0],
 		Lng:    res[1],

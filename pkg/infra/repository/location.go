@@ -205,7 +205,7 @@ func (l *LocConn) GetClosestUser(userId, geom string, limit int) ([]matchEntity.
 }
 func (*LocConn) createBigUser(row sqlx.ColScanner) (matchEntity.UserDTO, error) {
 	var newBigUser matchEntity.UserDTO
-	var newBasicInfo basicInfoEntity.Dao
+	var newBasicInfo basicInfoEntity.DAO
 	var newBasicInfoGender sql.NullString
 	var newBasicInfoLookingFor sql.NullString
 	var newMatchBioId sql.NullString

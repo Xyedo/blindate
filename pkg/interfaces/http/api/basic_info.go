@@ -4,13 +4,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/xyedo/blindate/pkg/domain"
+	basicInfoEntity "github.com/xyedo/blindate/pkg/domain/basicinfo/entities"
 )
 
 type basicInfoSvc interface {
-	CreateBasicInfo(bInfo domain.BasicInfo) error
-	GetBasicInfoByUserId(id string) (domain.BasicInfo, error)
-	UpdateBasicInfo(userId string, newBasicInfo domain.UpdateBasicInfo) error
+	CreateBasicInfo(bInfo basicInfoEntity.DTO) error
+	GetBasicInfoByUserId(id string) (basicInfoEntity.DTO, error)
+	UpdateBasicInfo(userId string, newBasicInfo basicInfoEntity.Update) error
 }
 
 func NewBasicInfo(basicInfoService basicInfoSvc) *BasicInfo {
@@ -25,7 +25,7 @@ type BasicInfo struct {
 
 func (b *BasicInfo) postBasicInfoHandler(c *gin.Context) {
 	userId := c.GetString(keyUserId)
-	var input domain.BasicInfo
+	var input basicInfoEntity.DTO
 	if err := c.ShouldBindJSON(&input); err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{
 			"gender":           "required and the value must one of the gender enums",
@@ -47,7 +47,7 @@ func (b *BasicInfo) postBasicInfoHandler(c *gin.Context) {
 		return
 	}
 
-	basicInfo := domain.BasicInfo{
+	basicInfo := basicInfoEntity.DTO{
 		UserId:           userId,
 		Gender:           input.Gender,
 		FromLoc:          input.FromLoc,
@@ -89,7 +89,7 @@ func (b *BasicInfo) getBasicInfoHandler(c *gin.Context) {
 }
 
 func (b *BasicInfo) patchBasicInfoHandler(c *gin.Context) {
-	var inputBasicInfo domain.UpdateBasicInfo
+	var inputBasicInfo basicInfoEntity.Update
 	err := c.ShouldBindJSON(&inputBasicInfo)
 	if err != nil {
 		errjson := jsonBindingErrResp(err, c, map[string]string{

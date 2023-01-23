@@ -7,16 +7,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/xyedo/blindate/pkg/common"
-	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/domain/entity"
+	"github.com/xyedo/blindate/pkg/domain/chat"
+	chatEntity "github.com/xyedo/blindate/pkg/domain/chat/entities"
 	"github.com/xyedo/blindate/pkg/util"
 )
 
 // TODO: Create chat_test.go
 type chatSvc interface {
-	CreateNewChat(content *domain.Chat) error
+	CreateNewChat(content *chatEntity.DTO) error
 	UpdateSeenChat(convId, userId string) error
-	GetMessages(convoId string, filter entity.ChatFilter) ([]domain.Chat, error)
+	GetMessages(convoId string, filter chat.Filter) ([]chatEntity.DTO, error)
 	DeleteMessagesById(chatId string) error
 }
 
@@ -32,12 +32,9 @@ type Chat struct {
 	attachSvc attachmentManager
 }
 
-func (chat *Chat) postChatHandler(c *gin.Context) {
-	var input struct {
-		Message string  `json:"message" binding:"required,max=4096"`
-		ReplyTo *string `json:"replyTo" binding:"omitempty,uuid"`
-	}
-	if err := c.ShouldBindJSON(&input); err != nil {
+func (cha *Chat) postChatHandler(c *gin.Context) {
+	var newChatPayload chatEntity.New
+	if err := c.ShouldBindJSON(&newChatPayload); err != nil {
 		if jsonErr := jsonBindingErrResp(err, c, map[string]string{
 			"Message": "must not empty and max characters is 4096",
 			"ReplyTo": "if specified, must be valid uuid",
@@ -49,14 +46,14 @@ func (chat *Chat) postChatHandler(c *gin.Context) {
 	}
 	convoId := c.GetString(keyConvId)
 	userId := c.GetString("userId")
-	dtoChat := domain.Chat{
+	dtoChat := chatEntity.DTO{
 		ConversationId: convoId,
 		Author:         userId,
-		Messages:       input.Message,
-		ReplyTo:        input.ReplyTo,
+		Messages:       newChatPayload.Message,
+		ReplyTo:        newChatPayload.ReplyTo,
 		SentAt:         time.Now(),
 	}
-	if err := chat.chatSvc.CreateNewChat(&dtoChat); err != nil {
+	if err := cha.chatSvc.CreateNewChat(&dtoChat); err != nil {
 		jsonHandleError(c, err)
 		return
 	}
@@ -72,12 +69,12 @@ func (chat *Chat) postChatHandler(c *gin.Context) {
 
 }
 
-func (chat *Chat) postChatMediaHandler(c *gin.Context) {
+func (cha *Chat) postChatMediaHandler(c *gin.Context) {
 	var validAudioTypes = []string{
 		"application/ogg",
 		"audio/mpeg",
 	}
-	key, mediaType := uploadFile(c, chat.attachSvc, validAudioTypes, "chat-attachment")
+	key, mediaType := uploadFile(c, cha.attachSvc, validAudioTypes, "chat-attachment")
 	if key == "" {
 		return
 	}
@@ -101,18 +98,18 @@ func (chat *Chat) postChatMediaHandler(c *gin.Context) {
 		errServerResp(c, err)
 		return
 	}
-	dtoChat := domain.Chat{
+	dtoChat := chatEntity.DTO{
 		ConversationId: convoId,
 		Author:         userId,
 		Messages:       "",
 		ReplyTo:        input.ReplyTo,
 		SentAt:         time.Now(),
-		Attachment: &domain.ChatAttachment{
+		Attachment: &chatEntity.Attachment{
 			BlobLink:  key,
 			MediaType: mediaType,
 		},
 	}
-	if err := chat.chatSvc.CreateNewChat(&dtoChat); err != nil {
+	if err := cha.chatSvc.CreateNewChat(&dtoChat); err != nil {
 		jsonHandleError(c, err)
 		return
 	}
@@ -127,7 +124,7 @@ func (chat *Chat) postChatMediaHandler(c *gin.Context) {
 	})
 }
 
-func (chat *Chat) getMessagesHandler(c *gin.Context) {
+func (cha *Chat) getMessagesHandler(c *gin.Context) {
 	var query struct {
 		Limit  *int       `form:"limit" binding:"omitempty,min=30,max=90"`
 		At     *time.Time `form:"at" binding:"omitempty,required_with_all=ChatId After"`
@@ -148,12 +145,12 @@ func (chat *Chat) getMessagesHandler(c *gin.Context) {
 		errServerResp(c, err)
 		return
 	}
-	chatQueryFilter := entity.ChatFilter{}
+	chatQueryFilter := chat.Filter{}
 	if query.Limit != nil {
 		chatQueryFilter.Limit = *query.Limit
 	}
 	if query.At != nil {
-		chatQueryFilter.Cursor = &entity.ChatCursor{
+		chatQueryFilter.Cursor = &chat.Cursor{
 			At: *query.At,
 		}
 	}
@@ -164,7 +161,7 @@ func (chat *Chat) getMessagesHandler(c *gin.Context) {
 		chatQueryFilter.Cursor.After = *query.After
 	}
 	convoId := c.GetString("convId")
-	dtoChats, err := chat.chatSvc.GetMessages(convoId, chatQueryFilter)
+	dtoChats, err := cha.chatSvc.GetMessages(convoId, chatQueryFilter)
 	if err != nil {
 		if errors.Is(err, common.ErrTooLongAccessingDB) {
 			errResourceConflictResp(c)

@@ -7,8 +7,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/xyedo/blindate/pkg/domain"
-	"github.com/xyedo/blindate/pkg/service"
+	"github.com/xyedo/blindate/pkg/applications/service"
+	websocketEntity "github.com/xyedo/blindate/pkg/domain/ws"
 )
 
 func NewWs(wsSvc *service.Ws, onlineSvc onlineSvc) *Ws {
@@ -50,7 +50,7 @@ func (ws *Ws) wsEndPoint(c *gin.Context) {
 		return
 	}
 	ws.onlineSvc.PutOnline(userId, true)
-	conn := domain.WsConn{Conn: wsConn}
+	conn := websocketEntity.Conn{Conn: wsConn}
 	ws.wsSvc.Clients.Set(conn, userId)
 	ws.wsSvc.ReverseClient.Set(userId, conn)
 

@@ -4,11 +4,12 @@ import (
 	"errors"
 
 	"github.com/xyedo/blindate/pkg/common"
-	"github.com/xyedo/blindate/pkg/repository"
+	"github.com/xyedo/blindate/pkg/domain/authentication"
+	"github.com/xyedo/blindate/pkg/domain/user"
 	"golang.org/x/crypto/bcrypt"
 )
 
-func NewAuth(authR repository.Auth, userR repository.User, tokenSvc *Jwt) *Auth {
+func NewAuth(authR authentication.Repository, userR user.Repository, tokenSvc *Jwt) *Auth {
 	return &Auth{
 		authRepo: authR,
 		userRepo: userR,
@@ -17,8 +18,8 @@ func NewAuth(authR repository.Auth, userR repository.User, tokenSvc *Jwt) *Auth 
 }
 
 type Auth struct {
-	authRepo repository.Auth
-	userRepo repository.User
+	authRepo authentication.Repository
+	userRepo user.Repository
 	tokenSvc *Jwt
 }
 
@@ -27,7 +28,7 @@ func (a *Auth) Login(email, password string) (accessToken string, refreshToken s
 	if err != nil {
 		return
 	}
-	err = bcrypt.CompareHashAndPassword([]byte(user.HashedPassword), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
 		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			return "", "", common.WrapError(err, common.ErrNotMatchCredential)

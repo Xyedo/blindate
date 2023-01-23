@@ -7,7 +7,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"github.com/xyedo/blindate/pkg/event"
+	"github.com/xyedo/blindate/pkg/domain/event"
 	"github.com/xyedo/blindate/pkg/infra"
 )
 
