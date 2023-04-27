@@ -21,6 +21,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/v4a v1.0.16 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/checksum v1.1.20 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/s3shared v1.13.19 // indirect
+	github.com/gin-contrib/cors v1.4.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 )
 

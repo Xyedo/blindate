@@ -10,8 +10,8 @@ migrate-down:
 migrate-create:
 	migrate create -dir $(MG_PATH) -seq -ext .sql $(name)
 
-build-up:
-	docker compose --env-file ./.env.dev up -d --build 
+up:
+	docker compose --env-file ./.env.dev up -d
 
 down: 
 	docker compose --env-file ./.env.dev down 
@@ -25,4 +25,4 @@ test :
 test-repo:
 	go test -timeout 2m github.com/xyedo/blindate/pkg/repository
 
-.PHONY: migrate-up migrate-down migrate-create build-up up down mock-repo test test-repo
+.PHONY: migrate-up migrate-down migrate-create up down mock-repo test test-repo

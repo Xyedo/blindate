@@ -4,38 +4,34 @@ volumes:
   pg-dev-data:
   
 services:
-  api:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
-    restart: on-failure
-    depends_on:
-      - pg-dev
-    env_file:
-      - ./.env.dev
   pg-dev:
     build:
       context: .
       dockerfile: Dockerfile-pg
     ports:
-      - "5433:5432"
+      - "5432:5432"
     restart: on-failure
     environment:
+      - TZ=Asia/Jakarta
       - POSTGRES_USER=${PG_USER}
       - POSTGRES_PASSWORD=${PG_PASSWORD}
       - POSTGRES_DB=${PG_DB}
     volumes:
       - pg-dev-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 0.5s
+      timeout: 10s
+      retries: 10
 
   migrate:
     image: migrate/migrate
     restart: on-failure
     depends_on:
-      - api
+      pg-dev:
+        condition: service_healthy
     links:
       - pg-dev
     volumes:
-      - ./pkg/repository/migrations:/migrations
+      - ./migrations:/migrations
     command: ["-path", "/migrations", "-database" , "${POSTGRE_DB_DSN}", "up"]
