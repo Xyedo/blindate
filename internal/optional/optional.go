@@ -7,6 +7,11 @@ import (
 
 type Option[T comparable] struct {
 	value *T
+	set   bool
+}
+
+func (t *Option[T]) JSONKeySent() bool {
+	return t.set
 }
 
 func (t *Option[T]) Set(v T) {
@@ -56,6 +61,7 @@ func (t Option[T]) MarshalJSON() ([]byte, error) {
 func (t *Option[T]) UnmarshalJSON(data []byte) error {
 	if string(data) == "null" {
 		t.value = nil
+		t.set = true
 		return nil
 	}
 	var value T
@@ -64,5 +70,6 @@ func (t *Option[T]) UnmarshalJSON(data []byte) error {
 	}
 
 	t.value = &value
+	t.set = true
 	return nil
 }

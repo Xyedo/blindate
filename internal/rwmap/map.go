@@ -33,3 +33,13 @@ func (rw *RwMap[K, V]) Delete(key K) {
 	delete(rw.m, key)
 	rw.mu.Unlock()
 }
+
+type Foreach[K comparable, V any] func(key K, value V)
+
+func (rw *RwMap[K, V]) Foreach(callback Foreach[K, V]) {
+	for k, v := range rw.m {
+		rw.mu.Lock()
+		callback(k, v)
+		rw.mu.Unlock()
+	}
+}

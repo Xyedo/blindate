@@ -62,5 +62,6 @@ func (cfg *Config) LoadConfig(filenames ...string) {
 	flag.StringVar(&cfg.Token.AccessExpires, "jwt-access-expires", os.Getenv("JWT_ACCESS_EXPIRES"), "Jwt Access")
 	flag.StringVar(&cfg.Token.RefreshExpires, "jwt-refresh-expires", os.Getenv("JWT_REFRESH_EXPIRES"), "Jwt Access")
 
+	flag.StringVar(&cfg.BucketName, "s3-bucket-name", os.Getenv("AWS_BUCKET_NAME"), "S3 bucket name")
 	flag.Parse()
 }

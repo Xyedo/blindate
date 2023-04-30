@@ -1,5 +1,6 @@
 package constant
 
 const (
-	KeyUserId = "userId"
+	KeyUserId       = "userId"
+	KeyRefreshToken = "refresh-token"
 )

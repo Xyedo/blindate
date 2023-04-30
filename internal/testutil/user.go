@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/xyedo/blindate/pkg/user"
-	userDTOs "github.com/xyedo/blindate/pkg/user/dtos"
-	userEntity "github.com/xyedo/blindate/pkg/user/entities"
+	"github.com/xyedo/blindate/pkg/domain/user"
+	userDTOs "github.com/xyedo/blindate/pkg/domain/user/dtos"
+	userEntity "github.com/xyedo/blindate/pkg/domain/user/entities"
 	"golang.org/x/crypto/bcrypt"
 )
 

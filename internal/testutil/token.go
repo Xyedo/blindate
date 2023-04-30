@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/xyedo/blindate/pkg/authentication"
+	"github.com/xyedo/blindate/pkg/domain/authentication"
 )
 
 func CreateNewToken(t *testing.T, auth authentication.Repository, jwtSecret string) string {

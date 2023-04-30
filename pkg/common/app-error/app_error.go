@@ -3,15 +3,14 @@ package apperror
 import "fmt"
 
 type Sentinel struct {
-	Err    error
-	Message    string
-	ErrMap map[string][]string
+	Err     error
+	Message string
+	ErrMap  map[string][]string
 }
 
 func (s Sentinel) Error() string {
-	return s.Message
+	return s.Err.Error()
 }
-
 
 type Payload struct {
 	Error   error
@@ -29,7 +28,7 @@ func NotFound(payload Payload) error {
 	}
 
 	return Sentinel{
-		Err: payload.Error,
+		Err:     payload.Error,
 		Message: payload.Message,
 	}
 }
@@ -45,7 +44,7 @@ func Forbidden(payload Payload) error {
 		payload.Error = ErrForbiddenAccess
 	}
 	return Sentinel{
-		Err: payload.Error,
+		Err:     payload.Error,
 		Message: payload.Message,
 	}
 }
@@ -61,7 +60,7 @@ func Unauthorized(payload Payload) error {
 	}
 
 	return Sentinel{
-		Err: payload.Error,
+		Err:     payload.Error,
 		Message: payload.Message,
 	}
 }
@@ -77,7 +76,7 @@ func Conflicted(payload Payload) error {
 	}
 
 	return Sentinel{
-		Err: payload.Error,
+		Err:     payload.Error,
 		Message: payload.Message,
 	}
 }
@@ -93,7 +92,24 @@ func Timeout(payload Payload) error {
 	}
 
 	return Sentinel{
-		Err: payload.Error,
+		Err:     payload.Error,
+		Message: payload.Message,
+	}
+}
+
+func BadPayload(payload Payload) error {
+	if payload.Message == "" {
+		payload.Message = "bad request"
+	}
+
+	if payload.Error != nil {
+		payload.Error = fmt.Errorf("%w:%w", ErrBadRequst, payload.Error)
+	} else {
+		payload.Error = ErrBadRequst
+	}
+
+	return Sentinel{
+		Err:     payload.Error,
 		Message: payload.Message,
 	}
 }
