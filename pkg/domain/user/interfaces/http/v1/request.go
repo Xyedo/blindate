@@ -18,14 +18,14 @@ type postUserRequest struct {
 	Dob      time.Time `json:"dob"`
 }
 
-func (u *postUserRequest) Mod() *postUserRequest {
+func (u *postUserRequest) mod() *postUserRequest {
 	mod.TrimWhiteSpace(&u.FullName)
 	mod.Trim(&u.Alias)
 	mod.Trim(&u.Email)
 	return u
 }
 
-func (u postUserRequest) Validate() error {
+func (u postUserRequest) validate() error {
 	return validation.ValidateStruct(&u,
 		validation.Field(&u.FullName, validation.Required, validation.Length(1, 50)),
 		validation.Field(&u.Alias, validation.Required, validation.By(validator.ValidUsername), validation.Length(1, 15)),
@@ -43,7 +43,7 @@ type patchUserRequest struct {
 	Dob         optional.Time   `json:"dob"`
 }
 
-func (u *patchUserRequest) Mod() *patchUserRequest {
+func (u *patchUserRequest) mod() *patchUserRequest {
 	u.FullName.If(func(s string) {
 		mod.TrimWhiteSpace(&s)
 		u.FullName.Set(s)
@@ -60,13 +60,13 @@ func (u *patchUserRequest) Mod() *patchUserRequest {
 	return u
 }
 
-func (u patchUserRequest) Validate() error {
+func (u patchUserRequest) validate() error {
 	return validation.ValidateStruct(&u,
-		validation.Field(&u.FullName, validation.Skip.When(!u.FullName.JSONKeySent()), validation.Length(1, 50)),
-		validation.Field(&u.Alias, validation.Skip.When(!u.Alias.JSONKeySent()), validation.By(validator.ValidUsername), validation.Length(1, 15)),
-		validation.Field(&u.Email, validation.Skip.When(!u.Email.JSONKeySent()), is.Email),
-		validation.Field(&u.OldPassword, validation.Required.When(u.NewPassword.Present()), validation.Skip.When(!u.OldPassword.JSONKeySent()), validation.Length(8, 0)),
-		validation.Field(&u.NewPassword, validation.Required.When(u.OldPassword.Present()), validation.Skip.When(!u.NewPassword.JSONKeySent()), validation.Length(8, 0)),
-		validation.Field(&u.Dob, validation.Skip.When(!u.Dob.JSONKeySent()), validation.By(validator.ValidDob)),
+		validation.Field(&u.FullName, validation.Skip.When(!u.FullName.ValueSet()), validation.Length(1, 50)),
+		validation.Field(&u.Alias, validation.Skip.When(!u.Alias.ValueSet()), validation.By(validator.ValidUsername), validation.Length(1, 15)),
+		validation.Field(&u.Email, validation.Skip.When(!u.Email.ValueSet()), is.Email),
+		validation.Field(&u.OldPassword, validation.Required.When(u.NewPassword.Present()), validation.Skip.When(!u.OldPassword.ValueSet()), validation.Length(8, 0)),
+		validation.Field(&u.NewPassword, validation.Required.When(u.OldPassword.Present()), validation.Skip.When(!u.NewPassword.ValueSet()), validation.Length(8, 0)),
+		validation.Field(&u.Dob, validation.Skip.When(!u.Dob.ValueSet()), validation.By(validator.ValidDob)),
 	)
 }

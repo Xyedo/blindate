@@ -10,7 +10,7 @@ type Option[T comparable] struct {
 	set   bool
 }
 
-func (t *Option[T]) JSONKeySent() bool {
+func (t *Option[T]) ValueSet() bool {
 	return t.set
 }
 

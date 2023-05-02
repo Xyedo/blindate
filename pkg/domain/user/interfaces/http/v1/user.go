@@ -41,7 +41,7 @@ func (u *userH) postUserHandler(c *gin.Context) {
 		return
 	}
 
-	err = request.Mod().Validate()
+	err = request.mod().validate()
 	if err != nil {
 		httperror.HandleError(c, err)
 		return
@@ -134,7 +134,7 @@ func (u *userH) patchUserByIdHandler(c *gin.Context) {
 		httperror.HandleError(c, err)
 		return
 	}
-	err = request.Mod().Validate()
+	err = request.mod().validate()
 	if err != nil {
 		httperror.HandleError(c, err)
 		return

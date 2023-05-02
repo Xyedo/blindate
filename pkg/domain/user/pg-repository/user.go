@@ -41,7 +41,7 @@ func (u *userDb) InsertUser(user userDTOs.RegisterUser) (string, error) {
 			return "", err
 		}
 
-		if errors.Is(err, context.Canceled) {
+		if errors.Is(err, context.DeadlineExceeded) {
 			return "", apperror.Timeout(apperror.Payload{Error: err})
 		}
 		return "", err
@@ -59,7 +59,7 @@ func (u *userDb) UpdateUser(user userEntities.User) error {
 	var returnedId string
 	err := u.conn.GetContext(ctx, &returnedId, updateUserById, args...)
 	if err != nil {
-		if errors.Is(err, context.Canceled) {
+		if errors.Is(err, context.DeadlineExceeded) {
 			return apperror.Timeout(apperror.Payload{Error: err})
 		}
 
@@ -91,7 +91,7 @@ func (u *userDb) GetUserById(id string) (userEntities.User, error) {
 		if errors.Is(err, sql.ErrNoRows) {
 			return userEntities.User{}, apperror.NotFound(apperror.Payload{Error: err, Message: "user not found"})
 		}
-		if errors.Is(err, context.Canceled) {
+		if errors.Is(err, context.DeadlineExceeded) {
 			return userEntities.User{}, apperror.Timeout(apperror.Payload{Error: err})
 		}
 		return userEntities.User{}, err
@@ -108,7 +108,7 @@ func (u *userDb) GetUserByEmail(email string) (userEntities.User, error) {
 		if errors.Is(err, sql.ErrNoRows) {
 			return userEntities.User{}, apperror.NotFound(apperror.Payload{Error: err, Message: "user not found"})
 		}
-		if errors.Is(err, context.Canceled) {
+		if errors.Is(err, context.DeadlineExceeded) {
 			return userEntities.User{}, apperror.Timeout(apperror.Payload{Error: err})
 		}
 		return userEntities.User{}, err
@@ -123,7 +123,7 @@ func (u *userDb) CreateProfilePicture(userId, pictureRef string, selected bool) 
 	var returnedId string
 	err := u.conn.GetContext(ctx, &returnedId, insertProfilePicture, userId, selected, pictureRef)
 	if err != nil {
-		if errors.Is(err, context.Canceled) {
+		if errors.Is(err, context.DeadlineExceeded) {
 			return "", apperror.Timeout(apperror.Payload{Error: err})
 		}
 		var pqErr *pq.Error
@@ -157,7 +157,7 @@ func (u *userDb) SelectProfilePicture(userId string, params userDTOs.ProfilePict
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, apperror.NotFound(apperror.Payload{Error: err, Message: "profile picture not found"})
 		}
-		if errors.Is(err, context.Canceled) {
+		if errors.Is(err, context.DeadlineExceeded) {
 			return nil, apperror.Timeout(apperror.Payload{Error: err})
 		}
 		return nil, err
@@ -172,7 +172,7 @@ func (u *userDb) UpdateProfilePictureToFalse(userId string) error {
 	var returnedProfilePictureId string
 	err := u.conn.GetContext(ctx, &returnedProfilePictureId, updateProfilePictureToFalse, userId)
 	if err != nil {
-		if errors.Is(err, context.Canceled) {
+		if errors.Is(err, context.DeadlineExceeded) {
 			return apperror.Timeout(apperror.Payload{Error: err})
 		}
 

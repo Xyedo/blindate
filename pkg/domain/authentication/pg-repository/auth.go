@@ -32,7 +32,7 @@ func (a *authConn) AddRefreshToken(token string) error {
 	if err != nil {
 		var pqErr *pq.Error
 		switch {
-		case errors.Is(err, context.Canceled):
+		case errors.Is(err, context.DeadlineExceeded):
 			return apperror.Timeout(apperror.Payload{Error: err})
 		case errors.Is(err, sql.ErrNoRows):
 			return apperror.Unauthorized(apperror.Payload{Error: err})
@@ -57,7 +57,7 @@ func (a *authConn) VerifyRefreshToken(token string) error {
 	err := a.conn.GetContext(ctx, &dbToken, query, token)
 	if err != nil {
 		switch {
-		case errors.Is(err, context.Canceled):
+		case errors.Is(err, context.DeadlineExceeded):
 			return apperror.Timeout(apperror.Payload{Error: err})
 		case errors.Is(err, sql.ErrNoRows):
 			return apperror.Unauthorized(apperror.Payload{Error: err})
@@ -78,7 +78,7 @@ func (a *authConn) DeleteRefreshToken(token string) error {
 	err := a.conn.GetContext(ctx, &returningToken, query, token)
 	if err != nil {
 		switch {
-		case errors.Is(err, context.Canceled):
+		case errors.Is(err, context.DeadlineExceeded):
 			return apperror.Timeout(apperror.Payload{Error: err})
 		case errors.Is(err, sql.ErrNoRows):
 			return apperror.Unauthorized(apperror.Payload{Error: err})

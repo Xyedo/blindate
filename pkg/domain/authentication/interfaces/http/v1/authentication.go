@@ -36,7 +36,7 @@ func (a *authH) postAuthHandler(c *gin.Context) {
 		return
 	}
 
-	accessToken, refreshToken, err := a.authUC.Login(request.Email, request.Password)
+	accessToken, refreshToken, err := a.authUC.Login( request.Email, request.Password)
 	if err != nil {
 		httperror.HandleError(c, err)
 		return
