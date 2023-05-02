@@ -38,6 +38,11 @@ func (b *basicInfoUC) GetById(id string) (basicInfoEntities.BasicInfo, error) {
 
 // Update implements basicinfo.Usecase
 func (b *basicInfoUC) Update(basicInfo basicInfoDTOs.UpdateBasicInfo) error {
+	err := basicInfo.Validate()
+	if err != nil {
+		return err
+	}
+
 	basicInfoDB, err := b.basicInfoRepo.GetBasicInfoByUserId(basicInfo.UserId)
 	if err != nil {
 		return err

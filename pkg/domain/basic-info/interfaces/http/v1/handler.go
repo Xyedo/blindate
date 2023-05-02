@@ -10,4 +10,5 @@ func (b *basicInfoH) Handler(globalRoute *gin.RouterGroup, jwt *security.Jwt) {
 	basicInfo := globalRoute.Group("/users/:userId/basic-info", httpMiddleware.AuthToken(jwt), httpMiddleware.ValidateUserId())
 	basicInfo.POST("/", b.postBasicInfoHandler)
 	basicInfo.GET("/", b.getBasicInfoHandler)
+	basicInfo.PATCH("/", b.patchBasicInfoHandler)
 }

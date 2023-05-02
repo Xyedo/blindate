@@ -7,16 +7,19 @@ import (
 	"github.com/xyedo/blindate/pkg/common/constant"
 	basicinfo "github.com/xyedo/blindate/pkg/domain/basic-info"
 	basicInfoDTOs "github.com/xyedo/blindate/pkg/domain/basic-info/dtos"
+	"github.com/xyedo/blindate/pkg/infrastructure"
 	httperror "github.com/xyedo/blindate/pkg/infrastructure/http/error"
 )
 
-func New(basicInfoUsecase basicinfo.Usecase) *basicInfoH {
+func New(config infrastructure.Config, basicInfoUsecase basicinfo.Usecase) *basicInfoH {
 	return &basicInfoH{
+		config:      config,
 		basicInfoUC: basicInfoUsecase,
 	}
 }
 
 type basicInfoH struct {
+	config      infrastructure.Config
 	basicInfoUC basicinfo.Usecase
 }
 
@@ -34,9 +37,8 @@ func (b *basicInfoH) postBasicInfoHandler(c *gin.Context) {
 		return
 	}
 
-	userId := c.GetString(constant.KeyUserId)
 	err = b.basicInfoUC.Create(basicInfoDTOs.CreateBasicInfo{
-		UserId:           userId,
+		UserId:           c.GetString(constant.KeyUserId),
 		Gender:           request.Gender,
 		FromLoc:          request.FromLoc,
 		Height:           request.Height,
@@ -61,9 +63,8 @@ func (b *basicInfoH) postBasicInfoHandler(c *gin.Context) {
 }
 
 func (b *basicInfoH) getBasicInfoHandler(c *gin.Context) {
-	userId := c.GetString(constant.KeyUserId)
 
-	basicInfo, err := b.basicInfoUC.GetById(userId)
+	basicInfo, err := b.basicInfoUC.GetById(c.GetString(constant.KeyUserId))
 	if err != nil {
 		httperror.HandleError(c, err)
 		return
@@ -86,5 +87,45 @@ func (b *basicInfoH) getBasicInfoHandler(c *gin.Context) {
 				Work:             basicInfo.Work,
 			},
 		},
+	})
+}
+
+func (b *basicInfoH) patchBasicInfoHandler(c *gin.Context) {
+	var request patchBasicInfoRequest
+	err := c.ShouldBindJSON(&request)
+	if err != nil {
+		httperror.HandleError(c, err)
+		return
+	}
+
+	err = request.mod().validate()
+	if err != nil {
+		httperror.HandleError(c, err)
+		return
+	}
+
+	err = b.basicInfoUC.Update(basicInfoDTOs.UpdateBasicInfo{
+		UserId:           c.GetString(constant.KeyUserId),
+		Gender:           request.Gender,
+		FromLoc:          request.FromLoc,
+		Height:           request.Height,
+		EducationLevel:   request.EducationLevel,
+		RelationshipPref: request.EducationLevel,
+		Drinking:         request.Drinking,
+		Smoking:          request.Smoking,
+		LookingFor:       request.LookingFor,
+		Zodiac:           request.Zodiac,
+		Kids:             request.Kids,
+		Work:             request.Work,
+	})
+
+	if err != nil {
+		httperror.HandleError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  "success",
+		"message": "basic-info updated",
 	})
 }

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/xyedo/blindate/internal/optional"
+	apperror "github.com/xyedo/blindate/pkg/common/app-error"
 )
 
 type UpdateBasicInfo struct {
@@ -21,4 +22,21 @@ type UpdateBasicInfo struct {
 	Work             optional.String
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
+}
+
+func (b UpdateBasicInfo) Validate() error {
+	if !b.Gender.ValueSet() &&
+		!b.FromLoc.ValueSet() &&
+		!b.Height.ValueSet() &&
+		!b.EducationLevel.ValueSet() &&
+		!b.Drinking.ValueSet() &&
+		!b.Smoking.ValueSet() &&
+		!b.RelationshipPref.ValueSet() &&
+		!b.LookingFor.ValueSet() &&
+		!b.Zodiac.ValueSet() &&
+		!b.Kids.ValueSet() &&
+		!b.Work.ValueSet() {
+		return apperror.BadPayload(apperror.Payload{Message: "body should not be empty"})
+	}
+	return nil
 }

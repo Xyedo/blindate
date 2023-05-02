@@ -15,6 +15,7 @@ import (
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	authHttpV1 "github.com/xyedo/blindate/pkg/domain/authentication/interfaces/http/v1"
+	basicInfoHttpV1 "github.com/xyedo/blindate/pkg/domain/basic-info/interfaces/http/v1"
 	gatewayHttpV1 "github.com/xyedo/blindate/pkg/domain/gateway/interfaces/http/v1"
 	userHttpV1 "github.com/xyedo/blindate/pkg/domain/user/interfaces/http/v1"
 	"github.com/xyedo/blindate/pkg/infrastructure"
@@ -80,12 +81,14 @@ func (h *httpServer) handlerV1() {
 	userHandler := userHttpV1.New(h.config, h.container.UserUC, h.container.AttachmentManager)
 	authHandler := authHttpV1.New(h.config, h.container.AuthUC)
 	gatewayHandler := gatewayHttpV1.New(h.config, h.container.GatewaySession)
+	basicInfoHandler := basicInfoHttpV1.New(h.config, h.container.BasicInfoUC)
 
 	go gatewayHandler.Listen()
 
 	gatewayHandler.Handler(v1, h.container.Jwt)
 	userHandler.Handler(v1, h.container.Jwt)
 	authHandler.Handler(v1)
+	basicInfoHandler.Handler(v1, h.container.Jwt)
 
 }
 func gracefulShutDown(shutdownError chan<- error, server *http.Server) {

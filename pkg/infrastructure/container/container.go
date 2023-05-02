@@ -8,6 +8,9 @@ import (
 	"github.com/xyedo/blindate/pkg/domain/authentication"
 	authRepo "github.com/xyedo/blindate/pkg/domain/authentication/pg-repository"
 	authUsecase "github.com/xyedo/blindate/pkg/domain/authentication/usecase"
+	basicinfo "github.com/xyedo/blindate/pkg/domain/basic-info"
+	basicinfoRepo "github.com/xyedo/blindate/pkg/domain/basic-info/pg-repository"
+	basicinfoUsecase "github.com/xyedo/blindate/pkg/domain/basic-info/usecase"
 	"github.com/xyedo/blindate/pkg/domain/gateway"
 	gatewayUsecase "github.com/xyedo/blindate/pkg/domain/gateway/usecase"
 	"github.com/xyedo/blindate/pkg/domain/user"
@@ -17,11 +20,12 @@ import (
 )
 
 type Container struct {
-	UserUC            user.Usecase
 	AttachmentManager attachment.Repository
 	Jwt               *security.Jwt
-	AuthUC            authentication.Usecase
 	GatewaySession    gateway.Session
+	UserUC            user.Usecase
+	AuthUC            authentication.Usecase
+	BasicInfoUC       basicinfo.Usecase
 }
 
 func New(db *sqlx.DB, config infrastructure.Config) Container {
@@ -36,15 +40,19 @@ func New(db *sqlx.DB, config infrastructure.Config) Container {
 
 	userRepo := userRepo.New(db)
 	authRepo := authRepo.New(db)
+	basicInfoRepo := basicinfoRepo.New(db)
 
 	authUC := authUsecase.New(authRepo, userRepo, jwt)
 	userUC := userUsecase.New(userRepo)
+	basicinfoUC := basicinfoUsecase.New(basicInfoRepo)
+
 	gatewaySession := gatewayUsecase.NewSession()
 	return Container{
-		UserUC:            userUC,
 		AttachmentManager: attachment,
 		Jwt:               jwt,
-		AuthUC:            authUC,
 		GatewaySession:    gatewaySession,
+		UserUC:            userUC,
+		AuthUC:            authUC,
+		BasicInfoUC:       basicinfoUC,
 	}
 }

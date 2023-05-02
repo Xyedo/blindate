@@ -16,12 +16,12 @@ type UpdateUser struct {
 }
 
 func (u UpdateUser) Validate() error {
-	if !u.FullName.Present() &&
-		!u.Alias.Present() &&
-		!u.Email.Present() &&
-		!u.OldPassword.Present() &&
-		!u.NewPassword.Present() &&
-		!u.Dob.Present() {
+	if !u.FullName.ValueSet() &&
+		!u.Alias.ValueSet() &&
+		!u.Email.ValueSet() &&
+		!u.OldPassword.ValueSet() &&
+		!u.NewPassword.ValueSet() &&
+		!u.Dob.ValueSet() {
 		return apperror.BadPayload(apperror.Payload{
 			Message: "body must not be empty",
 		})

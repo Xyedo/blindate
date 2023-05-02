@@ -10,7 +10,10 @@ type String struct {
 }
 
 func (s String) Value() (driver.Value, error) {
-	str, _ := s.Get()
+	str, ok := s.Get()
+	if !ok {
+		return nil, nil
+	}
 	return str, nil
 }
 
@@ -21,6 +24,8 @@ func (s *String) Scan(value interface{}) error {
 		return err
 	}
 
-	s.Set(sqlStr.String)
+	if sqlStr.Valid {
+		s.Set(sqlStr.String)
+	}
 	return nil
 }
