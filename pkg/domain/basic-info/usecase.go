@@ -7,6 +7,6 @@ import (
 
 type Usecase interface {
 	Create(basicInfoDTOs.CreateBasicInfo) error
-	GetById(string) (basicInfoEntities.BasicInfo, error)
+	GetById(string, string) (basicInfoEntities.BasicInfo, error)
 	Update(basicInfoDTOs.UpdateBasicInfo) error
 }

@@ -65,7 +65,7 @@ func (u *userH) postUserHandler(c *gin.Context) {
 func (u *userH) putUserImageProfileHandler(c *gin.Context) {
 	selectedQ := c.Query("selected")
 	selected := strings.EqualFold(selectedQ, "true")
-	userId := c.GetString(constant.KeyUserId)
+	userId := c.GetString(constant.KeyRequestUserId)
 	key := u.uploadProfilePic(c)
 	if key == "" {
 		return
@@ -92,7 +92,7 @@ func (u *userH) putUserImageProfileHandler(c *gin.Context) {
 	})
 }
 func (u *userH) getUserByIdHandler(c *gin.Context) {
-	userId := c.GetString(constant.KeyUserId)
+	userId := c.GetString(constant.KeyRequestUserId)
 
 	user, err := u.userUC.GetUserById(userDTOs.GetUserDetail{
 		Id:             userId,
@@ -140,7 +140,7 @@ func (u *userH) patchUserByIdHandler(c *gin.Context) {
 		return
 	}
 
-	userId := c.GetString(constant.KeyUserId)
+	userId := c.GetString(constant.KeyRequestUserId)
 
 	err = u.userUC.UpdateUser(userDTOs.UpdateUser{
 		Id:          userId,

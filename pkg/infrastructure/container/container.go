@@ -3,6 +3,7 @@ package container
 import (
 	"github.com/jmoiron/sqlx"
 	"github.com/xyedo/blindate/internal/security"
+	"github.com/xyedo/blindate/pkg/common/event"
 	"github.com/xyedo/blindate/pkg/domain/attachment"
 	s3manager "github.com/xyedo/blindate/pkg/domain/attachment/s3"
 	"github.com/xyedo/blindate/pkg/domain/authentication"
@@ -13,6 +14,9 @@ import (
 	basicinfoUsecase "github.com/xyedo/blindate/pkg/domain/basic-info/usecase"
 	"github.com/xyedo/blindate/pkg/domain/gateway"
 	gatewayUsecase "github.com/xyedo/blindate/pkg/domain/gateway/usecase"
+	"github.com/xyedo/blindate/pkg/domain/online"
+	onlineRepo "github.com/xyedo/blindate/pkg/domain/online/pg-repository"
+	onlineUsecase "github.com/xyedo/blindate/pkg/domain/online/usecase"
 	"github.com/xyedo/blindate/pkg/domain/user"
 	userRepo "github.com/xyedo/blindate/pkg/domain/user/pg-repository"
 	userUsecase "github.com/xyedo/blindate/pkg/domain/user/usecase"
@@ -26,6 +30,7 @@ type Container struct {
 	UserUC            user.Usecase
 	AuthUC            authentication.Usecase
 	BasicInfoUC       basicinfo.Usecase
+	OnlineUC          online.Usecase
 }
 
 func New(db *sqlx.DB, config infrastructure.Config) Container {
@@ -40,13 +45,18 @@ func New(db *sqlx.DB, config infrastructure.Config) Container {
 
 	userRepo := userRepo.New(db)
 	authRepo := authRepo.New(db)
+	onlineRepo := onlineRepo.New(db)
 	basicInfoRepo := basicinfoRepo.New(db)
 
 	authUC := authUsecase.New(authRepo, userRepo, jwt)
 	userUC := userUsecase.New(userRepo)
-	basicinfoUC := basicinfoUsecase.New(basicInfoRepo)
+	onlineUC := onlineUsecase.New(onlineRepo)
 
+	basicinfoUC := basicinfoUsecase.New(basicInfoRepo)
 	gatewaySession := gatewayUsecase.NewSession()
+
+	event.UserConnectionChange.Register(onlineUC)
+
 	return Container{
 		AttachmentManager: attachment,
 		Jwt:               jwt,
@@ -54,5 +64,6 @@ func New(db *sqlx.DB, config infrastructure.Config) Container {
 		UserUC:            userUC,
 		AuthUC:            authUC,
 		BasicInfoUC:       basicinfoUC,
+		OnlineUC:          onlineUC,
 	}
 }

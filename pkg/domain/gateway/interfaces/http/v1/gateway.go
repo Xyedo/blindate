@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"github.com/xyedo/blindate/pkg/common/constant"
+	"github.com/xyedo/blindate/pkg/common/event"
 	"github.com/xyedo/blindate/pkg/domain/gateway"
 	gatewayEntities "github.com/xyedo/blindate/pkg/domain/gateway/entities"
 	"github.com/xyedo/blindate/pkg/infrastructure"
@@ -78,14 +79,19 @@ func (g *gatewayH) Listen() {
 }
 
 func (g *gatewayH) wsHandler(c *gin.Context) {
-	userId := c.GetString(constant.KeyUserId)
+	userId := c.GetString(constant.KeyRequestUserId)
 	wsConnection, err := g.upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		log.Println(err)
 		log.Println(reflect.TypeOf(err))
 		return
 	}
-	//handleUserOnline
+
+	event.UserConnectionChange.Trigger(event.ConnectionPayload{
+		UserId: userId,
+		Online: true,
+	})
+
 	conn := gatewayEntities.Conn{Conn: wsConnection}
 	g.session.SetUserSocket(userId, conn)
 
@@ -149,7 +155,11 @@ func (g *gatewayH) cleanUp(id string) {
 	conn.Close()
 
 	g.session.DeleteUserSocket(id)
-	//handleUserOffline
+
+	event.UserConnectionChange.Trigger(event.ConnectionPayload{
+		UserId: id,
+		Online: false,
+	})
 
 }
 

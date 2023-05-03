@@ -40,7 +40,7 @@ func AuthToken(jwt *security.Jwt) gin.HandlerFunc {
 			return
 		}
 
-		c.Set(constant.KeyUserId, id)
+		c.Set(constant.KeyRequestUserId, id)
 	}
 }
 func ValidateUserId() gin.HandlerFunc {
@@ -55,7 +55,7 @@ func ValidateUserId() gin.HandlerFunc {
 			})
 			return
 		}
-		userId := c.GetString(constant.KeyUserId)
+		userId := c.GetString(constant.KeyRequestUserId)
 		if url.UserId != userId {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"message": "you should not access this resource",

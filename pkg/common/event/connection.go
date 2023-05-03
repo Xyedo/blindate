@@ -20,3 +20,9 @@ func (u userConnectionChange) Trigger(payload ConnectionPayload) {
 		go handler.HandleUserChangeConnection(payload)
 	}
 }
+
+func (u userConnectionChange) TriggerSync(payload ConnectionPayload) {
+	for _, handler := range u.handlers {
+		handler.HandleUserChangeConnection(payload)
+	}
+}

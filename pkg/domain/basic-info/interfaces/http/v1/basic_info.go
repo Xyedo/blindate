@@ -38,7 +38,7 @@ func (b *basicInfoH) postBasicInfoHandler(c *gin.Context) {
 	}
 
 	err = b.basicInfoUC.Create(basicInfoDTOs.CreateBasicInfo{
-		UserId:           c.GetString(constant.KeyUserId),
+		UserId:           c.GetString(constant.KeyRequestUserId),
 		Gender:           request.Gender,
 		FromLoc:          request.FromLoc,
 		Height:           request.Height,
@@ -63,8 +63,18 @@ func (b *basicInfoH) postBasicInfoHandler(c *gin.Context) {
 }
 
 func (b *basicInfoH) getBasicInfoHandler(c *gin.Context) {
+	var url struct {
+		UserId string `uri:"userId" binding:"required,uuid4"`
+	}
+	err := c.ShouldBindUri(&url)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
+			"message": "must have uuid in uri!",
+		})
+		return
+	}
 
-	basicInfo, err := b.basicInfoUC.GetById(c.GetString(constant.KeyUserId))
+	basicInfo, err := b.basicInfoUC.GetById(c.GetString(constant.KeyRequestUserId), url.UserId)
 	if err != nil {
 		httperror.HandleError(c, err)
 		return
@@ -105,7 +115,7 @@ func (b *basicInfoH) patchBasicInfoHandler(c *gin.Context) {
 	}
 
 	err = b.basicInfoUC.Update(basicInfoDTOs.UpdateBasicInfo{
-		UserId:           c.GetString(constant.KeyUserId),
+		UserId:           c.GetString(constant.KeyRequestUserId),
 		Gender:           request.Gender,
 		FromLoc:          request.FromLoc,
 		Height:           request.Height,
