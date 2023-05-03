@@ -33,7 +33,7 @@ type Container struct {
 	OnlineUC          online.Usecase
 }
 
-func New(db *sqlx.DB, config infrastructure.Config) Container {
+func New(db *sqlx.DB, config infrastructure.Config) *Container {
 	attachment := s3manager.NewS3(config.BucketName)
 
 	jwt := security.NewJwt(
@@ -57,7 +57,7 @@ func New(db *sqlx.DB, config infrastructure.Config) Container {
 
 	event.UserConnectionChange.Register(onlineUC)
 
-	return Container{
+	return &Container{
 		AttachmentManager: attachment,
 		Jwt:               jwt,
 		GatewaySession:    gatewaySession,

@@ -23,7 +23,7 @@ import (
 	"github.com/xyedo/blindate/pkg/infrastructure/container"
 )
 
-func NewServer(config infrastructure.Config, container container.Container) httpServer {
+func NewServer(config infrastructure.Config, container *container.Container) httpServer {
 	gin.EnableJsonDecoderDisallowUnknownFields()
 
 	ginEngine := gin.New()
@@ -40,7 +40,7 @@ func NewServer(config infrastructure.Config, container container.Container) http
 type httpServer struct {
 	config    infrastructure.Config
 	gin       *gin.Engine
-	container container.Container
+	container *container.Container
 }
 
 func (s *httpServer) Listen() error {
