@@ -7,6 +7,7 @@ import (
 	"time"
 
 	validation "github.com/go-ozzo/ozzo-validation"
+	apperror "github.com/xyedo/blindate/pkg/common/app-error"
 )
 
 func ValidDob(value any) error {
@@ -60,6 +61,21 @@ func ValidUsername(value any) error {
 
 	if strings.Contains(s, " ") {
 		return errors.New("must valid username with no spaces")
+	}
+	return nil
+}
+
+func Unique[T comparable](vs []T) error {
+	uniqueValue := make(map[T]bool)
+	for _, v := range vs {
+		if _, ok := uniqueValue[v]; ok {
+			return apperror.UnprocessableEntity(apperror.PayloadMap{
+				ErrorMap: map[string][]string{
+					"hobbies": {"every hobbies must be unique"},
+				},
+			})
+		}
+		uniqueValue[v] = true
 	}
 	return nil
 }

@@ -11,7 +11,7 @@ import (
 )
 
 type postUserRequest struct {
-	FullName string    `json:"full_name" mold:"trim_whitespace"`
+	FullName string    `json:"full_name"`
 	Alias    string    `json:"alias" mod:"trim"`
 	Email    string    `json:"email" mod:"trim"`
 	Password string    `json:"password"`
