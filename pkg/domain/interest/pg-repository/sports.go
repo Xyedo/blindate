@@ -15,27 +15,27 @@ import (
 	interestEntities "github.com/xyedo/blindate/pkg/domain/interest/entities"
 )
 
-// InsertMovieSeriesByInterestId implements interest.Repository
-func (i *interestConn) InsertMovieSeriesByInterestId(
+// InsertSportByInterestId implements interest.Repository
+func (i *interestConn) InsertSportByInterestId(
 	id string,
-	movieSeries []interestEntities.MovieSerie,
+	sports []interestEntities.Sport,
 ) error {
 	stmt := new(strings.Builder)
-	args := make([]any, 0, 2*len(movieSeries))
+	args := make([]any, 0, 2*len(sports))
 	args = append(args, id)
 
-	for i := range movieSeries {
+	for i := range sports {
 		param := i * 2
 		stmt.WriteString(
 			fmt.Sprintf("($%d, $%d, $%d),", 1, param+2, param+3),
 		)
 		newId := uuid.New()
-		args = append(args, newId, movieSeries[i].MovieSerie)
-		movieSeries[i].Id = newId.String()
+		args = append(args, newId, sports[i].Sport)
+		sports[i].Id = newId.String()
 	}
 
 	statement := stmt.String()
-	query := fmt.Sprintf(insertMovieSeries, statement[:len(statement)-1])
+	query := fmt.Sprintf(insertSports, statement[:len(statement)-1])
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -47,13 +47,12 @@ func (i *interestConn) InsertMovieSeriesByInterestId(
 			return err
 		}
 
-		if len(returnedIds) != len(movieSeries) {
+		if len(returnedIds) != len(sports) {
 			return transaction.ErrInvalidBulkOperation
 		}
 
 		return nil
 	})
-
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return apperror.Timeout(apperror.Payload{Error: err})
@@ -77,12 +76,12 @@ func (i *interestConn) InsertMovieSeriesByInterestId(
 						})
 				}
 			case "23505":
-				if strings.Contains(pqErr.Constraint, "movie_serie_unique") {
+				if strings.Contains(pqErr.Constraint, "sport_unique") {
 					return apperror.UnprocessableEntity(
 						apperror.PayloadMap{
 							Error: err,
 							ErrorMap: map[string]string{
-								"movie_series": "every value must be unique",
+								"sports": "every value must be unique",
 							},
 						},
 					)
@@ -95,45 +94,45 @@ func (i *interestConn) InsertMovieSeriesByInterestId(
 	return nil
 }
 
-// CheckInsertMovieSeriesValid implements interest.Repository
-func (i *interestConn) CheckInsertMovieSeriesValid(
+// CheckInsertSportValid implements interest.Repository
+func (i *interestConn) CheckInsertSportValid(
 	interestId string,
-	newMovieSeriesLength int,
+	newSportsLength int,
 ) error {
 	return i.checkInsertValueValid(
 		interestId,
-		"movie_series",
-		checkInsertMovieSeriesValid,
-		newMovieSeriesLength,
+		"sports",
+		checkInsertSportsValid,
+		newSportsLength,
 	)
 }
 
-// GetMovieSeriesByInterestId implements interest.Repository
-func (i *interestConn) GetMovieSeriesByInterestId(id string) (
-	[]interestEntities.MovieSerie,
+// GetSportByInterestId implements interest.Repository
+func (i *interestConn) GetSportByInterestId(id string) (
+	[]interestEntities.Sport,
 	error,
 ) {
-	return getValuesByInterestId[interestEntities.MovieSerie](
+	return getValuesByInterestId[interestEntities.Sport](
 		i.conn,
 		id,
-		getMovieSeries,
+		getSports,
 	)
 }
 
-// UpdateMovieSeriesByInterestId implements interest.Repository
-func (i *interestConn) UpdateMovieSeries(
-	movieSeries []interestEntities.MovieSerie,
+// UpdateSportByInterestId implements interest.Repository
+func (i *interestConn) UpdateSport(
+	sports []interestEntities.Sport,
 ) error {
 	stmt := new(strings.Builder)
-	args := make([]any, 0, 2*len(movieSeries))
+	args := make([]any, 0, 2*len(sports))
 
-	for i := range movieSeries {
+	for i := range sports {
 		param := i * 2
 		stmt.WriteString(fmt.Sprintf("($%d::uuid, $%d),", param+1, param+2))
-		args = append(args, movieSeries[i].Id, movieSeries[i].MovieSerie)
+		args = append(args, sports[i].Id, sports[i].Sport)
 	}
 	statement := stmt.String()
-	query := fmt.Sprintf(updateMovieSeries, statement[:len(statement)-1])
+	query := fmt.Sprintf(updateSports, statement[:len(statement)-1])
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -145,16 +144,18 @@ func (i *interestConn) UpdateMovieSeries(
 			return err
 		}
 
-		if len(returnedIds) != len(movieSeries) {
+		if len(returnedIds) != len(sports) {
 			return transaction.ErrInvalidBulkOperation
 		}
 
 		return nil
 	})
+
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return apperror.Timeout(apperror.Payload{Error: err})
 		}
+
 		if errors.Is(err, transaction.ErrInvalidBulkOperation) {
 			return apperror.BadPayload(apperror.Payload{
 				Error:   err,
@@ -165,12 +166,12 @@ func (i *interestConn) UpdateMovieSeries(
 		if errors.As(err, &pqErr) {
 			switch pqErr.Code {
 			case "23505":
-				if strings.Contains(pqErr.Constraint, "movie_serie_unique") {
+				if strings.Contains(pqErr.Constraint, "sport_unique") {
 					return apperror.UnprocessableEntity(
 						apperror.PayloadMap{
 							Error: err,
 							ErrorMap: map[string]string{
-								"movie_series": "every value must be unique",
+								"sports": "every value must be unique",
 							},
 						},
 					)
@@ -183,11 +184,7 @@ func (i *interestConn) UpdateMovieSeries(
 	return nil
 }
 
-// DeleteMovieSeriesByInterestId implements interest.Repository
-func (i *interestConn) DeleteMovieSeriesByIDs(movieIds []string) error {
-	return i.deleteValuesByIDs(
-		movieIds,
-		deleteMovieSeries,
-		"movie_serie_ids",
-	)
+// DeleteSportByInterestId implements interest.Repository
+func (i *interestConn) DeleteSportByIDs(sportIds []string) error {
+	return i.deleteValuesByIDs(sportIds, deleteSports, "sport_ids")
 }

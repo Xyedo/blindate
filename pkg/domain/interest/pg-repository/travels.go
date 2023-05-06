@@ -15,31 +15,30 @@ import (
 	interestEntities "github.com/xyedo/blindate/pkg/domain/interest/entities"
 )
 
-// InsertMovieSeriesByInterestId implements interest.Repository
-func (i *interestConn) InsertMovieSeriesByInterestId(
+// InsertTravelingByInterestId implements interest.Repository
+func (i *interestConn) InsertTravelingByInterestId(
 	id string,
-	movieSeries []interestEntities.MovieSerie,
+	travels []interestEntities.Travel,
 ) error {
 	stmt := new(strings.Builder)
-	args := make([]any, 0, 2*len(movieSeries))
+	args := make([]any, 0, 2*len(travels))
 	args = append(args, id)
 
-	for i := range movieSeries {
+	for i := range travels {
 		param := i * 2
 		stmt.WriteString(
 			fmt.Sprintf("($%d, $%d, $%d),", 1, param+2, param+3),
 		)
 		newId := uuid.New()
-		args = append(args, newId, movieSeries[i].MovieSerie)
-		movieSeries[i].Id = newId.String()
+		args = append(args, newId, travels[i].Travel)
+		travels[i].Id = newId.String()
 	}
 
 	statement := stmt.String()
-	query := fmt.Sprintf(insertMovieSeries, statement[:len(statement)-1])
+	query := fmt.Sprintf(insertTravels, statement[:len(statement)-1])
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
 	err := i.execTransaction(ctx, func(tx *sqlx.Tx) error {
 		var returnedIds []string
 		err := tx.SelectContext(ctx, &returnedIds, query, args...)
@@ -47,13 +46,12 @@ func (i *interestConn) InsertMovieSeriesByInterestId(
 			return err
 		}
 
-		if len(returnedIds) != len(movieSeries) {
+		if len(returnedIds) != len(travels) {
 			return transaction.ErrInvalidBulkOperation
 		}
 
 		return nil
 	})
-
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return apperror.Timeout(apperror.Payload{Error: err})
@@ -77,12 +75,12 @@ func (i *interestConn) InsertMovieSeriesByInterestId(
 						})
 				}
 			case "23505":
-				if strings.Contains(pqErr.Constraint, "movie_serie_unique") {
+				if strings.Contains(pqErr.Constraint, "travel_unique") {
 					return apperror.UnprocessableEntity(
 						apperror.PayloadMap{
 							Error: err,
 							ErrorMap: map[string]string{
-								"movie_series": "every value must be unique",
+								"travels": "every value must be unique",
 							},
 						},
 					)
@@ -95,45 +93,43 @@ func (i *interestConn) InsertMovieSeriesByInterestId(
 	return nil
 }
 
-// CheckInsertMovieSeriesValid implements interest.Repository
-func (i *interestConn) CheckInsertMovieSeriesValid(
+// CheckInsertTravelingValid implements interest.Repository
+func (i *interestConn) CheckInsertTravelingValid(
 	interestId string,
-	newMovieSeriesLength int,
+	newTravelsLength int,
 ) error {
 	return i.checkInsertValueValid(
 		interestId,
-		"movie_series",
-		checkInsertMovieSeriesValid,
-		newMovieSeriesLength,
+		"travels",
+		checkInsertTravelsValid,
+		newTravelsLength,
 	)
 }
 
-// GetMovieSeriesByInterestId implements interest.Repository
-func (i *interestConn) GetMovieSeriesByInterestId(id string) (
-	[]interestEntities.MovieSerie,
+// GetTravelingByInterestId implements interest.Repository
+func (i *interestConn) GetTravelingByInterestId(id string) (
+	[]interestEntities.Travel,
 	error,
 ) {
-	return getValuesByInterestId[interestEntities.MovieSerie](
+	return getValuesByInterestId[interestEntities.Travel](
 		i.conn,
 		id,
-		getMovieSeries,
+		getTravels,
 	)
 }
 
-// UpdateMovieSeriesByInterestId implements interest.Repository
-func (i *interestConn) UpdateMovieSeries(
-	movieSeries []interestEntities.MovieSerie,
-) error {
+// UpdateTravelingByInterestId implements interest.Repository
+func (i *interestConn) UpdateTraveling(travels []interestEntities.Travel) error {
 	stmt := new(strings.Builder)
-	args := make([]any, 0, 2*len(movieSeries))
+	args := make([]any, 0, 2*len(travels))
 
-	for i := range movieSeries {
+	for i := range travels {
 		param := i * 2
 		stmt.WriteString(fmt.Sprintf("($%d::uuid, $%d),", param+1, param+2))
-		args = append(args, movieSeries[i].Id, movieSeries[i].MovieSerie)
+		args = append(args, travels[i].Id, travels[i].Travel)
 	}
 	statement := stmt.String()
-	query := fmt.Sprintf(updateMovieSeries, statement[:len(statement)-1])
+	query := fmt.Sprintf(updateTravels, statement[:len(statement)-1])
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -145,32 +141,30 @@ func (i *interestConn) UpdateMovieSeries(
 			return err
 		}
 
-		if len(returnedIds) != len(movieSeries) {
+		if len(returnedIds) != len(travels) {
 			return transaction.ErrInvalidBulkOperation
 		}
 
 		return nil
 	})
+
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return apperror.Timeout(apperror.Payload{Error: err})
 		}
 		if errors.Is(err, transaction.ErrInvalidBulkOperation) {
-			return apperror.BadPayload(apperror.Payload{
-				Error:   err,
-				Message: "one of the id is not found",
-			})
+			return apperror.BadPayload(apperror.Payload{Error: err, Message: "one of the id is not found"})
 		}
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			switch pqErr.Code {
 			case "23505":
-				if strings.Contains(pqErr.Constraint, "movie_serie_unique") {
+				if strings.Contains(pqErr.Constraint, "travel_unique") {
 					return apperror.UnprocessableEntity(
 						apperror.PayloadMap{
 							Error: err,
 							ErrorMap: map[string]string{
-								"movie_series": "every value must be unique",
+								"travels": "every value must be unique",
 							},
 						},
 					)
@@ -183,11 +177,7 @@ func (i *interestConn) UpdateMovieSeries(
 	return nil
 }
 
-// DeleteMovieSeriesByInterestId implements interest.Repository
-func (i *interestConn) DeleteMovieSeriesByIDs(movieIds []string) error {
-	return i.deleteValuesByIDs(
-		movieIds,
-		deleteMovieSeries,
-		"movie_serie_ids",
-	)
+// DeleteTravelingByInterestId implements interest.Repository
+func (i *interestConn) DeleteTravelingByIDs(travelIds []string) error {
+	return i.deleteValuesByIDs(travelIds, deleteTravels, "travel_ids")
 }

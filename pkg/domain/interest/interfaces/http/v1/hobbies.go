@@ -59,10 +59,7 @@ func (h *interestH) patchHobbiesHandler(c *gin.Context) {
 	for _, hobbie := range request.Hobies {
 		hobbiesDTO = append(hobbiesDTO, interestDTOs.Hobbie(hobbie))
 	}
-	err = h.interestUC.UpdateHobbiesByInterestId(
-		c.GetString(constant.KeyInterestId),
-		hobbiesDTO,
-	)
+	err = h.interestUC.UpdateHobbies(hobbiesDTO)
 	if err != nil {
 		httperror.HandleError(c, err)
 		return
@@ -88,10 +85,7 @@ func (h *interestH) deleteHobbiesHandler(c *gin.Context) {
 		return
 	}
 
-	err = h.interestUC.DeleteHobbiesByInterestId(
-		c.GetString(constant.KeyInterestId),
-		request.IDs,
-	)
+	err = h.interestUC.DeleteHobbiesByIDs(request.IDs)
 	if err != nil {
 		httperror.HandleError(c, err)
 		return

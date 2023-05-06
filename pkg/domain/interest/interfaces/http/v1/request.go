@@ -80,20 +80,20 @@ func (h postHobbiesRequest) validate() error {
 	return nil
 }
 
-type patchHobbiesRequestHobbie struct {
+type hobbie struct {
 	Id     string `json:"id"`
 	Hobbie string `json:"hobbie"`
 }
 
-func (hobbie patchHobbiesRequestHobbie) Validate() error {
-	return validation.ValidateStruct(&hobbie,
-		validation.Field(&hobbie.Id, validation.Required, is.UUIDv4),
-		validation.Field(&hobbie.Hobbie, validation.Required, validation.Length(1, 11)),
+func (h hobbie) Validate() error {
+	return validation.ValidateStruct(&h,
+		validation.Field(&h.Id, validation.Required, is.UUIDv4),
+		validation.Field(&h.Hobbie, validation.Required, validation.Length(1, 21)),
 	)
 }
 
 type patchHobbiesRequest struct {
-	Hobies []patchHobbiesRequestHobbie `json:"hobbies"`
+	Hobies []hobbie `json:"hobbies"`
 }
 
 func (hobbies *patchHobbiesRequest) mod() *patchHobbiesRequest {
@@ -106,7 +106,7 @@ func (hobbies *patchHobbiesRequest) mod() *patchHobbiesRequest {
 
 func (hobbies patchHobbiesRequest) validate() error {
 	err := validation.ValidateStruct(&hobbies,
-		validation.Field(&hobbies.Hobies, validation.Required, validation.Length(1, 11)),
+		validation.Field(&hobbies.Hobies, validation.Required, validation.Length(1, 10)),
 	)
 	if err != nil {
 		return err
@@ -133,7 +133,7 @@ func (hobbies *deleteHobbiesRequest) mod() *deleteHobbiesRequest {
 
 func (hobbies deleteHobbiesRequest) validate() error {
 	err := validation.ValidateStruct(&hobbies,
-		validation.Field(&hobbies.IDs, validation.Required, validation.Length(1, 11),
+		validation.Field(&hobbies.IDs, validation.Required, validation.Length(1, 10),
 			validation.Each(validation.Required, is.UUIDv4),
 		),
 	)
@@ -164,26 +164,26 @@ func (m *postMovieSeriesRequest) mod() *postMovieSeriesRequest {
 
 func (movieSeries postMovieSeriesRequest) validate() error {
 	return validation.ValidateStruct(&movieSeries,
-		validation.Field(&movieSeries.MovieSeries, validation.Required, validation.Length(1, 21),
-			validation.Each(validation.Required, validation.Length(1, 21)),
+		validation.Field(&movieSeries.MovieSeries, validation.Required, validation.Length(1, 10),
+			validation.Each(validation.Required, validation.Length(1, 30)),
 		),
 	)
 }
 
-type patchMovieSeriesRequestMovieSerie struct {
+type movieSerie struct {
 	Id         string `json:"id"`
 	MovieSerie string `json:"movie_serie"`
 }
 
-func (movieSerie patchMovieSeriesRequestMovieSerie) Validate() error {
+func (movieSerie movieSerie) Validate() error {
 	return validation.ValidateStruct(&movieSerie,
 		validation.Field(&movieSerie.Id, validation.Required, is.UUIDv4),
-		validation.Field(&movieSerie.MovieSerie, validation.Required, validation.Length(1, 21)),
+		validation.Field(&movieSerie.MovieSerie, validation.Required, validation.Length(1, 30)),
 	)
 }
 
 type patchMovieSeriesRequest struct {
-	MovieSeries []patchMovieSeriesRequestMovieSerie `json:"movie_series"`
+	MovieSeries []movieSerie `json:"movie_series"`
 }
 
 func (movieSeries *patchMovieSeriesRequest) mod() *patchMovieSeriesRequest {
@@ -197,7 +197,7 @@ func (movieSeries *patchMovieSeriesRequest) mod() *patchMovieSeriesRequest {
 
 func (movieSeries patchMovieSeriesRequest) validate() error {
 	err := validation.ValidateStruct(&movieSeries,
-		validation.Field(&movieSeries.MovieSeries, validation.Required, validation.Length(1, 11)),
+		validation.Field(&movieSeries.MovieSeries, validation.Required, validation.Length(1, 10)),
 	)
 	if err != nil {
 		return err
@@ -224,7 +224,7 @@ func (movieSeries *deleteMovieSeriesRequest) mod() *deleteMovieSeriesRequest {
 
 func (movieSeries deleteMovieSeriesRequest) validate() error {
 	err := validation.ValidateStruct(&movieSeries,
-		validation.Field(&movieSeries.IDs, validation.Required, validation.Length(1, 11),
+		validation.Field(&movieSeries.IDs, validation.Required, validation.Length(1, 10),
 			validation.Each(validation.Required, is.UUIDv4),
 		),
 	)
@@ -238,5 +238,195 @@ func (movieSeries deleteMovieSeriesRequest) validate() error {
 	}
 
 	return nil
+}
 
+type postTravelsRequest struct {
+	Travels []string `json:"travels"`
+}
+
+func (t *postTravelsRequest) mod() *postTravelsRequest {
+	for i, travel := range t.Travels {
+		mod.TrimWhiteSpace(&travel)
+		t.Travels[i] = travel
+	}
+	return t
+}
+
+func (travels postTravelsRequest) validate() error {
+	return validation.ValidateStruct(&travels,
+		validation.Field(&travels.Travels, validation.Required, validation.Length(1, 10),
+			validation.Each(validation.Required, validation.Length(1, 21)),
+		),
+	)
+}
+
+type travel struct {
+	Id     string `json:"id"`
+	Travel string `json:"travel"`
+}
+
+func (t travel) Validate() error {
+	return validation.ValidateStruct(&t,
+		validation.Field(&t.Id, validation.Required, is.UUIDv4),
+		validation.Field(&t.Travel, validation.Required, validation.Length(1, 21)),
+	)
+}
+
+type patchTravelsRequest struct {
+	Travels []travel `json:"travels"`
+}
+
+func (travels *patchTravelsRequest) mod() *patchTravelsRequest {
+	for i, travel := range travels.Travels {
+		mod.TrimWhiteSpace(&travel.Travel)
+		travels.Travels[i].Travel = travel.Travel
+	}
+
+	return travels
+}
+
+func (travels patchTravelsRequest) validate() error {
+	err := validation.ValidateStruct(&travels,
+		validation.Field(&travels.Travels, validation.Required, validation.Length(1, 10)),
+	)
+	if err != nil {
+		return err
+	}
+
+	err = validator.Unique(travels.Travels, "travels")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type deleteTravelsRequest struct {
+	IDs []string `json:"travel_ids"`
+}
+
+func (travels *deleteTravelsRequest) mod() *deleteTravelsRequest {
+	for i := range travels.IDs {
+		mod.Trim(&travels.IDs[i])
+	}
+	return travels
+}
+
+func (travels deleteTravelsRequest) validate() error {
+	err := validation.ValidateStruct(&travels,
+		validation.Field(&travels.IDs, validation.Required, validation.Length(1, 10),
+			validation.Each(validation.Required, is.UUIDv4),
+		),
+	)
+	if err != nil {
+		return err
+	}
+
+	err = validator.Unique(travels.IDs, "travels")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type postSportsRequest struct {
+	Sports []string `json:"sports"`
+}
+
+func (sports *postSportsRequest) mod() *postSportsRequest {
+	for i, sport := range sports.Sports {
+		mod.TrimWhiteSpace(&sport)
+		sports.Sports[i] = sport
+	}
+
+	return sports
+}
+
+func (sports postSportsRequest) validate() error {
+	err := validation.ValidateStruct(&sports,
+		validation.Field(&sports.Sports, validation.Required, validation.Length(1, 10),
+			validation.Each(validation.Required, validation.Length(1, 21)),
+		),
+	)
+	if err != nil {
+		return err
+	}
+
+	err = validator.Unique(sports.Sports, "sports")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type sport struct {
+	Id    string `json:"id"`
+	Sport string `json:"sport"`
+}
+
+func (s sport) Validate() error {
+	return validation.ValidateStruct(&s,
+		validation.Field(&s.Id, validation.Required, is.UUIDv4),
+		validation.Field(&s.Sport, validation.Required, validation.Length(1, 21)),
+	)
+}
+
+type patchSportsRequest struct {
+	Sports []sport `json:"sports"`
+}
+
+func (sports *patchSportsRequest) mod() *patchSportsRequest {
+	for i, sport := range sports.Sports {
+		mod.TrimWhiteSpace(&sport.Sport)
+		sports.Sports[i].Sport = sport.Sport
+	}
+
+	return sports
+}
+
+func (sports patchSportsRequest) validate() error {
+	err := validation.ValidateStruct(&sports,
+		validation.Field(&sports.Sports, validation.Required, validation.Length(1, 10)),
+	)
+	if err != nil {
+		return err
+	}
+
+	err = validator.Unique(sports.Sports, "sports")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type deleteSportsRequest struct {
+	IDs []string `json:"sport_ids"`
+}
+
+func (sports *deleteSportsRequest) mod() *deleteSportsRequest {
+	for i := range sports.IDs {
+		mod.Trim(&sports.IDs[i])
+	}
+	return sports
+}
+
+func (sports deleteSportsRequest) validate() error {
+	err := validation.ValidateStruct(&sports,
+		validation.Field(&sports.IDs, validation.Required, validation.Length(1, 10),
+			validation.Each(validation.Required, is.UUIDv4),
+		),
+	)
+	if err != nil {
+		return err
+	}
+
+	err = validator.Unique(sports.IDs, "sports")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

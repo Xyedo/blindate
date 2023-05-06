@@ -6,20 +6,35 @@ import (
 )
 
 // CreateMovieSeriesByInterestId implements interest.Usecase
-func (i *interestUC) CreateMovieSeriesByInterestId(id string, movieSeries []string) ([]string, error) {
-	movieSeriesDB := make([]interestEntities.MovieSerie, 0, len(movieSeries))
+func (i *interestUC) CreateMovieSeriesByInterestId(
+	id string,
+	movieSeries []string,
+) ([]string, error) {
+	movieSeriesDB := make(
+		[]interestEntities.MovieSerie,
+		0,
+		len(movieSeries),
+	)
 	for _, movieSerie := range movieSeries {
-		movieSeriesDB = append(movieSeriesDB, interestEntities.MovieSerie{
-			MovieSerie: movieSerie,
-		})
+		movieSeriesDB = append(
+			movieSeriesDB,
+			interestEntities.MovieSerie{
+				MovieSerie: movieSerie,
+			})
 	}
 
-	err := i.interestRepo.CheckInsertMovieSeriesValid(id, len(movieSeries))
+	err := i.interestRepo.CheckInsertMovieSeriesValid(
+		id,
+		len(movieSeries),
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	err = i.interestRepo.InsertMovieSeriesByInterestId(id, movieSeriesDB)
+	err = i.interestRepo.InsertMovieSeriesByInterestId(
+		id,
+		movieSeriesDB,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -33,13 +48,22 @@ func (i *interestUC) CreateMovieSeriesByInterestId(id string, movieSeries []stri
 }
 
 // UpdateMovieSeriesByInterestId implements interest.Usecase
-func (i *interestUC) UpdateMovieSeriesByInterestId(id string, movieSeries []interestDTOs.MovieSerie) error {
-	movieSeriesEntity := make([]interestEntities.MovieSerie, 0, len(movieSeries))
+func (i *interestUC) UpdateMovieSeries(
+	movieSeries []interestDTOs.MovieSerie,
+) error {
+	movieSeriesEntity := make(
+		[]interestEntities.MovieSerie,
+		0,
+		len(movieSeries),
+	)
 	for _, movieSerie := range movieSeries {
-		movieSeriesEntity = append(movieSeriesEntity, interestEntities.MovieSerie(movieSerie))
+		movieSeriesEntity = append(
+			movieSeriesEntity,
+			interestEntities.MovieSerie(movieSerie),
+		)
 	}
 
-	err := i.interestRepo.UpdateMovieSeriesByInterestId(id, movieSeriesEntity)
+	err := i.interestRepo.UpdateMovieSeries(movieSeriesEntity)
 	if err != nil {
 		return err
 	}
@@ -48,6 +72,8 @@ func (i *interestUC) UpdateMovieSeriesByInterestId(id string, movieSeries []inte
 }
 
 // DeleteMovieSeriesByInterestId implements interest.Usecase
-func (i *interestUC) DeleteMovieSeriesByInterestId(id string, movieSerieIds []string) error {
-	return i.interestRepo.DeleteMovieSeriesByInterestId(id, movieSerieIds)
+func (i *interestUC) DeleteMovieSeriesByIDs(
+	movieSerieIds []string,
+) error {
+	return i.interestRepo.DeleteMovieSeriesByIDs(movieSerieIds)
 }

@@ -17,7 +17,10 @@ func (i *interestUC) CreateBio(bio interestDTOs.Bio) (string, error) {
 }
 
 // GetBioById implements interest.Usecase
-func (i *interestUC) GetBioById(userId string) (interestDTOs.Bio, error) {
+func (i *interestUC) GetBioById(userId string) (
+	interestDTOs.Bio,
+	error,
+) {
 	bio, err := i.interestRepo.GetBioByUserId(userId)
 	if err != nil {
 		return interestDTOs.Bio{}, err

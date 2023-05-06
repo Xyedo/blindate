@@ -23,7 +23,9 @@ type interestH struct {
 }
 
 func (h *interestH) getInterestDetailHandler(c *gin.Context) {
-	interestDetail, err := h.interestUC.GetById(c.GetString(constant.KeyRequestUserId))
+	interestDetail, err := h.interestUC.GetById(
+		c.GetString(constant.KeyRequestUserId),
+	)
 	if err != nil {
 		httperror.HandleError(c, err)
 		return

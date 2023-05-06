@@ -9,8 +9,8 @@ import (
 	httperror "github.com/xyedo/blindate/pkg/infrastructure/http/error"
 )
 
-func (h *interestH) postMovieSeriesHandler(c *gin.Context) {
-	var request postMovieSeriesRequest
+func (h *interestH) postTravelsHandler(c *gin.Context) {
+	var request postTravelsRequest
 	err := c.ShouldBindJSON(&request)
 	if err != nil {
 		httperror.HandleError(c, err)
@@ -23,9 +23,9 @@ func (h *interestH) postMovieSeriesHandler(c *gin.Context) {
 		return
 	}
 
-	movieSerieIds, err := h.interestUC.CreateMovieSeriesByInterestId(
+	travelIds, err := h.interestUC.CreateTravelsByInterestId(
 		c.GetString(constant.KeyInterestId),
-		request.MovieSeries,
+		request.Travels,
 	)
 	if err != nil {
 		httperror.HandleError(c, err)
@@ -35,13 +35,13 @@ func (h *interestH) postMovieSeriesHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
 		"data": gin.H{
-			"movie_series": movieSerieIds,
+			"travels": travelIds,
 		},
 	})
 }
 
-func (h *interestH) patchMovieSeriesHandler(c *gin.Context) {
-	var request patchMovieSeriesRequest
+func (h *interestH) patchTravelsHandler(c *gin.Context) {
+	var request patchTravelsRequest
 	err := c.ShouldBindJSON(&request)
 	if err != nil {
 		httperror.HandleError(c, err)
@@ -54,26 +54,24 @@ func (h *interestH) patchMovieSeriesHandler(c *gin.Context) {
 		return
 	}
 
-	movieSeriesDTO := make([]interestDTOs.MovieSerie, 0, len(request.MovieSeries))
-	for _, movieSerie := range request.MovieSeries {
-		movieSeriesDTO = append(
-			movieSeriesDTO,
-			interestDTOs.MovieSerie(movieSerie),
-		)
+	travelsDTO := make([]interestDTOs.Travel, 0, len(request.Travels))
+	for _, travel := range request.Travels {
+		travelsDTO = append(travelsDTO, interestDTOs.Travel(travel))
 	}
-	err = h.interestUC.UpdateMovieSeries(movieSeriesDTO)
+	err = h.interestUC.UpdateTravels(travelsDTO)
 	if err != nil {
 		httperror.HandleError(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
-		"message": "update movie_series success",
+		"message": "update travels success",
 	})
 }
 
-func (h *interestH) deleteMovieSeriesHandler(c *gin.Context) {
-	var request deleteMovieSeriesRequest
+func (h *interestH) deleteTravelsHandler(c *gin.Context) {
+	var request deleteTravelsRequest
 	err := c.ShouldBindJSON(&request)
 	if err != nil {
 		httperror.HandleError(c, err)
@@ -86,7 +84,7 @@ func (h *interestH) deleteMovieSeriesHandler(c *gin.Context) {
 		return
 	}
 
-	err = h.interestUC.DeleteMovieSeriesByIDs(request.IDs)
+	err = h.interestUC.DeleteTravelsByIDs(request.IDs)
 	if err != nil {
 		httperror.HandleError(c, err)
 		return

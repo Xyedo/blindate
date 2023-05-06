@@ -6,7 +6,10 @@ import (
 )
 
 // CreateHobbiesByInterestId implements interest.Usecase
-func (i *interestUC) CreateHobbiesByInterestId(interestId string, hobbies []string) ([]string, error) {
+func (i *interestUC) CreateHobbiesByInterestId(
+	id string,
+	hobbies []string,
+) ([]string, error) {
 	hobbiesDb := make([]interestEntities.Hobbie, 0, len(hobbies))
 	for _, hobbie := range hobbies {
 		hobbiesDb = append(hobbiesDb, interestEntities.Hobbie{
@@ -14,12 +17,12 @@ func (i *interestUC) CreateHobbiesByInterestId(interestId string, hobbies []stri
 		})
 	}
 
-	err := i.interestRepo.CheckInsertHobbiesValid(interestId, len(hobbiesDb))
+	err := i.interestRepo.CheckInsertHobbiesValid(id, len(hobbiesDb))
 	if err != nil {
 		return nil, err
 	}
 
-	err = i.interestRepo.InsertHobbiesByInterestId(interestId, hobbiesDb)
+	err = i.interestRepo.InsertHobbiesByInterestId(id, hobbiesDb)
 	if err != nil {
 		return nil, err
 	}
@@ -33,13 +36,18 @@ func (i *interestUC) CreateHobbiesByInterestId(interestId string, hobbies []stri
 }
 
 // UpdateHobbiesByInterestId implements interest.Usecase
-func (i *interestUC) UpdateHobbiesByInterestId(id string, hobbies []interestDTOs.Hobbie) error {
-	hobbieEntity := make([]interestEntities.Hobbie, 0, len(hobbies))
+func (i *interestUC) UpdateHobbies(
+	hobbies []interestDTOs.Hobbie,
+) error {
+	hobbiesEntity := make([]interestEntities.Hobbie, 0, len(hobbies))
 	for _, hobbie := range hobbies {
-		hobbieEntity = append(hobbieEntity, interestEntities.Hobbie(hobbie))
+		hobbiesEntity = append(
+			hobbiesEntity,
+			interestEntities.Hobbie(hobbie),
+		)
 	}
 
-	err := i.interestRepo.UpdateHobbiesByInterestId(id, hobbieEntity)
+	err := i.interestRepo.UpdateHobbies(hobbiesEntity)
 	if err != nil {
 		return err
 	}
@@ -48,6 +56,6 @@ func (i *interestUC) UpdateHobbiesByInterestId(id string, hobbies []interestDTOs
 }
 
 // DeleteHobbiesByInterestId implements interest.Usecase
-func (i *interestUC) DeleteHobbiesByInterestId(id string, hobbieIds []string) error {
-	return i.interestRepo.DeleteHobbiesByInterestId(id, hobbieIds)
+func (i *interestUC) DeleteHobbiesByIDs(hobbieIds []string) error {
+	return i.interestRepo.DeleteHobbiesByIDs(hobbieIds)
 }

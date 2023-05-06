@@ -100,60 +100,28 @@ func (i *interestConn) CheckInsertHobbiesValid(
 	interestId string,
 	newHobbiesLength int,
 ) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var lengthInHobbiesDB int
-	err := i.conn.GetContext(
-		ctx,
-		&lengthInHobbiesDB,
-		checkInsertHobbiesValid,
+	return i.checkInsertValueValid(
 		interestId,
+		"hobbies",
+		checkInsertHobbiesValid,
+		newHobbiesLength,
 	)
-	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			return apperror.Timeout(apperror.Payload{Error: err})
-		}
-		return err
-	}
-
-	if lengthInHobbiesDB+newHobbiesLength > 10 {
-		return apperror.UnprocessableEntity(apperror.PayloadMap{
-			ErrorMap: map[string]string{
-				"hobbies": fmt.Sprintf(
-					"new %d hobbies already surpassed the hobbies limit",
-					newHobbiesLength),
-			},
-		})
-	}
-
-	return nil
 }
 
 // GetHobbiesByInterestId implements interest.Repository
-func (i *interestConn) GetHobbiesByInterestId(id string) ([]interestEntities.Hobbie, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var hobbies []interestEntities.Hobbie
-	err := i.conn.SelectContext(ctx, &hobbies, getHobbies, id)
-	if err != nil {
-		if errors.Is(err, context.DeadlineExceeded) {
-			return nil, apperror.Timeout(apperror.Payload{Error: err})
-		}
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-
-		return nil, err
-	}
-
-	return hobbies, nil
+func (i *interestConn) GetHobbiesByInterestId(id string) (
+	[]interestEntities.Hobbie,
+	error,
+) {
+	return getValuesByInterestId[interestEntities.Hobbie](
+		i.conn,
+		id,
+		getHobbies,
+	)
 }
 
 // UpdateHobbiesByInterestId implements interest.Repository
-func (i *interestConn) UpdateHobbiesByInterestId(
-	id string,
+func (i *interestConn) UpdateHobbies(
 	hobbies []interestEntities.Hobbie,
 ) error {
 	stmt := new(strings.Builder)
@@ -188,14 +156,11 @@ func (i *interestConn) UpdateHobbiesByInterestId(
 		if errors.Is(err, context.DeadlineExceeded) {
 			return apperror.Timeout(apperror.Payload{Error: err})
 		}
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, transaction.ErrInvalidBulkOperation) {
 			return apperror.BadPayload(apperror.Payload{
 				Error:   err,
-				Message: "ids not found"},
-			)
-		}
-		if errors.Is(err, transaction.ErrInvalidBulkOperation) {
-			return apperror.BadPayload(apperror.Payload{Error: err, Message: "one of the id is not found"})
+				Message: "one of the id is not found",
+			})
 		}
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
@@ -220,32 +185,33 @@ func (i *interestConn) UpdateHobbiesByInterestId(
 }
 
 // DeleteHobbiesByInterestId implements interest.Repository
-func (i *interestConn) DeleteHobbiesByInterestId(
-	id string,
-	hobbieIds []string,
-) error {
-	stmt := new(strings.Builder)
-	args := make([]any, 0, len(hobbieIds))
+func (i *interestConn) DeleteHobbiesByIDs(hobbieIds []string) error {
+	return i.deleteValuesByIDs(hobbieIds, deleteHobbies, "hobbie_ids")
+}
 
-	for i, id := range hobbieIds {
+func (i *interestConn) deleteValuesByIDs(valueIds []string, query, key string) error {
+	stmt := new(strings.Builder)
+	args := make([]any, 0, len(valueIds))
+
+	for i, id := range valueIds {
 		stmt.WriteString(fmt.Sprintf("$%d,", i+1))
 		args = append(args, id)
 	}
 
 	statement := stmt.String()
-	query := fmt.Sprintf(deleteHobbies, statement[:len(statement)-1])
+	queryStmt := fmt.Sprintf(query, statement[:len(statement)-1])
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	err := i.execTransaction(ctx, func(tx *sqlx.Tx) error {
 		var returnedIds []string
-		err := tx.SelectContext(ctx, &returnedIds, query, args...)
+		err := tx.SelectContext(ctx, &returnedIds, queryStmt, args...)
 		if err != nil {
 			return err
 		}
 
-		if len(returnedIds) != len(hobbieIds) {
+		if len(returnedIds) != len(valueIds) {
 			return transaction.ErrInvalidBulkOperation
 		}
 
@@ -255,11 +221,13 @@ func (i *interestConn) DeleteHobbiesByInterestId(
 		if errors.Is(err, context.DeadlineExceeded) {
 			return apperror.Timeout(apperror.Payload{Error: err})
 		}
-		if errors.Is(err, sql.ErrNoRows) ||
-			errors.Is(err, transaction.ErrInvalidBulkOperation) {
-			return apperror.BadPayload(apperror.Payload{
-				Error:   err,
-				Message: "ids is not valid"})
+		if errors.Is(err, transaction.ErrInvalidBulkOperation) {
+			return apperror.UnprocessableEntity(apperror.PayloadMap{
+				Error: err,
+				ErrorMap: map[string]string{
+					key: "some of the value not found",
+				},
+			})
 		}
 
 		return err
@@ -268,6 +236,59 @@ func (i *interestConn) DeleteHobbiesByInterestId(
 	return nil
 }
 
+func getValuesByInterestId[T comparable](db *sqlx.DB, id, query string) ([]T, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var values []T
+	err := db.SelectContext(ctx, &values, query, id)
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, apperror.Timeout(apperror.Payload{Error: err})
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return values, nil
+}
+
+func (i *interestConn) checkInsertValueValid(
+	interestId, key, query string,
+	newValueLength int,
+) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var lengthInHobbiesDB int
+	err := i.conn.GetContext(
+		ctx,
+		&lengthInHobbiesDB,
+		query,
+		interestId,
+	)
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return apperror.Timeout(apperror.Payload{Error: err})
+		}
+		return err
+	}
+
+	if lengthInHobbiesDB+newValueLength > 10 {
+		return apperror.UnprocessableEntity(apperror.PayloadMap{
+			ErrorMap: map[string]string{
+				key: fmt.Sprintf(
+					"new %d %s already surpassed the %s limit",
+					newValueLength, key, key),
+			},
+		})
+	}
+
+	return nil
+}
 func (i *interestConn) execTransaction(ctx context.Context, cb func(tx *sqlx.Tx) error) error {
 	return transaction.ExecGeneric(i.conn, ctx, cb, &sql.TxOptions{
 		Isolation: sql.LevelReadCommitted,

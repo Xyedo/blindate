@@ -24,16 +24,6 @@ type interestConn struct {
 	conn *sqlx.DB
 }
 
-// CheckInsertSportValid implements interest.Repository
-func (*interestConn) CheckInsertSportValid(string, int) error {
-	panic("unimplemented")
-}
-
-// CheckInsertTravelingValid implements interest.Repository
-func (*interestConn) CheckInsertTravelingValid(string, int) error {
-	panic("unimplemented")
-}
-
 // InsertBio implements interest.Repository
 func (i *interestConn) InsertBio(bio interestEntities.Bio) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -129,44 +119,4 @@ func (i *interestConn) UpdateBio(bio interestEntities.Bio) error {
 	}
 
 	return nil
-}
-
-// InsertSportByInterestId implements interest.Repository
-func (*interestConn) InsertSportByInterestId(string, []interestEntities.Sport) error {
-	panic("unimplemented")
-}
-
-// UpdateSportByInterestId implements interest.Repository
-func (*interestConn) UpdateSportByInterestId(string, []interestEntities.Sport) error {
-	panic("unimplemented")
-}
-
-// DeleteSportByInterestId implements interest.Repository
-func (*interestConn) DeleteSportByInterestId(string, []string) error {
-	panic("unimplemented")
-}
-
-// InsertTravelingByInterestId implements interest.Repository
-func (*interestConn) InsertTravelingByInterestId(string, []interestEntities.Travel) error {
-	panic("unimplemented")
-}
-
-// UpdateTravelingByInterestId implements interest.Repository
-func (*interestConn) UpdateTravelingByInterestId(string, []interestEntities.Travel) error {
-	panic("unimplemented")
-}
-
-// DeleteTravelingByInterestId implements interest.Repository
-func (*interestConn) DeleteTravelingByInterestId(string, []string) error {
-	panic("unimplemented")
-}
-
-// GetSportByInterestId implements interest.Repository
-func (*interestConn) GetSportByInterestId(string) ([]interestEntities.Sport, error) {
-	panic("unimplemented")
-}
-
-// GetTravelingByInterestId implements interest.Repository
-func (*interestConn) GetTravelingByInterestId(string) ([]interestEntities.Travel, error) {
-	panic("unimplemented")
 }
