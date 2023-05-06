@@ -22,6 +22,9 @@ func (h *interestH) Handler(globalRoute *gin.RouterGroup, jwt *security.Jwt) {
 		interest.PATCH("/hobbies", h.patchHobbiesHandler)
 		interest.DELETE("/hobbies", h.deleteHobbiesHandler)
 
+		interest.POST("/movie-series", h.postMovieSeriesHandler)
+		interest.PATCH("/movie-series", h.patchMovieSeriesHandler)
+		interest.DELETE("/movie-series", h.deleteMovieSeriesHandler)
 	}
 
 }

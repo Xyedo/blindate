@@ -9,8 +9,8 @@ import (
 	httperror "github.com/xyedo/blindate/pkg/infrastructure/http/error"
 )
 
-func (h *interestH) postHobbiesHandler(c *gin.Context) {
-	var request postHobbiesRequest
+func (h *interestH) postMovieSeriesHandler(c *gin.Context) {
+	var request postMovieSeriesRequest
 
 	err := c.ShouldBindJSON(&request)
 	if err != nil {
@@ -24,9 +24,9 @@ func (h *interestH) postHobbiesHandler(c *gin.Context) {
 		return
 	}
 
-	hobbieIds, err := h.interestUC.CreateHobbiesByInterestId(
+	movieSerieIds, err := h.interestUC.CreateMovieSeriesByInterestId(
 		c.GetString(constant.KeyInterestId),
-		request.Hobies,
+		request.MovieSeries,
 	)
 	if err != nil {
 		httperror.HandleError(c, err)
@@ -36,13 +36,13 @@ func (h *interestH) postHobbiesHandler(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"status": "success",
 		"data": gin.H{
-			"hobbies": hobbieIds,
+			"movie_series": movieSerieIds,
 		},
 	})
 }
 
-func (h *interestH) patchHobbiesHandler(c *gin.Context) {
-	var request patchHobbiesRequest
+func (h *interestH) patchMovieSeriesHandler(c *gin.Context) {
+	var request patchMovieSeriesRequest
 	err := c.ShouldBindJSON(&request)
 	if err != nil {
 		httperror.HandleError(c, err)
@@ -55,27 +55,26 @@ func (h *interestH) patchHobbiesHandler(c *gin.Context) {
 		return
 	}
 
-	hobbiesDTO := make([]interestDTOs.Hobbie, 0, len(request.Hobies))
-	for _, hobbie := range request.Hobies {
-		hobbiesDTO = append(hobbiesDTO, interestDTOs.Hobbie(hobbie))
+	movieSeriesDTO := make([]interestDTOs.MovieSerie, 0, len(request.MovieSeries))
+	for _, movieSerie := range request.MovieSeries {
+		movieSeriesDTO = append(movieSeriesDTO, interestDTOs.MovieSerie(movieSerie))
 	}
-	err = h.interestUC.UpdateHobbiesByInterestId(
+	err = h.interestUC.UpdateMovieSeriesByInterestId(
 		c.GetString(constant.KeyInterestId),
-		hobbiesDTO,
+		movieSeriesDTO,
 	)
 	if err != nil {
 		httperror.HandleError(c, err)
 		return
 	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
-		"message": "update hobbies success",
+		"message": "update movie_series success",
 	})
 }
 
-func (h *interestH) deleteHobbiesHandler(c *gin.Context) {
-	var request deleteHobbiesRequest
+func (h *interestH) deleteMovieSeriesHandler(c *gin.Context) {
+	var request deleteMovieSeriesRequest
 	err := c.ShouldBindJSON(&request)
 	if err != nil {
 		httperror.HandleError(c, err)
@@ -88,7 +87,7 @@ func (h *interestH) deleteHobbiesHandler(c *gin.Context) {
 		return
 	}
 
-	err = h.interestUC.DeleteHobbiesByInterestId(
+	err = h.interestUC.DeleteMovieSeriesByInterestId(
 		c.GetString(constant.KeyInterestId),
 		request.IDs,
 	)

@@ -5,6 +5,11 @@ const insertHobbies = `
 		(interest_id, id, hobbie)
 	VALUES %s RETURNING id`
 
+const checkInsertHobbiesValid = `
+	SELECT count(id)
+	FROM hobbies
+	WHERE interest_id = $1`
+
 const getHobbies = `
 	SELECT 
 		id,
@@ -14,12 +19,12 @@ const getHobbies = `
 
 const updateHobbies = `
 	UPDATE hobbies AS h SET
-		hobbies = h2.hobbie
-		FROM (
-			VALUES %s
+		hobbie = h2.hobbie
+		FROM (VALUES 
+			%s
 		) AS h2 (id, hobbie)
 		WHERE h2.id = h.id
-	RETURNING id
+	RETURNING h.id
 	`
 
 const deleteHobbies = `
@@ -27,10 +32,3 @@ const deleteHobbies = `
 	WHERE 
 		id IN (%s)
 	RETURNING id`
-
-const hobbiesStatistic = `
-	UPDATE interest_statistics SET
-		hobbie_count = hobbie_count + $1
-	WHERE interest_id = $2
-	RETURNING interest_id
-`

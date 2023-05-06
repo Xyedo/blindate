@@ -1,12 +1,15 @@
-package tx
+package transaction
 
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
 )
+
+var ErrInvalidBulkOperation = errors.New("invalid bulk operation")
 
 // ExecGeneric need to be to use in your class method
 func ExecGeneric(conn *sqlx.DB, ctx context.Context, cb func(tx *sqlx.Tx) error, option *sql.TxOptions) error {

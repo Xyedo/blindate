@@ -17,6 +17,7 @@ import (
 	authHttpV1 "github.com/xyedo/blindate/pkg/domain/authentication/interfaces/http/v1"
 	basicInfoHttpV1 "github.com/xyedo/blindate/pkg/domain/basic-info/interfaces/http/v1"
 	gatewayHttpV1 "github.com/xyedo/blindate/pkg/domain/gateway/interfaces/http/v1"
+	interestHttpV1 "github.com/xyedo/blindate/pkg/domain/interest/interfaces/http/v1"
 	onlineHttpV1 "github.com/xyedo/blindate/pkg/domain/online/interfaces/http/v1"
 	userHttpV1 "github.com/xyedo/blindate/pkg/domain/user/interfaces/http/v1"
 	"github.com/xyedo/blindate/pkg/infrastructure"
@@ -84,6 +85,7 @@ func (h *httpServer) handlerV1() {
 	gatewayHandler := gatewayHttpV1.New(h.config, h.container.GatewaySession)
 	basicInfoHandler := basicInfoHttpV1.New(h.config, h.container.BasicInfoUC)
 	onlineHandler := onlineHttpV1.New(h.config, h.container.OnlineUC)
+	interestHandler := interestHttpV1.New(h.config, h.container.InterestUC)
 
 	go gatewayHandler.Listen()
 
@@ -92,8 +94,10 @@ func (h *httpServer) handlerV1() {
 	authHandler.Handler(v1)
 	basicInfoHandler.Handler(v1, h.container.Jwt)
 	onlineHandler.Handler(v1, h.container.Jwt)
+	interestHandler.Handler(v1, h.container.Jwt)
 
 }
+
 func gracefulShutDown(shutdownError chan<- error, server *http.Server) {
 	quit := make(chan os.Signal, 1)
 	defer close(quit)

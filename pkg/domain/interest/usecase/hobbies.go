@@ -14,7 +14,12 @@ func (i *interestUC) CreateHobbiesByInterestId(interestId string, hobbies []stri
 		})
 	}
 
-	err := i.interestRepo.InsertHobbiesByInterestId(interestId, hobbiesDb)
+	err := i.interestRepo.CheckInsertHobbiesValid(interestId, len(hobbiesDb))
+	if err != nil {
+		return nil, err
+	}
+
+	err = i.interestRepo.InsertHobbiesByInterestId(interestId, hobbiesDb)
 	if err != nil {
 		return nil, err
 	}
@@ -29,12 +34,12 @@ func (i *interestUC) CreateHobbiesByInterestId(interestId string, hobbies []stri
 
 // UpdateHobbiesByInterestId implements interest.Usecase
 func (i *interestUC) UpdateHobbiesByInterestId(id string, hobbies []interestDTOs.Hobbie) error {
-	hobbieEntities := make([]interestEntities.Hobbie, 0, len(hobbies))
+	hobbieEntity := make([]interestEntities.Hobbie, 0, len(hobbies))
 	for _, hobbie := range hobbies {
-		hobbieEntities = append(hobbieEntities, interestEntities.Hobbie(hobbie))
+		hobbieEntity = append(hobbieEntity, interestEntities.Hobbie(hobbie))
 	}
 
-	err := i.interestRepo.UpdateHobbiesByInterestId(id, hobbieEntities)
+	err := i.interestRepo.UpdateHobbiesByInterestId(id, hobbieEntity)
 	if err != nil {
 		return err
 	}

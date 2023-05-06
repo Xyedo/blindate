@@ -35,7 +35,10 @@ func (u *userUC) CreateUser(newUser userDTOs.RegisterUser) (string, error) {
 
 	return userId, nil
 }
-func (u *userUC) GetUserById(userDetail userDTOs.GetUserDetail) (userEntities.User, error) {
+func (u *userUC) GetUserById(userDetail userDTOs.GetUserDetail) (
+	userEntities.User,
+	error,
+) {
 	err := userDetail.Validate()
 	if err != nil {
 		return userEntities.User{}, err
@@ -47,7 +50,10 @@ func (u *userUC) GetUserById(userDetail userDTOs.GetUserDetail) (userEntities.Us
 	}
 
 	if userDetail.ProfilePicture {
-		profilePicture, err := u.userRepo.SelectProfilePicture(userDetail.Id, userDTOs.ProfilePictureQuery{})
+		profilePicture, err := u.userRepo.SelectProfilePicture(
+			userDetail.Id,
+			userDTOs.ProfilePictureQuery{},
+		)
 		if err != nil {
 			return userEntities.User{}, err
 		}
@@ -67,14 +73,23 @@ func (u *userUC) UpdateUser(updateUser userDTOs.UpdateUser) error {
 	if err != nil {
 		return err
 	}
-	if updateUser.NewPassword.Present() && updateUser.OldPassword.Present() {
+	if updateUser.NewPassword.Present() &&
+		updateUser.OldPassword.Present() {
 
-		err := security.ComparePassword(olduser.Password, updateUser.OldPassword.MustGet())
+		err := security.ComparePassword(
+			olduser.Password,
+			updateUser.OldPassword.MustGet(),
+		)
 		if err != nil {
-			return apperror.Unauthorized(apperror.Payload{Error: err, Message: "invalid email or password"})
+			return apperror.Unauthorized(apperror.Payload{
+				Error:   err,
+				Message: "invalid email or password",
+			})
 		}
 
-		hashedPass, err := security.HashAndSalt(updateUser.NewPassword.MustGet())
+		hashedPass, err := security.HashAndSalt(
+			updateUser.NewPassword.MustGet(),
+		)
 		if err != nil {
 			return err
 		}
@@ -112,23 +127,40 @@ func (u *userUC) UpdateUser(updateUser userDTOs.UpdateUser) error {
 	return nil
 }
 
-func (u *userUC) CreateNewProfilePic(profilePicture userDTOs.RegisterProfilePicture) (string, error) {
-	profilePictures, err := u.userRepo.SelectProfilePicture(profilePicture.UserId, userDTOs.ProfilePictureQuery{})
+func (u *userUC) CreateNewProfilePic(
+	profilePicture userDTOs.RegisterProfilePicture,
+) (string, error) {
+	profilePictures, err := u.userRepo.SelectProfilePicture(
+		profilePicture.UserId,
+		userDTOs.ProfilePictureQuery{},
+	)
 	if err != nil {
 		return "", err
 	}
 	if len(profilePictures) >= 5 {
-		return "", apperror.UnprocessableEntity(apperror.PayloadMap{ErrorMap: map[string][]string{"profilePicture": {"maximal profile pics is 5"}}})
+		return "", apperror.UnprocessableEntity(apperror.PayloadMap{
+			ErrorMap: map[string]string{
+				"profilePicture": "maximal profile pics is 5",
+			},
+		})
 	}
 	if profilePicture.Selected {
-		err := u.userRepo.UpdateProfilePictureToFalse(profilePicture.UserId)
+		err := u.userRepo.UpdateProfilePictureToFalse(
+			profilePicture.UserId,
+		)
 		if err != nil {
 			return "", err
 		}
 	}
 
-	profilePicture.PictureLink = filepath.Base(profilePicture.PictureLink)
-	id, err := u.userRepo.CreateProfilePicture(profilePicture.UserId, profilePicture.PictureLink, profilePicture.Selected)
+	profilePicture.PictureLink = filepath.Base(
+		profilePicture.PictureLink,
+	)
+	id, err := u.userRepo.CreateProfilePicture(
+		profilePicture.UserId,
+		profilePicture.PictureLink,
+		profilePicture.Selected,
+	)
 	if err != nil {
 		return "", err
 	}

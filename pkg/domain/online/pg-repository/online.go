@@ -53,8 +53,8 @@ func (o *onlineConn) Insert(online onlineEntities.Online) error {
 				if pqErr.Code == "23503" {
 					return apperror.UnprocessableEntity(apperror.PayloadMap{
 						Error: err,
-						ErrorMap: map[string][]string{
-							"user_id": {"value not found"},
+						ErrorMap: map[string]string{
+							"user_id": "value not found",
 						},
 					})
 				}

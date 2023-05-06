@@ -6,21 +6,24 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/xyedo/blindate/pkg/common/constant"
 	"github.com/xyedo/blindate/pkg/domain/interest"
+	"github.com/xyedo/blindate/pkg/infrastructure"
 	httperror "github.com/xyedo/blindate/pkg/infrastructure/http/error"
 )
 
-func New(interestUsecase interest.Usecase) *interestH {
+func New(config infrastructure.Config, interestUsecase interest.Usecase) *interestH {
 	return &interestH{
+		config:     config,
 		interestUC: interestUsecase,
 	}
 }
 
 type interestH struct {
+	config     infrastructure.Config
 	interestUC interest.Usecase
 }
 
 func (h *interestH) getInterestDetailHandler(c *gin.Context) {
-	interestDetail, err := h.interestUC.GetById(constant.KeyRequestUserId)
+	interestDetail, err := h.interestUC.GetById(c.GetString(constant.KeyRequestUserId))
 	if err != nil {
 		httperror.HandleError(c, err)
 		return

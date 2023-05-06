@@ -36,7 +36,10 @@ func (u *userDb) InsertUser(user userDTOs.RegisterUser) (string, error) {
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			if pqErr.Code == "23505" {
-				return "", apperror.Conflicted(apperror.Payload{Error: err, Message: "email already taken"})
+				return "", apperror.Conflicted(apperror.Payload{
+					Error:   err,
+					Message: "email already taken",
+				})
 			}
 			return "", err
 		}
@@ -64,13 +67,20 @@ func (u *userDb) UpdateUser(user userEntities.User) error {
 		}
 
 		if errors.Is(err, sql.ErrNoRows) {
-			return apperror.NotFound(apperror.Payload{Error: err, Message: "user not found"})
+			return apperror.NotFound(apperror.Payload{
+				Error:   err,
+				Message: "user not found",
+			})
 		}
 
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			if pqErr.Code == "23505" {
-				return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"email": {"already taken"}}})
+				return apperror.UnprocessableEntity(apperror.PayloadMap{
+					Error: err, ErrorMap: map[string]string{
+						"email": "already taken",
+					},
+				})
 			}
 		}
 

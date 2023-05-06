@@ -5,7 +5,7 @@ import "fmt"
 type Sentinel struct {
 	Err     error
 	Message string
-	ErrMap  map[string][]string
+	ErrMap  map[string]string
 }
 
 func (s Sentinel) Error() string {
@@ -116,12 +116,12 @@ func BadPayload(payload Payload) error {
 
 type PayloadMap struct {
 	Error    error
-	ErrorMap map[string][]string
+	ErrorMap map[string]string
 }
 
 func UnprocessableEntity(payload PayloadMap) error {
 	if payload.ErrorMap == nil {
-		payload.ErrorMap = map[string][]string{"unknown": {"unprocessable entity"}}
+		payload.ErrorMap = map[string]string{"unknown": "unprocessable entity"}
 	}
 
 	if payload.Error != nil {

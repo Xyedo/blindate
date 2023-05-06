@@ -68,10 +68,6 @@ func (i *interestUC) GetById(userId string) (interestDTOs.InterestDetail, error)
 
 }
 
-// CreateMovieSeriesByInterestId implements interest.Usecase
-func (*interestUC) CreateMovieSeriesByInterestId(string, []string) ([]string, error) {
-	panic("unimplemented")
-}
 
 // CreateSportsByInterestId implements interest.Usecase
 func (*interestUC) CreateSportsByInterestId(string, []string) ([]string, error) {
@@ -83,10 +79,7 @@ func (*interestUC) CreateTravelsByInterestId(string, []string) ([]string, error)
 	panic("unimplemented")
 }
 
-// DeleteMovieSeriesByInterestId implements interest.Usecase
-func (*interestUC) DeleteMovieSeriesByInterestId(string, []string) error {
-	panic("unimplemented")
-}
+
 
 // DeleteSportsByInterestId implements interest.Usecase
 func (*interestUC) DeleteSportsByInterestId(string, []string) error {
@@ -98,10 +91,7 @@ func (*interestUC) DeleteTravelsByInterestId(string, []string) error {
 	panic("unimplemented")
 }
 
-// UpdateMovieSeriesByInterestId implements interest.Usecase
-func (*interestUC) UpdateMovieSeriesByInterestId(string, []interestDTOs.MovieSerie) error {
-	panic("unimplemented")
-}
+
 
 // UpdateSportsByInterestId implements interest.Usecase
 func (*interestUC) UpdateSportsByInterestId(string, []interestDTOs.Sport) error {

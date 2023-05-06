@@ -14,6 +14,9 @@ import (
 	basicinfoUsecase "github.com/xyedo/blindate/pkg/domain/basic-info/usecase"
 	"github.com/xyedo/blindate/pkg/domain/gateway"
 	gatewayUsecase "github.com/xyedo/blindate/pkg/domain/gateway/usecase"
+	"github.com/xyedo/blindate/pkg/domain/interest"
+	interestRepo "github.com/xyedo/blindate/pkg/domain/interest/pg-repository"
+	interestUsecase "github.com/xyedo/blindate/pkg/domain/interest/usecase"
 	"github.com/xyedo/blindate/pkg/domain/online"
 	onlineRepo "github.com/xyedo/blindate/pkg/domain/online/pg-repository"
 	onlineUsecase "github.com/xyedo/blindate/pkg/domain/online/usecase"
@@ -31,6 +34,7 @@ type Container struct {
 	AuthUC            authentication.Usecase
 	BasicInfoUC       basicinfo.Usecase
 	OnlineUC          online.Usecase
+	InterestUC        interest.Usecase
 }
 
 func New(db *sqlx.DB, config infrastructure.Config) *Container {
@@ -47,15 +51,16 @@ func New(db *sqlx.DB, config infrastructure.Config) *Container {
 	authRepo := authRepo.New(db)
 	onlineRepo := onlineRepo.New(db)
 	basicInfoRepo := basicinfoRepo.New(db)
+	interestRepo := interestRepo.New(db)
 
 	authUC := authUsecase.New(authRepo, userRepo, jwt)
 	userUC := userUsecase.New(userRepo)
 	onlineUC := onlineUsecase.New(onlineRepo)
+	event.UserConnectionChange.Register(onlineUC)
 
 	basicinfoUC := basicinfoUsecase.New(basicInfoRepo)
 	gatewaySession := gatewayUsecase.NewSession()
-
-	event.UserConnectionChange.Register(onlineUC)
+	interestUC := interestUsecase.New(interestRepo)
 
 	return &Container{
 		AttachmentManager: attachment,
@@ -65,5 +70,6 @@ func New(db *sqlx.DB, config infrastructure.Config) *Container {
 		AuthUC:            authUC,
 		BasicInfoUC:       basicinfoUC,
 		OnlineUC:          onlineUC,
+		InterestUC:        interestUC,
 	}
 }

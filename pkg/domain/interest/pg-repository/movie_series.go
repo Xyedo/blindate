@@ -16,27 +16,27 @@ import (
 	interestEntities "github.com/xyedo/blindate/pkg/domain/interest/entities"
 )
 
-// InsertHobbiesByInterestId implements interest.Repository
-func (i *interestConn) InsertHobbiesByInterestId(
+// InsertMovieSeriesByInterestId implements interest.Repository
+func (i *interestConn) InsertMovieSeriesByInterestId(
 	id string,
-	hobbies []interestEntities.Hobbie,
+	movieSeries []interestEntities.MovieSerie,
 ) error {
 	stmt := new(strings.Builder)
-	args := make([]any, 0, 2*len(hobbies))
+	args := make([]any, 0, 2*len(movieSeries))
 	args = append(args, id)
 
-	for i := range hobbies {
+	for i := range movieSeries {
 		param := i * 2
 		stmt.WriteString(
 			fmt.Sprintf("($%d, $%d, $%d),", 1, param+2, param+3),
 		)
 		newId := uuid.New()
-		args = append(args, newId, hobbies[i].Hobbie)
-		hobbies[i].Id = newId.String()
+		args = append(args, newId, movieSeries[i].MovieSerie)
+		movieSeries[i].Id = newId.String()
 	}
 
 	statement := stmt.String()
-	query := fmt.Sprintf(insertHobbies, statement[:len(statement)-1])
+	query := fmt.Sprintf(insertMovieSeries, statement[:len(statement)-1])
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -48,12 +48,13 @@ func (i *interestConn) InsertHobbiesByInterestId(
 			return err
 		}
 
-		if len(returnedIds) != len(hobbies) {
+		if len(returnedIds) != len(movieSeries) {
 			return transaction.ErrInvalidBulkOperation
 		}
 
 		return nil
 	})
+
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return apperror.Timeout(apperror.Payload{Error: err})
@@ -77,12 +78,12 @@ func (i *interestConn) InsertHobbiesByInterestId(
 						})
 				}
 			case "23505":
-				if strings.Contains(pqErr.Constraint, "hobbie_unique") {
+				if strings.Contains(pqErr.Constraint, "movie_serie_unique") {
 					return apperror.UnprocessableEntity(
 						apperror.PayloadMap{
 							Error: err,
 							ErrorMap: map[string]string{
-								"hobbies": "every value must be unique",
+								"movie_series": "every value must be unique",
 							},
 						},
 					)
@@ -95,19 +96,19 @@ func (i *interestConn) InsertHobbiesByInterestId(
 	return nil
 }
 
-// CheckInsertHobbiesValid implements interest.Repository
-func (i *interestConn) CheckInsertHobbiesValid(
+// CheckInsertMovieSeriesValid implements interest.Repository
+func (i *interestConn) CheckInsertMovieSeriesValid(
 	interestId string,
-	newHobbiesLength int,
+	newMovieSeriesLength int,
 ) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var lengthInHobbiesDB int
+	var lengthInMovieSeriesDB int
 	err := i.conn.GetContext(
 		ctx,
-		&lengthInHobbiesDB,
-		checkInsertHobbiesValid,
+		&lengthInMovieSeriesDB,
+		checkInsertMovieSeriesValid,
 		interestId,
 	)
 	if err != nil {
@@ -117,12 +118,12 @@ func (i *interestConn) CheckInsertHobbiesValid(
 		return err
 	}
 
-	if lengthInHobbiesDB+newHobbiesLength > 10 {
+	if lengthInMovieSeriesDB+newMovieSeriesLength > 10 {
 		return apperror.UnprocessableEntity(apperror.PayloadMap{
 			ErrorMap: map[string]string{
-				"hobbies": fmt.Sprintf(
-					"new %d hobbies already surpassed the hobbies limit",
-					newHobbiesLength),
+				"movie_series": fmt.Sprintf(
+					"new %d movie_series already surpassed the movie_series limit",
+					newMovieSeriesLength),
 			},
 		})
 	}
@@ -130,13 +131,16 @@ func (i *interestConn) CheckInsertHobbiesValid(
 	return nil
 }
 
-// GetHobbiesByInterestId implements interest.Repository
-func (i *interestConn) GetHobbiesByInterestId(id string) ([]interestEntities.Hobbie, error) {
+// GetMovieSeriesByInterestId implements interest.Repository
+func (i *interestConn) GetMovieSeriesByInterestId(id string) (
+	[]interestEntities.MovieSerie,
+	error,
+) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	var hobbies []interestEntities.Hobbie
-	err := i.conn.SelectContext(ctx, &hobbies, getHobbies, id)
+	var movieSeries []interestEntities.MovieSerie
+	err := i.conn.SelectContext(ctx, &movieSeries, getMovieSeries, id)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return nil, apperror.Timeout(apperror.Payload{Error: err})
@@ -148,24 +152,24 @@ func (i *interestConn) GetHobbiesByInterestId(id string) ([]interestEntities.Hob
 		return nil, err
 	}
 
-	return hobbies, nil
+	return movieSeries, nil
 }
 
-// UpdateHobbiesByInterestId implements interest.Repository
-func (i *interestConn) UpdateHobbiesByInterestId(
+// UpdateMovieSeriesByInterestId implements interest.Repository
+func (i *interestConn) UpdateMovieSeriesByInterestId(
 	id string,
-	hobbies []interestEntities.Hobbie,
+	movieSeries []interestEntities.MovieSerie,
 ) error {
 	stmt := new(strings.Builder)
-	args := make([]any, 0, 2*len(hobbies))
+	args := make([]any, 0, 2*len(movieSeries))
 
-	for i := range hobbies {
+	for i := range movieSeries {
 		param := i * 2
 		stmt.WriteString(fmt.Sprintf("($%d::uuid, $%d),", param+1, param+2))
-		args = append(args, hobbies[i].Id, hobbies[i].Hobbie)
+		args = append(args, movieSeries[i].Id, movieSeries[i].MovieSerie)
 	}
 	statement := stmt.String()
-	query := fmt.Sprintf(updateHobbies, statement[:len(statement)-1])
+	query := fmt.Sprintf(updateMovieSeries, statement[:len(statement)-1])
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -177,13 +181,12 @@ func (i *interestConn) UpdateHobbiesByInterestId(
 			return err
 		}
 
-		if len(returnedIds) != len(hobbies) {
+		if len(returnedIds) != len(movieSeries) {
 			return transaction.ErrInvalidBulkOperation
 		}
 
 		return nil
 	})
-
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return apperror.Timeout(apperror.Payload{Error: err})
@@ -191,22 +194,25 @@ func (i *interestConn) UpdateHobbiesByInterestId(
 		if errors.Is(err, sql.ErrNoRows) {
 			return apperror.BadPayload(apperror.Payload{
 				Error:   err,
-				Message: "ids not found"},
-			)
+				Message: "ids not found",
+			})
 		}
 		if errors.Is(err, transaction.ErrInvalidBulkOperation) {
-			return apperror.BadPayload(apperror.Payload{Error: err, Message: "one of the id is not found"})
+			return apperror.BadPayload(apperror.Payload{
+				Error:   err,
+				Message: "one of the id is not found",
+			})
 		}
 		var pqErr *pq.Error
 		if errors.As(err, &pqErr) {
 			switch pqErr.Code {
 			case "23505":
-				if strings.Contains(pqErr.Constraint, "hobbie_unique") {
+				if strings.Contains(pqErr.Constraint, "movie_serie_unique") {
 					return apperror.UnprocessableEntity(
 						apperror.PayloadMap{
 							Error: err,
 							ErrorMap: map[string]string{
-								"hobbies": "every value must be unique",
+								"movie_series": "every value must be unique",
 							},
 						},
 					)
@@ -219,21 +225,20 @@ func (i *interestConn) UpdateHobbiesByInterestId(
 	return nil
 }
 
-// DeleteHobbiesByInterestId implements interest.Repository
-func (i *interestConn) DeleteHobbiesByInterestId(
+// DeleteMovieSeriesByInterestId implements interest.Repository
+func (i *interestConn) DeleteMovieSeriesByInterestId(
 	id string,
-	hobbieIds []string,
+	movieIds []string,
 ) error {
 	stmt := new(strings.Builder)
-	args := make([]any, 0, len(hobbieIds))
+	args := make([]any, 0, len(movieIds))
 
-	for i, id := range hobbieIds {
+	for i, id := range movieIds {
 		stmt.WriteString(fmt.Sprintf("$%d,", i+1))
 		args = append(args, id)
 	}
-
 	statement := stmt.String()
-	query := fmt.Sprintf(deleteHobbies, statement[:len(statement)-1])
+	query := fmt.Sprintf(deleteMovieSeries, statement[:len(statement)-1])
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -245,7 +250,7 @@ func (i *interestConn) DeleteHobbiesByInterestId(
 			return err
 		}
 
-		if len(returnedIds) != len(hobbieIds) {
+		if len(returnedIds) != len(movieIds) {
 			return transaction.ErrInvalidBulkOperation
 		}
 
@@ -255,22 +260,23 @@ func (i *interestConn) DeleteHobbiesByInterestId(
 		if errors.Is(err, context.DeadlineExceeded) {
 			return apperror.Timeout(apperror.Payload{Error: err})
 		}
-		if errors.Is(err, sql.ErrNoRows) ||
-			errors.Is(err, transaction.ErrInvalidBulkOperation) {
+		if errors.Is(err, sql.ErrNoRows) {
+			return apperror.UnprocessableEntity(apperror.PayloadMap{
+				Error: err,
+				ErrorMap: map[string]string{
+					"movie_serie_ids": "all of the value not found",
+				},
+			})
+		}
+		if errors.Is(err, transaction.ErrInvalidBulkOperation) {
 			return apperror.BadPayload(apperror.Payload{
 				Error:   err,
-				Message: "ids is not valid"})
+				Message: "ids is not valid",
+			})
 		}
 
 		return err
 	}
 
 	return nil
-}
-
-func (i *interestConn) execTransaction(ctx context.Context, cb func(tx *sqlx.Tx) error) error {
-	return transaction.ExecGeneric(i.conn, ctx, cb, &sql.TxOptions{
-		Isolation: sql.LevelReadCommitted,
-		ReadOnly:  false,
-	})
 }

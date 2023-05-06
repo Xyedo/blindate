@@ -24,6 +24,16 @@ type interestConn struct {
 	conn *sqlx.DB
 }
 
+// CheckInsertSportValid implements interest.Repository
+func (*interestConn) CheckInsertSportValid(string, int) error {
+	panic("unimplemented")
+}
+
+// CheckInsertTravelingValid implements interest.Repository
+func (*interestConn) CheckInsertTravelingValid(string, int) error {
+	panic("unimplemented")
+}
+
 // InsertBio implements interest.Repository
 func (i *interestConn) InsertBio(bio interestEntities.Bio) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -45,8 +55,11 @@ func (i *interestConn) InsertBio(bio interestEntities.Bio) (string, error) {
 				if strings.Contains(pqErr.Constraint, "user_id") {
 					return "", apperror.UnprocessableEntity(
 						apperror.PayloadMap{
-							Error:    err,
-							ErrorMap: map[string][]string{"user_id": {"value is not found"}}})
+							Error: err,
+							ErrorMap: map[string]string{
+								"user_id": "value is not found",
+							},
+						})
 				}
 			}
 			if pqErr.Code == "23505" {
@@ -106,8 +119,8 @@ func (i *interestConn) UpdateBio(bio interestEntities.Bio) error {
 			return apperror.UnprocessableEntity(
 				apperror.PayloadMap{
 					Error: err,
-					ErrorMap: map[string][]string{
-						"user_id": {"value not found"},
+					ErrorMap: map[string]string{
+						"user_id": "value not found",
 					},
 				},
 			)
@@ -116,21 +129,6 @@ func (i *interestConn) UpdateBio(bio interestEntities.Bio) error {
 	}
 
 	return nil
-}
-
-// InsertMovieSeriesByInterestId implements interest.Repository
-func (*interestConn) InsertMovieSeriesByInterestId(string, []interestEntities.MovieSerie) error {
-	panic("unimplemented")
-}
-
-// UpdateMovieSeriesByInterestId implements interest.Repository
-func (*interestConn) UpdateMovieSeriesByInterestId(string, []interestEntities.MovieSerie) error {
-	panic("unimplemented")
-}
-
-// DeleteMovieSeriesByInterestId implements interest.Repository
-func (*interestConn) DeleteMovieSeriesByInterestId(string, []string) error {
-	panic("unimplemented")
 }
 
 // InsertSportByInterestId implements interest.Repository
@@ -160,11 +158,6 @@ func (*interestConn) UpdateTravelingByInterestId(string, []interestEntities.Trav
 
 // DeleteTravelingByInterestId implements interest.Repository
 func (*interestConn) DeleteTravelingByInterestId(string, []string) error {
-	panic("unimplemented")
-}
-
-// GetMovieSeriesByInterestId implements interest.Repository
-func (*interestConn) GetMovieSeriesByInterestId(string) ([]interestEntities.MovieSerie, error) {
 	panic("unimplemented")
 }
 

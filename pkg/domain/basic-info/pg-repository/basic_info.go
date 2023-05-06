@@ -25,7 +25,9 @@ type basicInfoConn struct {
 }
 
 // InsertBasicInfo implements basicinfo.Repository
-func (b *basicInfoConn) InsertBasicInfo(basicinfo basicInfoEntities.BasicInfo) error {
+func (b *basicInfoConn) InsertBasicInfo(
+	basicinfo basicInfoEntities.BasicInfo,
+) error {
 	args := []any{
 		basicinfo.UserId,
 		basicinfo.Gender,
@@ -59,29 +61,73 @@ func (b *basicInfoConn) InsertBasicInfo(basicinfo basicInfoEntities.BasicInfo) e
 			if pqErr.Code == "23503" {
 				switch {
 				case strings.Contains(pqErr.Constraint, "user_id"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"user_id": {"value not found"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err,
+						ErrorMap: map[string]string{
+							"user_id": "value not found",
+						},
+					})
 				case strings.Contains(pqErr.Constraint, "gender"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"gender": {"invalid enums"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err,
+						ErrorMap: map[string]string{
+							"gender": "invalid enums",
+						},
+					})
 				case strings.Contains(pqErr.Constraint, "education_level"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"education_level": {"invalid enums"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err,
+						ErrorMap: map[string]string{
+							"education_level": "invalid enums",
+						},
+					})
 				case strings.Contains(pqErr.Constraint, "drinking"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"drinking": {"invalid enums"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err,
+						ErrorMap: map[string]string{
+							"drinking": "invalid enums",
+						},
+					})
 				case strings.Contains(pqErr.Constraint, "smoking"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"smoking": {"invalid enums"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err,
+						ErrorMap: map[string]string{
+							"smoking": "invalid enums",
+						},
+					})
 				case strings.Contains(pqErr.Constraint, "relationship_pref"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"relationship_pref": {"invalid enums"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err,
+						ErrorMap: map[string]string{
+							"relationship_pref": "invalid enums",
+						},
+					})
 				case strings.Contains(pqErr.Constraint, "looking_for"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"looking_for": {"invalid enums"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err,
+						ErrorMap: map[string]string{
+							"looking_for": "invalid enums",
+						},
+					})
 				case strings.Contains(pqErr.Constraint, "zodiac"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"zodiac": {"invalid enums"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err,
+						ErrorMap: map[string]string{
+							"zodiac": "invalid enums",
+						},
+					})
 				}
 			}
 			if pqErr.Code == "23505" {
-				return apperror.Conflicted(apperror.Payload{Error: err, Message: "basic info already created"})
+				return apperror.Conflicted(apperror.Payload{
+					Error:   err,
+					Message: "basic info already created",
+				})
 			}
 		}
 		return err
 	}
+
 	return nil
 }
 
@@ -139,21 +185,60 @@ func (b *basicInfoConn) UpdateBasicInfo(bInfo basicInfoEntities.BasicInfo) error
 			if pqErr.Code == "23503" {
 				switch {
 				case strings.Contains(pqErr.Constraint, "user_id"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"user_id": {"value not found"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err,
+						ErrorMap: map[string]string{
+							"user_id": "value not found",
+						},
+					})
 				case strings.Contains(pqErr.Constraint, "gender"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"gender": {"invalid enums"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err,
+						ErrorMap: map[string]string{
+							"gender": "invalid enums",
+						},
+					})
 				case strings.Contains(pqErr.Constraint, "education_level"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"education_level": {"invalid enums"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err,
+						ErrorMap: map[string]string{
+							"education_level": "invalid enums",
+						},
+					})
 				case strings.Contains(pqErr.Constraint, "drinking"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"drinking": {"invalid enums"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err,
+						ErrorMap: map[string]string{
+							"drinking": "invalid enums",
+						},
+					})
 				case strings.Contains(pqErr.Constraint, "smoking"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"smoking": {"invalid enums"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err,
+						ErrorMap: map[string]string{
+							"smoking": "invalid enums",
+						},
+					})
 				case strings.Contains(pqErr.Constraint, "relationship_pref"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"relationship_pref": {"invalid enums"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err, ErrorMap: map[string]string{
+							"relationship_pref": "invalid enums",
+						},
+					})
 				case strings.Contains(pqErr.Constraint, "looking_for"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"looking_for": {"invalid enums"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err,
+						ErrorMap: map[string]string{
+							"looking_for": "invalid enums",
+						},
+					})
 				case strings.Contains(pqErr.Constraint, "zodiac"):
-					return apperror.UnprocessableEntity(apperror.PayloadMap{Error: err, ErrorMap: map[string][]string{"zodiac": {"invalid enums"}}})
+					return apperror.UnprocessableEntity(apperror.PayloadMap{
+						Error: err,
+						ErrorMap: map[string]string{
+							"zodiac": "invalid enums",
+						},
+					})
 				}
 			}
 		}

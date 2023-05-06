@@ -38,7 +38,7 @@ func ValidDob(value any) error {
 func ValidUsername(value any) error {
 	var s string
 	v, ok := value.(interface{ Value() (driver.Value, error) })
-	if !ok {
+	if ok {
 		v, err := v.Value()
 		if err != nil {
 			return err
@@ -65,13 +65,13 @@ func ValidUsername(value any) error {
 	return nil
 }
 
-func Unique[T comparable](vs []T) error {
+func Unique[T comparable](vs []T, key string) error {
 	uniqueValue := make(map[T]bool)
 	for _, v := range vs {
 		if _, ok := uniqueValue[v]; ok {
 			return apperror.UnprocessableEntity(apperror.PayloadMap{
-				ErrorMap: map[string][]string{
-					"hobbies": {"every hobbies must be unique"},
+				ErrorMap: map[string]string{
+					key: "every value must be unique",
 				},
 			})
 		}

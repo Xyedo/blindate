@@ -20,8 +20,8 @@ import (
 )
 
 type Error struct {
-	Message string              `json:"message,omitempty"`
-	Errors  map[string][]string `json:"errors,omitempty"`
+	Message string            `json:"message,omitempty"`
+	Errors  map[string]string `json:"errors,omitempty"`
 }
 
 func HandleError(c *gin.Context, err error) {
@@ -85,7 +85,7 @@ func HandleError(c *gin.Context, err error) {
 		if field != "" {
 			c.AbortWithStatusJSON(http.StatusBadRequest, Error{
 				Message: "decode json error",
-				Errors:  map[string][]string{field: {msg}},
+				Errors:  map[string]string{field: msg},
 			})
 			return
 		}
