@@ -16,6 +16,7 @@ func (t *Option[T]) ValueSet() bool {
 
 func (t *Option[T]) Set(v T) {
 	t.value = &v
+	t.set = true
 }
 
 func (t Option[T]) Get() (T, bool) {
