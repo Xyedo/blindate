@@ -5,6 +5,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/xyedo/blindate/internal/locale"
 	"github.com/xyedo/blindate/pkg/infrastructure"
 	"github.com/xyedo/blindate/pkg/infrastructure/container"
 	"github.com/xyedo/blindate/pkg/infrastructure/http"
@@ -27,6 +28,7 @@ func main() {
 	var cfg infrastructure.Config
 	cfg.LoadConfig(".env.dev")
 
+	locale.New()
 	db, err := postgre.OpenDB(cfg)
 	if err != nil {
 		log.Fatal(err)

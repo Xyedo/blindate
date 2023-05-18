@@ -1,0 +1,29 @@
+[ErrValidationLengthTooLong]
+description = "error validation on length to long"
+hash = "sha1-6cf93e7e2bbb47a98185a3dea33a3d3fa792bae9"
+other = "panjang nilai harus tidak lebih dari {{.max}}"
+
+[ErrValidationLengthTooShort]
+description = "error validation on length to short"
+hash = "sha1-d238cf113d2a6ebe1399d85cc33306de29c88a9c"
+other = "panjang nilai harus tidak kurang dari {{.min}}"
+
+[ErrValidationRequired]
+description = "error validation on required"
+hash = "sha1-165be95a7efdd04a8a7138f0e45a6942e71a534f"
+other = "nilai dibutuhkan"
+
+[ErrValidationValidEmail]
+description = "error validation on email constrain"
+hash = "sha1-87bec0504746837e695653e86af0018f248f9f7a"
+other = "nilai harus merupakan email"
+
+[ErrValidationValidUsername]
+description = "error validation on username constrain"
+hash = "sha1-1334173cd12593bf318359846bd10ff203446a52"
+other = "nilai harus merupakan username dan tanpa spasi"
+
+[ErrValidationDayOfBirth]
+description = "error validation on username constrain"
+hash = "sha1-06ce66e2243afc5f167691daad256ae7b824be69"
+other = "tanggal lahir tidak valid"

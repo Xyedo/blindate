@@ -15,6 +15,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/nicksnyder/go-i18n/v2/i18n"
+	"github.com/xyedo/blindate/internal/locale"
 	"github.com/xyedo/blindate/internal/security"
 	apperror "github.com/xyedo/blindate/pkg/common/app-error"
 )
@@ -25,6 +27,8 @@ type Error struct {
 }
 
 func HandleError(c *gin.Context, err error) {
+	lang := c.GetHeader("Accept-Language")
+	localizer := i18n.NewLocalizer(locale.Bundle, lang)
 	// application error
 	var appErr apperror.Sentinel
 	if errors.As(err, &appErr) {
@@ -98,7 +102,43 @@ func HandleError(c *gin.Context, err error) {
 	//usecase validation error
 	var validatorError validation.Errors
 	if errors.As(err, &validatorError) {
-		c.AbortWithStatusJSON(http.StatusBadRequest, validatorError)
+
+		mapErr := make(map[string]string)
+		for key, err := range validatorError {
+			if errObj := (validation.ErrorObject{}); errors.As(err, &errObj) {
+				switch errObj.Code() {
+				case "validation_required":
+					mapErr[key] = localizer.MustLocalize(&i18n.LocalizeConfig{
+						MessageID: "ErrValidationRequired",
+					})
+				case "validation_length_too_long":
+					mapErr[key] = localizer.MustLocalize(&i18n.LocalizeConfig{
+						MessageID:    "ErrValidationLengthTooLong",
+						TemplateData: errObj.Params(),
+					})
+				case "validation_length_too_short":
+					mapErr[key] = localizer.MustLocalize(&i18n.LocalizeConfig{
+						MessageID:    "ErrValidationLengthTooShort",
+						TemplateData: errObj.Params(),
+					})
+				case "validation_valid_username":
+					mapErr[key] = localizer.MustLocalize(&i18n.LocalizeConfig{
+						MessageID: "ErrValidationValidUsername",
+					})
+				case "validation_is_email":
+					mapErr[key] = localizer.MustLocalize(&i18n.LocalizeConfig{
+						MessageID: "ErrValidationValidEmail",
+					})
+				case "validation_day_of_birth":
+					mapErr[key] = localizer.MustLocalize(&i18n.LocalizeConfig{
+						MessageID: "ErrValidationDayOfBirth",
+					})
+				default:
+					mapErr[key] = fmt.Sprintf("this code %s not registered yet", errObj.Code())
+				}
+			}
+		}
+		c.AbortWithStatusJSON(http.StatusBadRequest, mapErr)
 		return
 	}
 

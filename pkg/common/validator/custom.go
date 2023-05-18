@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	validation "github.com/go-ozzo/ozzo-validation"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	apperror "github.com/xyedo/blindate/pkg/common/app-error"
 )
 
@@ -30,7 +30,7 @@ func ValidDob(value any) error {
 	oldest := time.Date(1970, time.January, 1, 0, 0, 0, 0, time.UTC)
 
 	if !(date.Before(youngest) && date.After(oldest)) {
-		return errors.New("invalid day of birth")
+		return validation.NewError("validation_day_of_birth","invalid day of birth")
 	}
 	return nil
 }
@@ -60,7 +60,7 @@ func ValidUsername(value any) error {
 	}
 
 	if strings.Contains(s, " ") {
-		return errors.New("must valid username with no spaces")
+		return validation.NewError("validation_valid_username", "value must be valid username with no spaces")
 	}
 	return nil
 }

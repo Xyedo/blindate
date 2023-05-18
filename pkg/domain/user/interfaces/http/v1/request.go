@@ -3,8 +3,8 @@ package v1
 import (
 	"time"
 
-	"github.com/go-ozzo/ozzo-validation/is"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/xyedo/blindate/internal/optional"
 	"github.com/xyedo/blindate/pkg/common/mod"
 	"github.com/xyedo/blindate/pkg/common/validator"
@@ -29,13 +29,14 @@ func (u postUserRequest) validate() error {
 	return validation.ValidateStruct(&u,
 		validation.Field(&u.FullName, validation.Required, validation.Length(1, 50)),
 		validation.Field(&u.Alias, validation.Required, validation.By(validator.ValidUsername), validation.Length(1, 15)),
+		validation.Field(&u.Email, validation.Required, is.Email),
 		validation.Field(&u.Password, validation.Required, validation.Length(8, 0)),
 		validation.Field(&u.Dob, validation.Required, validation.By(validator.ValidDob)),
 	)
 }
 
 type patchUserRequest struct {
-	FullName    optional.String `json:"full_name"  mold:"trim_whitespace"`
+	FullName    optional.String `json:"full_name"`
 	Alias       optional.String `json:"alias" mod:"trim"`
 	Email       optional.String `json:"email" mod:"trim"`
 	OldPassword optional.String `json:"old_password"`

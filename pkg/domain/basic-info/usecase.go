@@ -2,11 +2,10 @@ package basicinfo
 
 import (
 	basicInfoDTOs "github.com/xyedo/blindate/pkg/domain/basic-info/dtos"
-	basicInfoEntities "github.com/xyedo/blindate/pkg/domain/basic-info/entities"
 )
 
 type Usecase interface {
 	Create(basicInfoDTOs.CreateBasicInfo) error
-	GetById(string, string) (basicInfoEntities.BasicInfo, error)
+	GetById(string, string) (basicInfoDTOs.BasicInfo, error)
 	Update(basicInfoDTOs.UpdateBasicInfo) error
 }

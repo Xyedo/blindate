@@ -1,0 +1,23 @@
+[ErrValidationDayOfBirth]
+description = "error validation on username constrain"
+other = "invalid day of birth"
+
+[ErrValidationLengthTooLong]
+description = "error validation on length to long"
+other = "the length must be no more than {{.max}}"
+
+[ErrValidationLengthTooShort]
+description = "error validation on length to short"
+other = "the length must be no less than {{.min}}"
+
+[ErrValidationRequired]
+description = "error validation on required"
+other = "value is required"
+
+[ErrValidationValidEmail]
+description = "error validation on email constrain"
+other = "value must be valid email"
+
+[ErrValidationValidUsername]
+description = "error validation on username constrain"
+other = "value must be valid username with no spaces"

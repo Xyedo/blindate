@@ -1,0 +1,4 @@
+[ErrValidationDayOfBirth]
+description = "error validation on username constrain"
+hash = "sha1-06ce66e2243afc5f167691daad256ae7b824be69"
+other = "invalid day of birth"

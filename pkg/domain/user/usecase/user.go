@@ -8,7 +8,6 @@ import (
 	apperror "github.com/xyedo/blindate/pkg/common/app-error"
 	"github.com/xyedo/blindate/pkg/domain/user"
 	userDTOs "github.com/xyedo/blindate/pkg/domain/user/dtos"
-	userEntities "github.com/xyedo/blindate/pkg/domain/user/entities"
 )
 
 func New(userRepo user.Repository) user.Usecase {
@@ -36,17 +35,17 @@ func (u *userUC) CreateUser(newUser userDTOs.RegisterUser) (string, error) {
 	return userId, nil
 }
 func (u *userUC) GetUserById(userDetail userDTOs.GetUserDetail) (
-	userEntities.User,
+	userDTOs.User,
 	error,
 ) {
 	err := userDetail.Validate()
 	if err != nil {
-		return userEntities.User{}, err
+		return userDTOs.User{}, err
 	}
 
 	user, err := u.userRepo.GetUserById(userDetail.Id)
 	if err != nil {
-		return userEntities.User{}, err
+		return userDTOs.User{}, err
 	}
 
 	if userDetail.ProfilePicture {
@@ -55,12 +54,12 @@ func (u *userUC) GetUserById(userDetail userDTOs.GetUserDetail) (
 			userDTOs.ProfilePictureQuery{},
 		)
 		if err != nil {
-			return userEntities.User{}, err
+			return userDTOs.User{}, err
 		}
 		user.ProfilePic = profilePicture
 	}
 
-	return user, nil
+	return userDTOs.FromEntities(user), nil
 }
 
 func (u *userUC) UpdateUser(updateUser userDTOs.UpdateUser) error {

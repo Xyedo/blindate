@@ -27,13 +27,13 @@ func (b *basicInfoUC) Create(basicInfo basicInfoDTOs.CreateBasicInfo) error {
 }
 
 // GetById implements basicinfo.Usecase
-func (b *basicInfoUC) GetById(requestId, id string) (basicInfoEntities.BasicInfo, error) {
+func (b *basicInfoUC) GetById(requestId, id string) (basicInfoDTOs.BasicInfo, error) {
 	foundBasicInfo, err := b.basicInfoRepo.GetBasicInfoByUserId(id)
 	if err != nil {
-		return basicInfoEntities.BasicInfo{}, err
+		return basicInfoDTOs.BasicInfo{}, err
 	}
 
-	return foundBasicInfo, nil
+	return basicInfoDTOs.BasicInfo(foundBasicInfo), nil
 }
 
 // Update implements basicinfo.Usecase
