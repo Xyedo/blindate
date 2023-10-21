@@ -13,8 +13,8 @@ CREATE TABLE hobbies (
   hobbie CITEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
-  version bigint NOT NULL DEFAULT 0
-  CONSTRAINT hobbies_interest_id_hobbie_unique UNIQUE(interest_id, hobbie)   
+  version bigint NOT NULL DEFAULT 0,
+  CONSTRAINT hobbies_interest_id_hobbie_unique UNIQUE (interest_id, hobbie)   
 );
 
 CREATE TABLE movie_series (
@@ -23,8 +23,8 @@ CREATE TABLE movie_series (
   movie_serie CITEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
-  version bigint NOT NULL DEFAULT 0
-  CONSTRAINT movie_series_interest_id_movie_serie_unique UNIQUE(interest_id, movie_serie)   
+  version bigint NOT NULL DEFAULT 0,
+  CONSTRAINT movie_series_interest_id_movie_serie_unique UNIQUE (interest_id, movie_serie)   
 );
 
 CREATE TABLE traveling (
@@ -33,8 +33,8 @@ CREATE TABLE traveling (
   travel CITEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
-  version bigint NOT NULL DEFAULT 0
-  CONSTRAINT traveling_interest_id_travel_unique UNIQUE(interest_id, travel)  
+  version bigint NOT NULL DEFAULT 0,
+  CONSTRAINT traveling_interest_id_travel_unique UNIQUE (interest_id, travel)  
 );
 
 CREATE TABLE sports (
@@ -43,6 +43,6 @@ CREATE TABLE sports (
   sport CITEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
-  version bigint NOT NULL DEFAULT 0
-  CONSTRAINT sports_interest_id_sport_unique UNIQUE(interest_id, sport)  
+  version bigint NOT NULL DEFAULT 0,
+  CONSTRAINT sports_interest_id_sport_unique UNIQUE (interest_id, sport)  
 );

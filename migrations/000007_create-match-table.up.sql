@@ -8,6 +8,6 @@ CREATE TABLE match(
   revealed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
-  version BIGINT NOT NULL DEFAULT 0
-  CONSTRAINT match_request_from_request_to_unique UNIQUE(request_from, request_to)
+  version BIGINT NOT NULL DEFAULT 0,
+  CONSTRAINT match_request_from_request_to_unique UNIQUE (request_from, request_to) 
 );

@@ -1,1 +1,1 @@
-DROP TABLE conversations;
+DROP TABLE IF EXISTS conversations;
