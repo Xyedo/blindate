@@ -14,6 +14,7 @@ var Config config
 type config struct {
 	Host       string
 	Port       int
+	Secret     string
 	Env        string
 	BucketName string
 	DbConf     struct {
@@ -45,6 +46,7 @@ func LoadConfig(filenames ...string) {
 
 	flag.StringVar(&Config.Host, "host", os.Getenv("APP_HOST"), "application host")
 	flag.IntVar(&Config.Port, "port", appPort, "API server port")
+	flag.StringVar(&Config.Secret, "secret", os.Getenv("APP_SECRET"), "internal api usage")
 	flag.StringVar(&Config.Env, "env", "development", "Environtment (development | staging | production)")
 
 	flag.StringVar(&Config.DbConf.Host, "db-host", os.Getenv("PG_HOST"), "PostgreSQL Host")

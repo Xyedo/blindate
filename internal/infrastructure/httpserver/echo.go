@@ -7,22 +7,27 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	userhandler "github.com/xyedo/blindate/internal/domain/user/handler"
+	internalUserHandler "github.com/xyedo/blindate/internal/domain/user/handler/intrnl"
 	"github.com/xyedo/blindate/internal/infrastructure"
+	echomiddleware "github.com/xyedo/blindate/internal/infrastructure/httpserver/echo-middleware"
 )
 
 func NewEcho() *Server {
 	e := echo.New()
 	e.HTTPErrorHandler = EchoErrorHandler
 
-	e.Use(middleware.Recover(), middleware.CORS(), middleware.BodyLimit("4M"), middleware.ContextTimeout(3*time.Second))
+	e.Use(
+		middleware.Recover(),
+		middleware.CORS(),
+		middleware.BodyLimit("4M"),
+		middleware.ContextTimeout(3*time.Second))
 
 	e.GET("/healthcheck", func(c echo.Context) error {
 		return nil
 	})
 
-	apiv1 := e.Group("v1")
-	routeHandler(apiv1)
+	apiv1 := e.Group("/v1")
+	internalRouteHandler(apiv1)
 
 	return &Server{
 		server: &http.Server{
@@ -31,6 +36,7 @@ func NewEcho() *Server {
 		},
 	}
 }
-func routeHandler(e *echo.Group) {
-	userhandler.Route(e)
+func internalRouteHandler(e *echo.Group) {
+	e.Group("/internal", echomiddleware.Internal)
+	internalUserHandler.Route(e)
 }
