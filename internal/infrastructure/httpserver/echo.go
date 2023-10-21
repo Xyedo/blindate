@@ -37,6 +37,6 @@ func NewEcho() *Server {
 	}
 }
 func internalRouteHandler(e *echo.Group) {
-	e.Group("/internal", echomiddleware.Internal)
-	internalUserHandler.Route(e)
+	internal := e.Group("/internal", echomiddleware.Internal)
+	internalUserHandler.Route(internal)
 }
