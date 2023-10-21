@@ -9,7 +9,7 @@ services:
       context: .
       dockerfile: Dockerfile-pg
     ports:
-      - "5432:5432"
+      - "${PG_PORT}:5432"
     restart: on-failure
     environment:
       - TZ=Asia/Jakarta

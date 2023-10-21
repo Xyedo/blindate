@@ -3,6 +3,7 @@ package httpserver
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -20,6 +21,7 @@ func (s *Server) Listen() error {
 
 	go gracefulShutDown(shutdownErr, s.server)
 
+	log.Printf("listening on %s\n", s.server.Addr)
 	err := s.server.ListenAndServe()
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err

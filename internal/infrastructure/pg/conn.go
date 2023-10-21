@@ -2,10 +2,10 @@ package pg
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/xyedo/blindate/internal/infrastructure"
 )
 
@@ -16,15 +16,16 @@ var (
 
 func InitConnection() {
 	config := infrastructure.Config.DbConf
-	conn, err := pgx.ConnectConfig(context.TODO(), &pgx.ConnConfig{
-		Config: pgconn.Config{
-			Host:     config.Host,
-			Port:     uint16(config.Port),
-			Database: config.Database,
-			User:     config.User,
-			Password: config.Password,
-		},
-	})
+
+	connStr := fmt.Sprintf(
+		"postgresql://%s:%s@%s:%d/%s?sslmode=disable",
+		config.User,
+		config.Password,
+		config.Host,
+		config.Port,
+		config.Database,
+	)
+	conn, err := pgx.Connect(context.TODO(), connStr)
 
 	if err != nil {
 		panic(err)
