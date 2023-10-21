@@ -2,10 +2,31 @@ package apperror
 
 import "fmt"
 
+type StatusError string
+
+const (
+	StatusErrorMalformedRequestBody StatusError = "MALFORMED_REQUEST_BODY"
+	StatusErrorValidation           StatusError = "VALIDATION_ERROR"
+)
+const (
+	statusErrorDefaultNotFound             StatusError = "NOT_FOUND"
+	statusErrorDefaultForbidden            StatusError = "FORBIDDEN"
+	statusErrorDefaultUnauthorized         StatusError = "UNAUTHORIZED"
+	statusErrorDefaultConflicted           StatusError = "CONFLICTED"
+	statusErrorDefaultTimeout              StatusError = "TIMEOUT"
+	statusErrorDefaultBadPayload           StatusError = "BAD_PAYLOAD"
+	statusErrorDefaultUnprocessablePayload StatusError = "UNPROCESSABLE_PAYLOAD"
+)
+
 type Sentinel struct {
-	Err     error
-	Message string
-	ErrMap  map[string]string
+	Err      error
+	Message  string
+	Payloads []ErrorPayload
+}
+
+type ErrorPayload struct {
+	Status StatusError
+	ErrMap map[string][]any
 }
 
 func (s Sentinel) Error() string {
@@ -14,6 +35,7 @@ func (s Sentinel) Error() string {
 
 type Payload struct {
 	Error   error
+	Status  StatusError
 	Message string
 }
 
@@ -26,9 +48,16 @@ func NotFound(payload Payload) error {
 	} else {
 		payload.Error = ErrNotFound
 	}
-
+	if payload.Status == "" {
+		payload.Status = statusErrorDefaultNotFound
+	}
 	return Sentinel{
-		Err:     payload.Error,
+		Err: payload.Error,
+		Payloads: []ErrorPayload{
+			{
+				Status: payload.Status,
+			},
+		},
 		Message: payload.Message,
 	}
 }
@@ -43,8 +72,17 @@ func Forbidden(payload Payload) error {
 	} else {
 		payload.Error = ErrForbiddenAccess
 	}
+
+	if payload.Status == "" {
+		payload.Status = statusErrorDefaultForbidden
+	}
 	return Sentinel{
-		Err:     payload.Error,
+		Err: payload.Error,
+		Payloads: []ErrorPayload{
+			{
+				Status: payload.Status,
+			},
+		},
 		Message: payload.Message,
 	}
 }
@@ -59,8 +97,17 @@ func Unauthorized(payload Payload) error {
 		payload.Error = ErrUnauthorized
 	}
 
+	if payload.Status == "" {
+		payload.Status = statusErrorDefaultUnauthorized
+	}
+
 	return Sentinel{
-		Err:     payload.Error,
+		Err: payload.Error,
+		Payloads: []ErrorPayload{
+			{
+				Status: payload.Status,
+			},
+		},
 		Message: payload.Message,
 	}
 }
@@ -75,8 +122,17 @@ func Conflicted(payload Payload) error {
 		payload.Error = ErrConflict
 	}
 
+	if payload.Status == "" {
+		payload.Status = statusErrorDefaultConflicted
+	}
+
 	return Sentinel{
-		Err:     payload.Error,
+		Err: payload.Error,
+		Payloads: []ErrorPayload{
+			{
+				Status: payload.Status,
+			},
+		},
 		Message: payload.Message,
 	}
 }
@@ -91,8 +147,17 @@ func Timeout(payload Payload) error {
 		payload.Error = ErrTimeout
 	}
 
+	if payload.Status == "" {
+		payload.Status = statusErrorDefaultTimeout
+	}
+
 	return Sentinel{
-		Err:     payload.Error,
+		Err: payload.Error,
+		Payloads: []ErrorPayload{
+			{
+				Status: payload.Status,
+			},
+		},
 		Message: payload.Message,
 	}
 }
@@ -103,25 +168,67 @@ func BadPayload(payload Payload) error {
 	}
 
 	if payload.Error != nil {
-		payload.Error = fmt.Errorf("%w:%w", ErrBadRequst, payload.Error)
+		payload.Error = fmt.Errorf("%w:%w", ErrBadRequest, payload.Error)
 	} else {
-		payload.Error = ErrBadRequst
+		payload.Error = ErrBadRequest
+	}
+
+	if payload.Status == "" {
+		payload.Status = statusErrorDefaultBadPayload
 	}
 
 	return Sentinel{
-		Err:     payload.Error,
+		Err: payload.Error,
+		Payloads: []ErrorPayload{
+			{
+				Status: payload.Status,
+			},
+		},
 		Message: payload.Message,
 	}
 }
 
 type PayloadMap struct {
 	Error    error
-	ErrorMap map[string]string
+	Message  string
+	Payloads []ErrorPayload
 }
 
-func UnprocessableEntity(payload PayloadMap) error {
-	if payload.ErrorMap == nil {
-		payload.ErrorMap = map[string]string{"unknown": "unprocessable entity"}
+func BadPayloadWithPayloadMap(payload PayloadMap) error {
+	if payload.Message == "" {
+		payload.Message = "bad request"
+	}
+
+	if payload.Error != nil {
+		payload.Error = fmt.Errorf("%w:%w", ErrBadRequest, payload.Error)
+	} else {
+		payload.Error = ErrBadRequest
+	}
+
+	if payload.Payloads == nil {
+		payload.Payloads = []ErrorPayload{
+			{
+				Status: statusErrorDefaultBadPayload,
+			},
+		}
+	} else {
+		for i := range payload.Payloads {
+			if payload.Payloads[i].Status == "" {
+				payload.Payloads[i].Status = statusErrorDefaultBadPayload
+			}
+		}
+	}
+
+	return Sentinel{
+		Err:      payload.Error,
+		Payloads: payload.Payloads,
+		Message:  payload.Message,
+	}
+}
+
+func UnprocessableEntity(payload Payload) error {
+	if payload.Message == "" {
+		payload.Message = "we undestand your request, but its unprocessable"
 	}
 
 	if payload.Error != nil {
@@ -130,8 +237,49 @@ func UnprocessableEntity(payload PayloadMap) error {
 		payload.Error = ErrUnprocessableEntity
 	}
 
+	if payload.Status == "" {
+		payload.Status = statusErrorDefaultUnprocessablePayload
+	}
+
 	return Sentinel{
-		Err:    payload.Error,
-		ErrMap: payload.ErrorMap,
+		Err:     payload.Error,
+		Message: payload.Message,
+		Payloads: []ErrorPayload{
+			{
+				Status: payload.Status,
+			},
+		},
+	}
+}
+
+func UnprocessableEntityWithPayloadMap(payload PayloadMap) error {
+	if payload.Message == "" {
+		payload.Message = "we undestand your request, but its unprocessable"
+	}
+
+	if payload.Error != nil {
+		payload.Error = fmt.Errorf("%w:%w", ErrUnprocessableEntity, payload.Error)
+	} else {
+		payload.Error = ErrUnprocessableEntity
+	}
+
+	if payload.Payloads == nil {
+		payload.Payloads = []ErrorPayload{
+			{
+				Status: statusErrorDefaultUnprocessablePayload,
+			},
+		}
+	} else {
+		for i := range payload.Payloads {
+			if payload.Payloads[i].Status == "" {
+				payload.Payloads[i].Status = statusErrorDefaultUnprocessablePayload
+			}
+		}
+	}
+
+	return Sentinel{
+		Err:      payload.Error,
+		Message:  payload.Message,
+		Payloads: payload.Payloads,
 	}
 }

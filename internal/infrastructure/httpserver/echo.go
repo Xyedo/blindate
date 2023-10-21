@@ -13,13 +13,15 @@ import (
 
 func NewEcho() *Server {
 	e := echo.New()
+	e.HTTPErrorHandler = EchoErrorHandler
+
 	e.Use(middleware.Recover(), middleware.CORS(), middleware.BodyLimit("4M"), middleware.ContextTimeout(3*time.Second))
 
 	e.GET("/healthcheck", func(c echo.Context) error {
 		return nil
 	})
 
-	userhandler.Route(e)
+	routeHandler(e)
 
 	return &Server{
 		server: &http.Server{
@@ -27,4 +29,7 @@ func NewEcho() *Server {
 			Handler: e,
 		},
 	}
+}
+func routeHandler(e *echo.Echo) {
+	userhandler.Route(e)
 }

@@ -11,5 +11,5 @@ var (
 	ErrUnauthorized        = errors.New("unauthorized")
 	ErrConflict            = errors.New("conflict")
 	ErrTimeout             = errors.New("timeout")
-	ErrBadRequst           = errors.New("bad request")
+	ErrBadRequest          = errors.New("bad request")
 )

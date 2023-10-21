@@ -15,6 +15,19 @@ var (
 )
 
 func InitConnection() {
+	once.Do(func() {
+		initConnection()
+	})
+}
+
+func Get() *pgx.Conn {
+	once.Do(func() {
+		initConnection()
+	})
+	return connection
+}
+
+func initConnection() {
 	config := infrastructure.Config.DbConf
 
 	connStr := fmt.Sprintf(
@@ -33,11 +46,4 @@ func InitConnection() {
 
 	connection = conn
 
-}
-
-func Get() *pgx.Conn {
-	once.Do(func() {
-		InitConnection()
-	})
-	return connection
 }

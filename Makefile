@@ -1,8 +1,7 @@
 include .env
 
 MG_PATH=./migrations
-# DB_DSN =postgresql://${PG_USER}:${PG_PASSWORD}@localhost:5432/${PG_DB}?sslmode=disable
-DB_DSN =postgresql://postgres:eooshVErSBFx2ymQXVbr@containers-us-west-82.railway.app:5693/railway
+DB_DSN =postgresql://${PG_USER}:${PG_PASSWORD}@localhost:5432/${PG_DB}?sslmode=disable
 
 migrate-up: 
 	migrate -path $(MG_PATH) -database $(DB_DSN) up

@@ -1,11 +1,13 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/xyedo/blindate/internal/domain/user/usecase"
 )
 
-func handleClrekWebhook(c echo.Context) error {
+func handleEventWebhook(c echo.Context) error {
 	var request struct {
 		Data struct {
 			Id string `json:"id"`
@@ -20,6 +22,9 @@ func handleClrekWebhook(c echo.Context) error {
 	switch request.Type {
 	case "user.created":
 		return usecase.RegisterUser(c.Request().Context(), request.Data.Id)
+	case "user.deleted":
+		return usecase.DeleteUser(c.Request().Context(), request.Data.Id)
 	}
-	return nil
+
+	return c.NoContent(http.StatusBadRequest)
 }
