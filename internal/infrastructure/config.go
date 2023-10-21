@@ -39,12 +39,12 @@ type config struct {
 func LoadConfig(filenames ...string) {
 	_ = godotenv.Load(filenames...)
 
-	appPort, err := strconv.Atoi(os.Getenv("APP_PORT"))
+	appPort, err := strconv.Atoi(os.Getenv("PORT"))
 	if err != nil {
 		log.Panic(err)
 	}
 
-	flag.StringVar(&Config.Host, "host", os.Getenv("APP_HOST"), "application host")
+	flag.StringVar(&Config.Host, "host", os.Getenv("HOST"), "application host")
 	flag.IntVar(&Config.Port, "port", appPort, "API server port")
 	flag.StringVar(&Config.Secret, "secret", os.Getenv("APP_SECRET"), "internal api usage")
 	flag.StringVar(&Config.Env, "env", "development", "Environtment (development | staging | production)")
