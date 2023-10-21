@@ -36,10 +36,7 @@ type config struct {
 }
 
 func LoadConfig(filenames ...string) {
-	err := godotenv.Load(filenames...)
-	if err != nil {
-		log.Panic(err)
-	}
+	_ = godotenv.Load(filenames...)
 
 	appPort, err := strconv.Atoi(os.Getenv("APP_PORT"))
 	if err != nil {
