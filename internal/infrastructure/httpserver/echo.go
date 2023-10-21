@@ -21,7 +21,8 @@ func NewEcho() *Server {
 		return nil
 	})
 
-	routeHandler(e)
+	apiv1 := e.Group("v1")
+	routeHandler(apiv1)
 
 	return &Server{
 		server: &http.Server{
@@ -30,6 +31,6 @@ func NewEcho() *Server {
 		},
 	}
 }
-func routeHandler(e *echo.Echo) {
+func routeHandler(e *echo.Group) {
 	userhandler.Route(e)
 }
