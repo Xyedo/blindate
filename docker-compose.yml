@@ -34,4 +34,4 @@ services:
       - pg-dev
     volumes:
       - ./migrations:/migrations
-    command: ["-path", "/migrations", "-database" , "postgresql://${PG_USER}:${PG_PASSWORD}@localhost:5432/${PG_DB}", "up"]
+    command: ["-path", "/migrations", "-database" , "postgresql://${PG_USER}:${PG_PASSWORD}@pg-dev/${PG_DB}?sslmode=disable", "up"]

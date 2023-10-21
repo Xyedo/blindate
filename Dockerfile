@@ -1,4 +1,4 @@
-FROM golang:1.19-alpine as builder
+FROM golang:1.21-alpine as builder
 
 LABEL maintainer="xyedo | Hafid Mahdi"
 
@@ -27,6 +27,6 @@ WORKDIR /root/
 
 COPY --from=builder /app/webapi .
 
-EXPOSE 4000
+EXPOSE 8080
 
 CMD ["./webapi"]

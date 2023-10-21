@@ -83,7 +83,7 @@
 --   ('Pisces');
 
 CREATE TABLE basic_info(
-  user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  user_id CITEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   gender TEXT NOT NULL,
   from_loc TEXT,
   height SMALLINT,

@@ -1,5 +1,7 @@
+include .env
 
 MG_PATH=./migrations
+DB_DSN =postgresql://${PG_USER}:${PG_PASSWORD}@localhost:5432/${PG_DB}?sslmode=disable
 
 migrate-up: 
 	migrate -path $(MG_PATH) -database $(DB_DSN) up
@@ -13,6 +15,12 @@ migrate-create:
 up:
 	docker compose --env-file ./.env up -d
 
+migrate-force:
+	migrate -path $(MG_PATH) -database $(DB_DSN) force $(n)
+
+build:
+	docker build --tag blindate .
+	
 down: 
 	docker compose --env-file ./.env down 
 
@@ -25,4 +33,4 @@ test :
 test-repo:
 	go test -timeout 2m github.com/xyedo/blindate/pkg/repository
 
-.PHONY: migrate-up migrate-down migrate-create up down mock-repo test test-repo
+.PHONY: migrate-up migrate-down migrate-create up down mock-repo test test-repo build

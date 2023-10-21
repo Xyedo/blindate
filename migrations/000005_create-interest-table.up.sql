@@ -1,6 +1,6 @@
 CREATE TABLE interests (
   id UUID PRIMARY KEY default uuid_generate_v4(),
-  user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  user_id CITEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
   bio TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
@@ -41,7 +41,7 @@ CREATE TABLE sports (
   id UUID PRIMARY KEY default  uuid_generate_v4(),
   interest_id UUID NOT NULL REFERENCES interests(id) ON DELETE CASCADE,
   sport CITEXT NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
   version bigint NOT NULL DEFAULT 0
   CONSTRAINT sports_interest_id_sport_unique UNIQUE(interest_id, sport)  
