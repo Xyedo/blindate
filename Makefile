@@ -11,10 +11,10 @@ migrate-create:
 	migrate create -dir $(MG_PATH) -seq -ext .sql $(name)
 
 up:
-	docker compose --env-file ./.env.dev up -d
+	docker compose --env-file ./.env up -d
 
 down: 
-	docker compose --env-file ./.env.dev down 
+	docker compose --env-file ./.env down 
 
 mock-repo:
 	mockgen -destination pkg/infra/repository/mock/$(mock_name).go -package mockrepo -mock_names Repository=Mock$(mock_interface) github.com/xyedo/blindate/pkg/domain/$(domain_name) Repository 
