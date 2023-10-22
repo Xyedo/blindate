@@ -10,7 +10,7 @@ type Option[T comparable] struct {
 	set   bool
 }
 
-func (t *Option[T]) ValueSet() bool {
+func (t *Option[T]) IsSet() bool {
 	return t.set
 }
 
@@ -20,7 +20,7 @@ func (t *Option[T]) Set(v T) {
 }
 
 func (t Option[T]) Get() (T, bool) {
-	if !t.Present() {
+	if !t.IsPresent() {
 		var zero T
 		return zero, false
 	}
@@ -28,32 +28,32 @@ func (t Option[T]) Get() (T, bool) {
 	return *t.value, true
 }
 func (t Option[T]) MustGet() T {
-	if !t.Present() {
+	if !t.IsPresent() {
 		panic("value is not present")
 	}
 
 	return *t.value
 }
 
-func (t Option[T]) Present() bool {
+func (t Option[T]) IsPresent() bool {
 	return t.value != nil
 }
 
 func (t Option[T]) OrElse(v T) T {
-	if t.Present() {
+	if t.IsPresent() {
 		return *t.value
 	}
 	return v
 }
 
 func (t Option[T]) If(fn func(T)) Option[T] {
-	if t.Present() {
+	if t.IsPresent() {
 		fn(*t.value)
 	}
 	return t
 }
 func (t Option[T]) MarshalJSON() ([]byte, error) {
-	if t.Present() {
+	if t.IsPresent() {
 		return json.Marshal(t.value)
 	}
 	return json.Marshal(nil)

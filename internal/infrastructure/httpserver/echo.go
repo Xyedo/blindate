@@ -7,7 +7,9 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	userHandler "github.com/xyedo/blindate/internal/domain/user/handler/external"
 	internalUserHandler "github.com/xyedo/blindate/internal/domain/user/handler/intrnl"
+
 	"github.com/xyedo/blindate/internal/infrastructure"
 	echomiddleware "github.com/xyedo/blindate/internal/infrastructure/httpserver/echo-middleware"
 )
@@ -28,6 +30,11 @@ func NewEcho() *Server {
 
 	apiv1 := e.Group("/v1")
 	internalRouteHandler(apiv1)
+
+	apiv1.Use(echomiddleware.Guard)
+	{
+		userHandler.Route(apiv1)
+	}
 
 	return &Server{
 		server: &http.Server{

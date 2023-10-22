@@ -11,7 +11,7 @@ type Int64 struct {
 
 func (i Int64) Value() (driver.Value, error) {
 	v, ok := i.Get()
-	if !i.ValueSet() || !ok {
+	if !i.IsSet() || !ok {
 		return nil, nil
 	}
 	return v, nil
@@ -36,7 +36,7 @@ type Int32 struct {
 
 func (i Int32) Value() (driver.Value, error) {
 	v, ok := i.Get()
-	if !i.ValueSet() || !ok {
+	if !i.IsSet() || !ok {
 		return nil, nil
 	}
 	return int64(v), nil

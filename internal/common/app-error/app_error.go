@@ -7,6 +7,7 @@ type StatusError string
 const (
 	StatusErrorMalformedRequestBody StatusError = "MALFORMED_REQUEST_BODY"
 	StatusErrorValidation           StatusError = "VALIDATION_ERROR"
+	StatusErrorInvalidAuth          StatusError = "INVALID_AUTHORIZATION"
 )
 const (
 	statusErrorDefaultNotFound             StatusError = "NOT_FOUND"
