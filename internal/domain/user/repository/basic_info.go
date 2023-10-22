@@ -65,7 +65,7 @@ func StoreBasicInfo(ctx context.Context, conn pg.Querier, payload entities.Basic
 
 }
 
-func GetBasicInfoById(ctx context.Context, conn pg.Querier, id string) (entities.BasicInfo, error) {
+func GetBasicInfoById(ctx context.Context, conn pg.Querier, id string, opts ...entities.GetBasicInfoOption) (entities.BasicInfo, error) {
 	const getBasicInfoById = `
 	SELECT 
 		user_id,
@@ -86,8 +86,14 @@ func GetBasicInfoById(ctx context.Context, conn pg.Querier, id string) (entities
 	FROM basic_info
 	WHERE user_id = $1
 `
+
+	query := getBasicInfoById
+	if len(opts) > 0 && opts[0].PessimisticLocking {
+		query += "\nSELECT FOR UPDATE"
+	}
+
 	var returnedBasicInfo entities.BasicInfo
-	err := conn.QueryRow(ctx, getBasicInfoById, id).
+	err := conn.QueryRow(ctx, query, id).
 		Scan(
 			&returnedBasicInfo.UserId,
 			&returnedBasicInfo.Gender,

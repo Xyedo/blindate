@@ -3,6 +3,7 @@ package pg
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -19,15 +20,13 @@ type Querier interface {
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
+var (
+	pool *pgxpool.Pool
+	once sync.Once
+)
+
 func Transaction(ctx context.Context, option pgx.TxOptions, cb func(tx Querier) error) error {
-	pool, err := GetPool(ctx)
-	if err != nil {
-		return err
-	}
-
-	defer pool.Close()
-
-	tx, err := pool.BeginTx(ctx, option)
+	tx, err := GetPool(ctx).BeginTx(ctx, option)
 
 	if err != nil {
 		return err
@@ -47,21 +46,38 @@ func Transaction(ctx context.Context, option pgx.TxOptions, cb func(tx Querier) 
 
 }
 
-func GetPool(ctx context.Context) (*pgxpool.Pool, error) {
-	config := infrastructure.Config.DbConf
+func GetPool(ctx context.Context) *pgxpool.Pool {
+	once.Do(func() {
+		_, _ = InitPool(ctx)
+	})
 
-	connStr := fmt.Sprintf(
-		"postgresql://%s:%s@%s:%d/%s?sslmode=disable",
-		config.User,
-		config.Password,
-		config.Host,
-		config.Port,
-		config.Database,
-	)
-	conn, err := pgxpool.New(ctx, connStr)
+	return pool
+}
+
+func InitPool(ctx context.Context) (*pgxpool.Pool, error) {
+	var err error
+	once.Do(func() {
+		config := infrastructure.Config.DbConf
+
+		connStr := fmt.Sprintf(
+			"postgresql://%s:%s@%s:%d/%s?sslmode=disable",
+			config.User,
+			config.Password,
+			config.Host,
+			config.Port,
+			config.Database,
+		)
+
+		if conn, pgErr := pgxpool.New(ctx, connStr); pgErr != nil {
+			err = pgErr
+		} else {
+			pool = conn
+		}
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	return conn, nil
+	return pool, nil
+
 }

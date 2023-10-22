@@ -8,21 +8,9 @@ import (
 )
 
 func RegisterUser(ctx context.Context, id string) error {
-	pool, err := pg.GetPool(ctx)
-	if err != nil {
-		return err
-	}
-	defer pool.Close()
-
-	return repository.StoreUser(ctx, pool, id)
+	return repository.StoreUser(ctx, pg.GetPool(ctx), id)
 }
 
 func DeleteUser(ctx context.Context, id string) error {
-	pool, err := pg.GetPool(ctx)
-	if err != nil {
-		return err
-	}
-	defer pool.Close()
-
-	return repository.DeleteUserById(ctx, pool, id)
+	return repository.DeleteUserById(ctx, pg.GetPool(ctx), id)
 }

@@ -6,6 +6,10 @@ import (
 	"github.com/xyedo/blindate/pkg/optional"
 )
 
+type GetBasicInfoOption struct {
+	PessimisticLocking bool
+}
+
 type CreateBasicInfo struct {
 	Gender           string
 	FromLoc          optional.String
