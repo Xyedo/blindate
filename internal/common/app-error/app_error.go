@@ -10,6 +10,7 @@ const (
 	StatusErrorInvalidAuth          StatusError = "INVALID_AUTHORIZATION"
 )
 const (
+	statusErrorDefaultDuplicate            StatusError = "DUPLICATE"
 	statusErrorDefaultNotFound             StatusError = "NOT_FOUND"
 	statusErrorDefaultForbidden            StatusError = "FORBIDDEN"
 	statusErrorDefaultUnauthorized         StatusError = "UNAUTHORIZED"
@@ -20,14 +21,14 @@ const (
 )
 
 type Sentinel struct {
-	Err      error
-	Message  string
-	Payloads []ErrorPayload
+	Err      error          `json:"-"`
+	Message  string         `json:"message"`
+	Payloads []ErrorPayload `json:"payload"`
 }
 
 type ErrorPayload struct {
-	Status StatusError
-	ErrMap map[string][]any
+	Status  StatusError `json:"status"`
+	Details any         `json:"details"`
 }
 
 func (s Sentinel) Error() string {
@@ -40,6 +41,34 @@ type Payload struct {
 	Message string
 }
 
+func Duplicate(payload Payload, indempotent bool) error {
+	if payload.Message == "" {
+		payload.Message = "duplicate"
+	}
+
+	var payloadErr error
+	if indempotent {
+		payloadErr = ErrConflictIdempotent
+	} else {
+		payloadErr = ErrConflict
+	}
+	if payload.Error != nil {
+		payloadErr = fmt.Errorf("%w:%w", payloadErr, payload.Error)
+	}
+
+	if payload.Status == "" {
+		payload.Status = statusErrorDefaultDuplicate
+	}
+	return Sentinel{
+		Err: payloadErr,
+		Payloads: []ErrorPayload{
+			{
+				Status: payload.Status,
+			},
+		},
+		Message: payload.Message,
+	}
+}
 func NotFound(payload Payload) error {
 	if payload.Message == "" {
 		payload.Message = "not found"
@@ -255,7 +284,7 @@ func UnprocessableEntity(payload Payload) error {
 
 func UnprocessableEntityWithPayloadMap(payload PayloadMap) error {
 	if payload.Message == "" {
-		payload.Message = "we undestand your request, but its unprocessable"
+		payload.Message = "we understand your request, but its unprocessable"
 	}
 
 	if payload.Error != nil {

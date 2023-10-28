@@ -10,8 +10,8 @@ import (
 	"github.com/xyedo/blindate/internal/infrastructure/auth"
 )
 
-func postBasicInfo(c echo.Context) error {
-	var request dtos.PostBasicInfoRequest
+func postUserDetailHandler(c echo.Context) error {
+	var request dtos.PostUserDetailRequest
 
 	err := c.Bind(&request)
 	if err != nil {
@@ -23,11 +23,10 @@ func postBasicInfo(c echo.Context) error {
 		return err
 	}
 
-	ctx := c.Request().Context()
-	requestId := ctx.Value(auth.RequestId).(string)
-
-	returnedId, err := usecase.CreateBasicInfo(ctx, requestId, entities.CreateBasicInfo{
+	returnedId, err := usecase.CreateUserDetail(c.Request().Context(), c.Param("id"), entities.CreateUserDetail{
 		Gender:           request.Gender,
+		Geog:             entities.Geography(request.Location),
+		Bio:              request.Bio,
 		FromLoc:          request.FromLoc,
 		Height:           request.Height,
 		EducationLevel:   request.EducationLevel,
@@ -51,22 +50,22 @@ func postBasicInfo(c echo.Context) error {
 
 }
 
-func getBasicInfoById(c echo.Context) error {
+func getUserDetailByIdHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 	requestId := ctx.Value(auth.RequestId).(string)
 
-	returnedBasicInfo, err := usecase.GetBasicInfoById(ctx, requestId, c.Param("id"))
+	userDetail, err := usecase.GetUserDetail(ctx, requestId, c.Param("id"))
 	if err != nil {
 		return err
 	}
 
 	return c.JSON(http.StatusCreated, map[string]any{
-		"data": returnedBasicInfo,
+		"data": userDetail,
 	})
 }
 
-func patchBasicInfoById(c echo.Context) error {
-	var request dtos.PatchBasicInfoRequest
+func patchUserDetailByIdHandler(c echo.Context) error {
+	var request dtos.PatchUserDetailRequest
 
 	err := c.Bind(&request)
 	if err != nil {
@@ -80,6 +79,6 @@ func patchBasicInfoById(c echo.Context) error {
 	ctx := c.Request().Context()
 	requestId := ctx.Value(auth.RequestId).(string)
 
-	return usecase.UpdateBasicInfoById(ctx, requestId, entities.UpdateBasicInfo{})
+	return usecase.UpdateUserDetailById(ctx, requestId, request.ToEntity())
 
 }

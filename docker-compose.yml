@@ -1,8 +1,5 @@
 version: '3.8'
 
-volumes:
-  pg-dev-data:
-  
 services:
   pg-dev:
     build:
@@ -16,8 +13,7 @@ services:
       - POSTGRES_USER=${PG_USER}
       - POSTGRES_PASSWORD=${PG_PASSWORD}
       - POSTGRES_DB=${PG_DB}
-    volumes:
-      - pg-dev-data:/var/lib/postgresql/data
+
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 0.5s

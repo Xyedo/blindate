@@ -3,6 +3,7 @@ package pg
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"sync"
 
 	"github.com/jackc/pgx/v5"
@@ -26,8 +27,13 @@ var (
 )
 
 func Transaction(ctx context.Context, option pgx.TxOptions, cb func(tx Querier) error) error {
-	tx, err := GetPool(ctx).BeginTx(ctx, option)
+	conn, err := GetConnectionPool(ctx)
+	if err != nil {
+		return err
+	}
+	defer conn.Release()
 
+	tx, err := conn.BeginTx(ctx, option)
 	if err != nil {
 		return err
 	}
@@ -35,7 +41,7 @@ func Transaction(ctx context.Context, option pgx.TxOptions, cb func(tx Querier) 
 	err = cb(tx)
 	if err != nil {
 		if txErr := tx.Rollback(ctx); txErr != nil {
-			return fmt.Errorf("cannot rollback with error %v:%v", txErr, err)
+			return fmt.Errorf("err %w but cannot rollback with error:%w", err, txErr)
 		}
 
 		return err
@@ -46,38 +52,45 @@ func Transaction(ctx context.Context, option pgx.TxOptions, cb func(tx Querier) 
 
 }
 
-func GetPool(ctx context.Context) *pgxpool.Pool {
-	once.Do(func() {
-		_, _ = InitPool(ctx)
-	})
+func GetConnectionPool(ctx context.Context) (*pgxpool.Conn, error) {
+	if pool == nil {
+		once.Do(func() {
+			_, _ = InitPool(ctx)
+		})
+	}
 
-	return pool
+	return pool.Acquire(ctx)
 }
 
 func InitPool(ctx context.Context) (*pgxpool.Pool, error) {
-	var err error
-	once.Do(func() {
-		config := infrastructure.Config.DbConf
+	config := infrastructure.Config.DbConf
 
-		connStr := fmt.Sprintf(
-			"postgresql://%s:%s@%s:%d/%s?sslmode=disable",
-			config.User,
-			config.Password,
-			config.Host,
-			config.Port,
-			config.Database,
-		)
+	dsn := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable pool_max_conns=%d",
+		config.Host,
+		config.Port,
+		config.User,
+		config.Password,
+		config.Database,
+		runtime.NumCPU()*4,
+	)
 
-		if conn, pgErr := pgxpool.New(ctx, connStr); pgErr != nil {
-			err = pgErr
-		} else {
-			pool = conn
-		}
-	})
+	dbConfig, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	return pool, nil
+	db, err := pgxpool.NewWithConfig(ctx, dbConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := db.Ping(ctx); err != nil {
+		return nil, err
+	}
+
+	pool = db
+
+	return db, nil
 
 }

@@ -1,4 +1,4 @@
-CREATE TABLE users (
+CREATE TABLE account (
   id CITEXT PRIMARY KEY,
   is_deleted BOOLEAN NOT NULL DEFAULT FALSE
 );

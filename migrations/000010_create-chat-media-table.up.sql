@@ -1,0 +1,5 @@
+CREATE TABLE chat_media(
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  chat_id SERIAL NOT NULL REFERENCES chat(id) ON DELETE CASCADE,
+  file_id UUID NOT NULL REFERENCES file(id) ON DELETE CASCADE
+);

@@ -5,7 +5,18 @@ import (
 	"encoding/json"
 )
 
-type Option[T comparable] struct {
+func New[T any](vs ...T) Option[T] {
+	o := Option[T]{
+		set: true,
+	}
+	if len(vs) > 0 {
+		o.value = &vs[0]
+	}
+
+	return o
+}
+
+type Option[T any] struct {
 	value *T
 	set   bool
 }

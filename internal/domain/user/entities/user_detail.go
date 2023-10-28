@@ -1,17 +1,21 @@
 package entities
 
 import (
-	"time"
-
 	"github.com/xyedo/blindate/pkg/optional"
 )
 
-type GetBasicInfoOption struct {
+type GetUserDetailOption struct {
 	PessimisticLocking bool
+	WithHobbies        bool
+	WithMovieSeries    bool
+	WithTravels        bool
+	WithSports         bool
 }
 
-type CreateBasicInfo struct {
+type CreateUserDetail struct {
 	Gender           string
+	Geog             Geography
+	Bio              string
 	FromLoc          optional.String
 	Height           optional.Int16
 	EducationLevel   optional.String
@@ -24,8 +28,10 @@ type CreateBasicInfo struct {
 	Work             optional.String
 }
 
-type UpdateBasicInfo struct {
+type UpdateUserDetail struct {
 	Gender           optional.String
+	Geog             optional.Option[Geography]
+	Bio              optional.String
 	FromLoc          optional.String
 	Height           optional.Int16
 	EducationLevel   optional.String
@@ -36,5 +42,4 @@ type UpdateBasicInfo struct {
 	Zodiac           optional.String
 	Kids             optional.Int16
 	Work             optional.String
-	UpdateAt         time.Time
 }

@@ -10,17 +10,20 @@ import (
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 )
 
-func CreateBasicInfo(ctx context.Context, requestId string, payload entities.CreateBasicInfo) (string, error) {
+func CreateUserDetail(ctx context.Context, requestId string, payload entities.CreateUserDetail) (string, error) {
 	var returnedId string
 	err := pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
-		returnedUser, err := repository.GetUserById(ctx, tx, requestId)
+		_, err := repository.GetUserById(ctx, tx, requestId)
 		if err != nil {
 			return err
 		}
 
-		id, err := repository.StoreBasicInfo(ctx, tx,
-			entities.BasicInfo{
-				UserId:           returnedUser.Id,
+		id, err := repository.StoreUserDetail(ctx, tx,
+			entities.UserDetail{
+				UserId:           requestId,
+				Geog:             payload.Geog,
+				Bio:              payload.Bio,
+				LastOnline:       time.Now(),
 				Gender:           entities.Gender(payload.Gender),
 				FromLoc:          payload.FromLoc,
 				Height:           payload.Height,
@@ -52,17 +55,29 @@ func CreateBasicInfo(ctx context.Context, requestId string, payload entities.Cre
 	return returnedId, nil
 }
 
-func GetBasicInfoById(ctx context.Context, requestId, userId string) (entities.BasicInfo, error) {
+func GetUserDetail(ctx context.Context, requestId, userId string) (entities.UserDetail, error) {
+	conn, err := pg.GetConnectionPool(ctx)
+	if err != nil {
+		return entities.UserDetail{}, err
+	}
+
+	defer conn.Release()
+
 	//TODO: can check another userId if match/revealed
-	return repository.GetBasicInfoById(ctx, pg.GetPool(ctx), requestId)
+	return repository.GetUserDetailById(ctx, conn, requestId, entities.GetUserDetailOption{
+		WithHobbies:     true,
+		WithMovieSeries: true,
+		WithTravels:     true,
+		WithSports:      true,
+	})
 
 }
 
-func UpdateBasicInfoById(ctx context.Context, requestId string, payload entities.UpdateBasicInfo) error {
+func UpdateUserDetailById(ctx context.Context, requestId string, payload entities.UpdateUserDetail) error {
 	return pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
-		_, err := repository.GetBasicInfoById(ctx, tx,
+		_, err := repository.GetUserDetailById(ctx, tx,
 			requestId,
-			entities.GetBasicInfoOption{
+			entities.GetUserDetailOption{
 				PessimisticLocking: true,
 			},
 		)
@@ -70,6 +85,6 @@ func UpdateBasicInfoById(ctx context.Context, requestId string, payload entities
 			return err
 		}
 
-		return repository.UpdateBasicInfoById(ctx, tx, requestId, payload)
+		return repository.UpdateUserDetailById(ctx, tx, requestId, payload)
 	})
 }

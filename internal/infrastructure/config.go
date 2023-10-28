@@ -34,6 +34,7 @@ type config struct {
 		RefreshExpires string
 	}
 	ClrekToken string
+	TestId     string
 }
 
 func LoadConfig(filenames ...string) {
@@ -47,7 +48,7 @@ func LoadConfig(filenames ...string) {
 	flag.StringVar(&Config.Host, "host", os.Getenv("HOST"), "application host")
 	flag.IntVar(&Config.Port, "port", appPort, "API server port")
 	flag.StringVar(&Config.Secret, "secret", os.Getenv("APP_SECRET"), "internal api usage")
-	flag.StringVar(&Config.Env, "env", "development", "Environtment (development | staging | production)")
+	flag.StringVar(&Config.Env, "env", os.Getenv("ENV"), "Environtment (development | staging | production)")
 
 	flag.StringVar(&Config.DbConf.Host, "db-host", os.Getenv("PG_HOST"), "PostgreSQL Host")
 	var dbPort string
@@ -67,6 +68,7 @@ func LoadConfig(filenames ...string) {
 
 	flag.StringVar(&Config.BucketName, "s3-bucket-name", os.Getenv("AWS_BUCKET_NAME"), "S3 bucket name")
 	flag.StringVar(&Config.ClrekToken, "clrek-auth-token", os.Getenv("CLREK_TOKEN"), "Clrek Token")
+	flag.StringVar(&Config.TestId, "test_user_id", os.Getenv("TEST_ID"), "test_id")
 	flag.Parse()
 
 	if v, err := strconv.ParseUint(dbPort, 10, 64); err == nil {

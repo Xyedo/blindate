@@ -24,7 +24,8 @@ func handleEventWebhook(c echo.Context) error {
 		return usecase.RegisterUser(c.Request().Context(), request.Data.Id)
 	case "user.deleted":
 		return usecase.DeleteUser(c.Request().Context(), request.Data.Id)
+	default:
+		return c.NoContent(http.StatusBadRequest)
 	}
 
-	return c.NoContent(http.StatusBadRequest)
 }

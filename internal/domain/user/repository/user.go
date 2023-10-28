@@ -12,8 +12,11 @@ import (
 
 func StoreUser(ctx context.Context, conn pg.Querier, id string) error {
 	const storeUser = `
-	INSERT INTO users(id)
+	INSERT INTO account(id)
 	VALUES($1)
+	ON CONFLICT(id)
+	DO UPDATE SET
+	is_deleted = false
 `
 	ct, err := conn.Exec(ctx, storeUser, id)
 	if err != nil {
@@ -30,14 +33,19 @@ func StoreUser(ctx context.Context, conn pg.Querier, id string) error {
 func GetUserById(ctx context.Context, conn pg.Querier, id string, opts ...entities.GetUserOption) (entities.User, error) {
 	const storeUser = `
 	SELECT 
-		id,
-		is_deleted
-	FROM users
+		id, 
+		is_deleted 
+	FROM account 
 	WHERE id = $1
 `
 	query := storeUser
+
+	if !(len(opts) > 0 && opts[0].WithDeleted) {
+		query += " AND is_deleted = false"
+	}
+
 	if len(opts) > 0 && opts[0].PessimisticLocking {
-		query += "\n SELECT FOR UPDATE"
+		query += "\n FOR UPDATE"
 	}
 
 	var returnedUser entities.User
@@ -48,7 +56,8 @@ func GetUserById(ctx context.Context, conn pg.Querier, id string, opts ...entiti
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return entities.User{}, apperror.NotFound(apperror.Payload{
-				Error: err,
+				Status: entities.UserNotFound,
+				Error:  err,
 			})
 		}
 
@@ -57,9 +66,9 @@ func GetUserById(ctx context.Context, conn pg.Querier, id string, opts ...entiti
 	return returnedUser, nil
 }
 
-func DeleteUserById(ctx context.Context, conn pg.Querier, id string) error {
+func SoftDeleteUserById(ctx context.Context, conn pg.Querier, id string) error {
 	const deleteUserById = `
-	UPDATE users SET
+	UPDATE account SET
 		is_deleted = true
 	where id = $1
 	returning id
@@ -69,7 +78,8 @@ func DeleteUserById(ctx context.Context, conn pg.Querier, id string) error {
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return apperror.NotFound(apperror.Payload{
-				Error: err,
+				Status: entities.UserNotFound,
+				Error:  err,
 			})
 		}
 

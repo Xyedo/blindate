@@ -26,14 +26,14 @@ func EchoErrorHandler(err error, c echo.Context) {
 	}
 
 	// application error
-	var appErr *apperror.Sentinel
+	var appErr apperror.Sentinel
 	if errors.As(err, &appErr) {
+		err := Error{
+			Message: appErr.Message,
+			Errors:  appErr.Payloads,
+		}
 		switch {
 		case errors.Is(appErr.Err, apperror.ErrBadRequest):
-			err := Error{
-				Message: appErr.Message,
-				Errors:  appErr.Payloads,
-			}
 			_ = c.JSON(http.StatusBadRequest, err)
 			return
 
@@ -53,6 +53,11 @@ func EchoErrorHandler(err error, c echo.Context) {
 			_ = c.JSON(http.StatusForbidden, err)
 			return
 
+		case errors.Is(appErr.Err, apperror.ErrConflictIdempotent):
+			_ = c.JSON(http.StatusOK, Error{
+				Message: "already created",
+			})
+			return
 		case errors.Is(appErr.Err, apperror.ErrConflict):
 			_ = c.JSON(http.StatusConflict, err)
 			return
@@ -72,7 +77,7 @@ func EchoErrorHandler(err error, c echo.Context) {
 				Errors: []apperror.ErrorPayload{
 					{
 						Status: apperror.StatusErrorMalformedRequestBody,
-						ErrMap: map[string][]any{
+						Details: map[string][]any{
 							field: {msg},
 						},
 					},
@@ -94,8 +99,8 @@ func EchoErrorHandler(err error, c echo.Context) {
 			Message: "validation_error",
 			Errors: []apperror.ErrorPayload{
 				{
-					Status: apperror.StatusErrorValidation,
-					ErrMap: mapErr,
+					Status:  apperror.StatusErrorValidation,
+					Details: mapErr,
 				},
 			},
 		})
@@ -126,12 +131,18 @@ func EchoErrorHandler(err error, c echo.Context) {
 		if echoErr.Internal != nil {
 			c.Logger().Error(err)
 		}
+		_ = c.JSON(echoErr.Code, map[string]any{
+			"message": echoErr.Message,
+		})
+		return
 
 	}
+	c.Echo().Logger.Error(err)
+
 	_ = c.JSON(http.StatusInternalServerError, Error{
 		Message: "cant catch 'em all, sorry!",
 	})
-	c.Echo().Logger.Error(err)
+
 }
 
 func jsonDecoderError(err error) (field, message string) {

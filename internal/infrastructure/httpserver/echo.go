@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -11,6 +12,7 @@ import (
 	internalUserHandler "github.com/xyedo/blindate/internal/domain/user/handler/intrnl"
 
 	"github.com/xyedo/blindate/internal/infrastructure"
+	"github.com/xyedo/blindate/internal/infrastructure/auth"
 	echomiddleware "github.com/xyedo/blindate/internal/infrastructure/httpserver/echo-middleware"
 )
 
@@ -31,10 +33,19 @@ func NewEcho() *Server {
 	apiv1 := e.Group("/v1")
 	internalRouteHandler(apiv1)
 
-	apiv1.Use(echomiddleware.Guard)
-	{
-		userHandler.Route(apiv1)
+	if infrastructure.Config.Env == "dev" {
+		apiv1.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
+			return func(c echo.Context) error {
+				ctx := context.WithValue(c.Request().Context(), auth.RequestId, infrastructure.Config.TestId)
+				c.SetRequest(c.Request().WithContext(ctx))
+				return next(c)
+			}
+		})
+	} else {
+		apiv1.Use(echomiddleware.Guard)
 	}
+
+	userHandler.Route(apiv1)
 
 	return &Server{
 		server: &http.Server{
