@@ -11,14 +11,14 @@ import (
 
 func Guard(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		authorization := c.Request().Header.Get("Authorization")
-		if authorization == "" {
+		authorizationHeader := c.Request().Header.Get("Authorization")
+		if authorizationHeader == "" {
 			return apperror.Unauthorized(apperror.Payload{
 				Status: apperror.StatusErrorInvalidAuth,
 			})
 		}
 
-		s := strings.Split(authorization, " ")
+		s := strings.Split(authorizationHeader, " ")
 		if len(s) < 2 || s[0] != "Bearer" {
 			return apperror.Unauthorized(apperror.Payload{
 				Status: apperror.StatusErrorInvalidAuth,

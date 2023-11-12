@@ -63,7 +63,7 @@ func GetConnectionPool(ctx context.Context) (*pgxpool.Conn, error) {
 }
 
 func InitPool(ctx context.Context) (*pgxpool.Pool, error) {
-	config := infrastructure.Config.DbConf
+	config := infrastructure.Config.Postgre
 
 	dsn := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable pool_max_conns=%d",

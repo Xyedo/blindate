@@ -2,76 +2,93 @@ package infrastructure
 
 import (
 	"flag"
-	"log"
 	"os"
 	"strconv"
 
+	"github.com/invopop/validation"
 	"github.com/joho/godotenv"
 )
 
 var Config config
 
 type config struct {
-	Host       string
-	Port       int
-	Secret     string
-	Env        string
-	BucketName string
-	DbConf     struct {
-		Host         string
-		Port         uint64
-		User         string
-		Password     string
-		Database     string
-		MaxOpenConns int
-		MaxIdleConns int
-		MaxIdleTime  string
+	Host string
+	Port int
+	Env  string
+	AWS  struct {
+		AccessKeyId     string
+		SecretAccessKey string
+		BucketName      string
 	}
-	Token struct {
-		AccessSecret   string
-		RefreshSecret  string
-		AccessExpires  string
-		RefreshExpires string
+	Postgre struct {
+		Host     string
+		Port     uint64
+		User     string
+		Password string
+		Database string
 	}
-	ClrekToken string
-	TestId     string
+	Clerk struct {
+		Token  string
+		ApiKey string
+		TestId string
+	}
 }
 
+func (c config) validate() error {
+	return validation.ValidateStruct(&c,
+		validation.Field(&c.Host, validation.Required),
+		validation.Field(&c.Port, validation.Required),
+		validation.Field(&c.Env, validation.Required),
+
+		validation.Field(&c.AWS.AccessKeyId, validation.Required),
+		validation.Field(&c.AWS.SecretAccessKey, validation.Required),
+		validation.Field(&c.AWS.BucketName, validation.Required),
+
+		validation.Field(&c.Postgre.Host, validation.Required),
+		validation.Field(&c.Postgre.Port, validation.Required),
+		validation.Field(&c.Postgre.User, validation.Required),
+		validation.Field(&c.Postgre.Password, validation.Required),
+		validation.Field(&c.Postgre.Database, validation.Required),
+
+		validation.Field(&c.Clerk.Token, validation.Required),
+		validation.Field(&c.Clerk.ApiKey, validation.Required),
+		validation.Field(&c.Clerk.TestId, validation.Required),
+	)
+}
 func LoadConfig(filenames ...string) {
 	_ = godotenv.Load(filenames...)
 
-	appPort, err := strconv.Atoi(os.Getenv("PORT"))
-	if err != nil {
-		log.Panic(err)
-	}
-
-	flag.StringVar(&Config.Host, "host", os.Getenv("HOST"), "application host")
+	// APP
+	appPort, _ := strconv.Atoi(os.Getenv("APP_PORT"))
+	flag.StringVar(&Config.Host, "host", os.Getenv("APP_HOST"), "application host")
 	flag.IntVar(&Config.Port, "port", appPort, "API server port")
-	flag.StringVar(&Config.Secret, "secret", os.Getenv("APP_SECRET"), "internal api usage")
-	flag.StringVar(&Config.Env, "env", os.Getenv("ENV"), "Environtment (development | staging | production)")
+	flag.StringVar(&Config.Env, "env", os.Getenv("APP_ENV"), "get env")
 
-	flag.StringVar(&Config.DbConf.Host, "db-host", os.Getenv("PG_HOST"), "PostgreSQL Host")
+	//AWS s3
+	flag.StringVar(&Config.AWS.AccessKeyId, "aws-access-key-id", os.Getenv("AWS_ACCESS_KEY_ID"), "S3 bucket name")
+	flag.StringVar(&Config.AWS.SecretAccessKey, "aws-secret-access-key", os.Getenv("AWS_SECRET_ACCESS_KEY"), "S3 bucket name")
+	flag.StringVar(&Config.AWS.BucketName, "s3-bucket-name", os.Getenv("AWS_BUCKET_NAME"), "S3 bucket name")
+
+	// Postgre
+	flag.StringVar(&Config.Postgre.Host, "db-host", os.Getenv("PG_HOST"), "PostgreSQL Host")
 	var dbPort string
 	flag.StringVar(&dbPort, "db-port", os.Getenv("PG_PORT"), "PostgreSQL Port")
-	flag.StringVar(&Config.DbConf.User, "db-user", os.Getenv("PG_USER"), "PostgreSQL Username")
-	flag.StringVar(&Config.DbConf.Password, "db-password", os.Getenv("PG_PASSWORD"), "PostgreSQL Password")
-	flag.StringVar(&Config.DbConf.Database, "db-name", os.Getenv("PG_DB"), "PostgreSQL Database name")
+	if v, err := strconv.ParseUint(dbPort, 10, 64); err == nil {
+		Config.Postgre.Port = v
+	}
 
-	flag.IntVar(&Config.DbConf.MaxOpenConns, "db-max-open-conns", 25, "PostgreSQL max open connections")
-	flag.IntVar(&Config.DbConf.MaxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
-	flag.StringVar(&Config.DbConf.MaxIdleTime, "db-max-idle-time", "15m", "PostgreSQL max connection idle time")
+	flag.StringVar(&Config.Postgre.User, "db-user", os.Getenv("PG_USER"), "PostgreSQL Username")
+	flag.StringVar(&Config.Postgre.Password, "db-password", os.Getenv("PG_PASSWORD"), "PostgreSQL Password")
+	flag.StringVar(&Config.Postgre.Database, "db-name", os.Getenv("PG_DB"), "PostgreSQL Database name")
 
-	flag.StringVar(&Config.Token.AccessSecret, "jwt-access-secret", os.Getenv("JWT_ACCESS_SECRET_KEY"), "Jwt Access")
-	flag.StringVar(&Config.Token.RefreshSecret, "jwt-refresh-secret", os.Getenv("JWT_REFRESH_SECRET_KEY"), "Jwt Access")
-	flag.StringVar(&Config.Token.AccessExpires, "jwt-access-expires", os.Getenv("JWT_ACCESS_EXPIRES"), "Jwt Access")
-	flag.StringVar(&Config.Token.RefreshExpires, "jwt-refresh-expires", os.Getenv("JWT_REFRESH_EXPIRES"), "Jwt Access")
-
-	flag.StringVar(&Config.BucketName, "s3-bucket-name", os.Getenv("AWS_BUCKET_NAME"), "S3 bucket name")
-	flag.StringVar(&Config.ClrekToken, "clrek-auth-token", os.Getenv("CLREK_TOKEN"), "Clrek Token")
-	flag.StringVar(&Config.TestId, "test_user_id", os.Getenv("TEST_ID"), "test_id")
+	flag.StringVar(&Config.Clerk.Token, "clrek-auth-token", os.Getenv("CLREK_TOKEN"), "Clrek Token")
+	flag.StringVar(&Config.Clerk.ApiKey, "clrek-apikey", os.Getenv("CLREK_API_KEY"), "Clrek ApiKey")
+	flag.StringVar(&Config.Clerk.TestId, "clrek-test-id", os.Getenv("CLREK_TEST_ID"), "Clrek TestId")
 	flag.Parse()
 
-	if v, err := strconv.ParseUint(dbPort, 10, 64); err == nil {
-		Config.DbConf.Port = v
+	err := Config.validate()
+	if err != nil {
+		panic(err)
 	}
+
 }

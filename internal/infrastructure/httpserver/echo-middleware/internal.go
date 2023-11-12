@@ -10,7 +10,7 @@ import (
 func Internal(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		apiKey := c.Request().Header.Get("ApiKey")
-		if apiKey != infrastructure.Config.Secret {
+		if apiKey != infrastructure.Config.Clerk.ApiKey {
 			return c.JSON(http.StatusUnauthorized, map[string]any{
 				"message": "invalid request header key/value",
 			})
@@ -19,4 +19,3 @@ func Internal(next echo.HandlerFunc) echo.HandlerFunc {
 		return next(c)
 	}
 }
-

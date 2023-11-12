@@ -19,7 +19,7 @@ var (
 )
 
 func initConn() {
-	client, err := clerk.NewClient(infrastructure.Config.ClrekToken)
+	client, err := clerk.NewClient(infrastructure.Config.Clerk.Token)
 	if err != nil {
 		panic(err)
 	}

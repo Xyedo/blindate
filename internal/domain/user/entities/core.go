@@ -10,6 +10,7 @@ type User struct {
 	Id        string
 	IsDeleted bool
 }
+
 type UserDetail struct {
 	UserId           string
 	Geog             Geography

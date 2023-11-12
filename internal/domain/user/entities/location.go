@@ -44,3 +44,15 @@ type CreateLocation struct {
 	UserId string
 	Geog   Geography
 }
+
+type FindClosestUser struct {
+	UserId string
+	Geog   Geography
+	Page   int
+	Limit  int
+}
+
+type ClosestUser struct {
+	UserId   string
+	Distance string
+}

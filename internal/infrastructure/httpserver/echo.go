@@ -36,7 +36,7 @@ func NewEcho() *Server {
 	if infrastructure.Config.Env == "dev" {
 		apiv1.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 			return func(c echo.Context) error {
-				ctx := context.WithValue(c.Request().Context(), auth.RequestId, infrastructure.Config.TestId)
+				ctx := context.WithValue(c.Request().Context(), auth.RequestId, infrastructure.Config.Clerk.TestId)
 				c.SetRequest(c.Request().WithContext(ctx))
 				return next(c)
 			}
