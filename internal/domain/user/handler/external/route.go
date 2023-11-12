@@ -10,6 +10,7 @@ func Route(e *echo.Group) {
 	users := e.Group("/users")
 
 	users.GET("/:id/detail", getUserDetailByIdHandler)
+	users.PUT("/:id/detail/photo", putUserDetailPhotoHandler, matchRequestParamId)
 	users.POST("/:id/detail", postUserDetailHandler, matchRequestParamId)
 	users.PATCH("/:id/detail", patchUserDetailByIdHandler, matchRequestParamId)
 

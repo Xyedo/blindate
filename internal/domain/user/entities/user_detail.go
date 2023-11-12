@@ -5,11 +5,12 @@ import (
 )
 
 type GetUserDetailOption struct {
-	PessimisticLocking bool
-	WithHobbies        bool
-	WithMovieSeries    bool
-	WithTravels        bool
-	WithSports         bool
+	PessimisticLocking  bool
+	WithHobbies         bool
+	WithMovieSeries     bool
+	WithTravels         bool
+	WithSports          bool
+	WithProfilePictures bool
 }
 
 type CreateUserDetail struct {

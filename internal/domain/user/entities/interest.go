@@ -142,14 +142,14 @@ func (payload CreateInterest) Validate(userDetailDb UserDetail) error {
 	return nil
 }
 
-func (c CreateInterest) ToHobbies(interestUUID string) []Hobbie {
+func (c CreateInterest) ToHobbies(userId string) []Hobbie {
 	now := time.Now()
 
 	res := make([]Hobbie, 0, len(c.Hobbies))
 	for _, hobbie := range c.Hobbies {
 		res = append(res, Hobbie{
 			UUID:      uuid.NewString(),
-			UserId:    interestUUID,
+			UserId:    userId,
 			Hobbie:    hobbie,
 			CreatedAt: now,
 			UpdatedAt: now,
@@ -160,14 +160,14 @@ func (c CreateInterest) ToHobbies(interestUUID string) []Hobbie {
 	return res
 }
 
-func (c CreateInterest) ToMovieSeries(interestUUID string) []MovieSerie {
+func (c CreateInterest) ToMovieSeries(userId string) []MovieSerie {
 	now := time.Now()
 
 	res := make([]MovieSerie, 0, len(c.MovieSeries))
 	for _, movieSerie := range c.MovieSeries {
 		res = append(res, MovieSerie{
 			UUID:       uuid.NewString(),
-			UserId:     interestUUID,
+			UserId:     userId,
 			MovieSerie: movieSerie,
 			CreatedAt:  now,
 			UpdatedAt:  now,
@@ -177,14 +177,14 @@ func (c CreateInterest) ToMovieSeries(interestUUID string) []MovieSerie {
 
 	return res
 }
-func (c CreateInterest) ToTravels(interestUUID string) []Travel {
+func (c CreateInterest) ToTravels(userId string) []Travel {
 	now := time.Now()
 
 	res := make([]Travel, 0, len(c.Travels))
 	for _, travel := range c.Travels {
 		res = append(res, Travel{
 			UUID:      uuid.NewString(),
-			UserId:    interestUUID,
+			UserId:    userId,
 			Travel:    travel,
 			CreatedAt: now,
 			UpdatedAt: now,
@@ -195,14 +195,14 @@ func (c CreateInterest) ToTravels(interestUUID string) []Travel {
 	return res
 }
 
-func (c CreateInterest) ToSports(interestUUID string) []Sport {
+func (c CreateInterest) ToSports(userId string) []Sport {
 	now := time.Now()
 
 	res := make([]Sport, 0, len(c.Sports))
 	for _, sport := range c.Sports {
 		res = append(res, Sport{
 			UUID:      uuid.NewString(),
-			UserId:    interestUUID,
+			UserId:    userId,
 			Sport:     sport,
 			CreatedAt: now,
 			UpdatedAt: now,

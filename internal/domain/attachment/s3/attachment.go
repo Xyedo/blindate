@@ -12,24 +12,29 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/google/uuid"
 	"github.com/xyedo/blindate/internal/domain/attachment/entities"
+	"github.com/xyedo/blindate/internal/infrastructure"
 )
 
-func NewS3(bucketName string) *attachmentManager {
+var Manager *attachmentManager
+
+func InitS3Manager() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion("ap-southeast-1"))
 	if err != nil {
 		log.Panicln(err)
 	}
 	client := s3.NewFromConfig(cfg)
-	return &attachmentManager{
+	Manager = &attachmentManager{
 		uploader: manager.NewUploader(client, func(u *manager.Uploader) {
 			u.PartSize = 10 << 20
 		}),
 		presignClient: s3.NewPresignClient(client),
 		s3client:      client,
-		bucketName:    bucketName,
+		bucketName:    infrastructure.Config.AWS.BucketName,
 	}
+
 }
 
 type attachmentManager struct {
@@ -66,12 +71,12 @@ func (a *attachmentManager) DeleteBlob(ctx context.Context, key string) error {
 	return nil
 }
 
-func (a *attachmentManager) GetPresignedUrl(ctx context.Context, key string) (string, error) {
+func (a *attachmentManager) GetPresignedUrl(ctx context.Context, key string, expires time.Duration) (string, error) {
 	presignRes, err := a.presignClient.PresignGetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(a.bucketName),
 		Key:    aws.String(key),
 	}, func(po *s3.PresignOptions) {
-		po.Expires = 5 * time.Minute
+		po.Expires = expires
 	})
 	if err != nil {
 		return "", err

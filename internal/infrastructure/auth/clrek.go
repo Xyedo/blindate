@@ -7,10 +7,10 @@ import (
 	"github.com/xyedo/blindate/internal/infrastructure"
 )
 
-type requestId string
+type key string
 
 const (
-	RequestId requestId = "RequestId"
+	RequestId key = "RequestId"
 )
 
 var (

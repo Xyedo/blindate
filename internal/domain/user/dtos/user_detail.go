@@ -262,10 +262,11 @@ type UserDetail struct {
 	Kids             optional.Int16      `json:"kids"`
 	Work             optional.String     `json:"work"`
 
-	Hobbies     []string `json:"hobbies"`
-	MovieSeries []string `json:"movie_series"`
-	Travels     []string `json:"travels"`
-	Sports      []string `json:"sports"`
+	Hobbies            []string `json:"hobbies"`
+	MovieSeries        []string `json:"movie_series"`
+	Travels            []string `json:"travels"`
+	Sports             []string `json:"sports"`
+	ProfilePictureURLs []string `json:"profile-picture-urls"`
 }
 type UserDetailGeography struct {
 	Lat string `json:"lat"`
@@ -293,27 +294,33 @@ func GetUserDetailResponse(user entities.UserDetail) UserDetail {
 		sports = append(sports, sport.Sport)
 	}
 
+	profilePicURLs := make([]string, 0, len(user.ProfilePictures))
+	for _, profilePic := range user.ProfilePictures {
+		profilePicURLs = append(profilePicURLs, profilePic.GetPresignedUrl())
+	}
+
 	return UserDetail{
 		UserId: user.UserId,
 		Geog: UserDetailGeography{
 			Lat: user.Geog.Lat,
 			Lng: user.Geog.Lng,
 		},
-		Bio:              user.Bio,
-		Gender:           string(user.Gender),
-		FromLoc:          user.FromLoc,
-		Height:           user.Height,
-		EducationLevel:   user.EducationLevel,
-		Drinking:         user.Drinking,
-		Smoking:          user.Smoking,
-		RelationshipPref: user.RelationshipPref,
-		LookingFor:       user.LookingFor,
-		Zodiac:           user.Zodiac,
-		Kids:             user.Kids,
-		Work:             user.Work,
-		Hobbies:          hobbies,
-		MovieSeries:      movieSeries,
-		Travels:          travels,
-		Sports:           sports,
+		Bio:                user.Bio,
+		Gender:             string(user.Gender),
+		FromLoc:            user.FromLoc,
+		Height:             user.Height,
+		EducationLevel:     user.EducationLevel,
+		Drinking:           user.Drinking,
+		Smoking:            user.Smoking,
+		RelationshipPref:   user.RelationshipPref,
+		LookingFor:         user.LookingFor,
+		Zodiac:             user.Zodiac,
+		Kids:               user.Kids,
+		Work:               user.Work,
+		Hobbies:            hobbies,
+		MovieSeries:        movieSeries,
+		Travels:            travels,
+		Sports:             sports,
+		ProfilePictureURLs: profilePicURLs,
 	}
 }

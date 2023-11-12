@@ -31,10 +31,11 @@ type UserDetail struct {
 	UpdatedAt        time.Time
 	Version          int64
 
-	Hobbies     []Hobbie
-	MovieSeries []MovieSerie
-	Travels     []Travel
-	Sports      []Sport
+	Hobbies         []Hobbie
+	MovieSeries     []MovieSerie
+	Travels         []Travel
+	Sports          []Sport
+	ProfilePictures []ProfilePicture
 }
 
 type Hobbie struct {
@@ -71,4 +72,20 @@ type Sport struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Version   int64
+}
+
+type ProfilePicture struct {
+	UUID         string
+	UserId       string
+	Selected     bool
+	FileId       string
+	presignedURL string
+}
+
+func (p *ProfilePicture) SetPresignedURL(url string) {
+	p.presignedURL = url
+}
+
+func (p ProfilePicture) GetPresignedUrl() string {
+	return p.presignedURL
 }

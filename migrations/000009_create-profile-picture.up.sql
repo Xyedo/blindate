@@ -1,6 +1,6 @@
 CREATE TABLE profile_pictures(
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id CITEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
+  account_id CITEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
   selected BOOLEAN NOT NULL DEFAULT FALSE,
   file_id  UUID NOT NULL REFERENCES file(id) ON DELETE CASCADE
 );

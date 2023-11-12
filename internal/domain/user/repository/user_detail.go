@@ -282,6 +282,37 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 			returnedUserDetail.Sports = append(returnedUserDetail.Sports, sport)
 		}
 	}
+	if len(opts) > 0 && opts[0].WithProfilePictures {
+		const getPhotoProfile = `
+		SELECT 
+			id, 
+			account_id,
+			selected,
+			file_id
+		FROM profile_pictures 
+		WHERE account_id = $1
+		ORDER BY selected ASC`
+		rows, err := conn.Query(ctx, getPhotoProfile, id)
+		if err != nil {
+			return entities.UserDetail{}, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var profilePic entities.ProfilePicture
+			err = rows.Scan(
+				&profilePic.UUID,
+				&profilePic.UserId,
+				&profilePic.Selected,
+				&profilePic.FileId,
+			)
+			if err != nil {
+				return entities.UserDetail{}, err
+			}
+
+			returnedUserDetail.ProfilePictures = append(returnedUserDetail.ProfilePictures, profilePic)
+		}
+	}
 
 	return returnedUserDetail, nil
 

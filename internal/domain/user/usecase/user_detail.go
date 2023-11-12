@@ -2,23 +2,26 @@ package usecase
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	attachmentRepo "github.com/xyedo/blindate/internal/domain/attachment/repository"
+	"github.com/xyedo/blindate/internal/domain/attachment/s3"
 	"github.com/xyedo/blindate/internal/domain/user/entities"
-	"github.com/xyedo/blindate/internal/domain/user/repository"
+	userRepo "github.com/xyedo/blindate/internal/domain/user/repository"
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 )
 
 func CreateUserDetail(ctx context.Context, requestId string, payload entities.CreateUserDetail) (string, error) {
 	var returnedId string
 	err := pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
-		_, err := repository.GetUserById(ctx, tx, requestId)
+		_, err := userRepo.GetUserById(ctx, tx, requestId)
 		if err != nil {
 			return err
 		}
 
-		id, err := repository.StoreUserDetail(ctx, tx,
+		id, err := userRepo.StoreUserDetail(ctx, tx,
 			entities.UserDetail{
 				UserId:           requestId,
 				Geog:             payload.Geog,
@@ -64,18 +67,52 @@ func GetUserDetail(ctx context.Context, requestId, userId string) (entities.User
 	defer conn.Release()
 
 	//TODO: can check another userId if match/revealed
-	return repository.GetUserDetailById(ctx, conn, requestId, entities.GetUserDetailOption{
-		WithHobbies:     true,
-		WithMovieSeries: true,
-		WithTravels:     true,
-		WithSports:      true,
+	userDetail, err := userRepo.GetUserDetailById(ctx, conn, requestId, entities.GetUserDetailOption{
+		WithHobbies:         true,
+		WithMovieSeries:     true,
+		WithTravels:         true,
+		WithSports:          true,
+		WithProfilePictures: true,
 	})
+	if err != nil {
+		return entities.UserDetail{}, err
+	}
+
+	if len(userDetail.ProfilePictures) > 0 {
+		fileIds, fileIdToIdxMap := userDetail.ToFileIds()
+		files, err := attachmentRepo.GetFileByIds(ctx, conn, fileIds)
+		if err != nil {
+			return entities.UserDetail{}, err
+		}
+
+		var wg sync.WaitGroup
+		errs := make([]error, len(files))
+
+		wg.Add(len(files))
+		for i := 0; i < len(files); i++ {
+			go func(i int, wg *sync.WaitGroup) {
+				defer wg.Done()
+				presignedURL, err := s3.Manager.GetPresignedUrl(ctx, files[i].BlobLink, 1*time.Hour)
+				if err != nil {
+					errs[i] = err
+					return
+				}
+
+				if idx, ok := fileIdToIdxMap[files[i].UUID]; ok {
+					userDetail.ProfilePictures[idx].SetPresignedURL(presignedURL)
+				}
+			}(i, &wg)
+		}
+		wg.Wait()
+	}
+
+	return userDetail, nil
 
 }
 
 func UpdateUserDetailById(ctx context.Context, requestId string, payload entities.UpdateUserDetail) error {
 	return pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
-		_, err := repository.GetUserDetailById(ctx, tx,
+		_, err := userRepo.GetUserDetailById(ctx, tx,
 			requestId,
 			entities.GetUserDetailOption{
 				PessimisticLocking: true,
@@ -85,6 +122,6 @@ func UpdateUserDetailById(ctx context.Context, requestId string, payload entitie
 			return err
 		}
 
-		return repository.UpdateUserDetailById(ctx, tx, requestId, payload)
+		return userRepo.UpdateUserDetailById(ctx, tx, requestId, payload)
 	})
 }
