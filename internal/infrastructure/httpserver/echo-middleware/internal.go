@@ -7,7 +7,7 @@ import (
 	"github.com/xyedo/blindate/internal/infrastructure"
 )
 
-func Internal(next echo.HandlerFunc) echo.HandlerFunc {
+func InternalApiKey(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		apiKey := c.Request().Header.Get("ApiKey")
 		if apiKey != infrastructure.Config.Clerk.ApiKey {

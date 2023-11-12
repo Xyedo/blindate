@@ -245,3 +245,75 @@ func (req PatchUserDetailRequest) ToEntity() entities.UpdateUserDetail {
 		Work:             req.Work,
 	}
 }
+
+type UserDetail struct {
+	UserId           string              `json:"user_id"`
+	Geog             UserDetailGeography `json:"geo"`
+	Bio              string              `json:"bio"`
+	Gender           string              `json:"gender"`
+	FromLoc          optional.String     `json:"from_location"`
+	Height           optional.Int16      `json:"height"`
+	EducationLevel   optional.String     `json:"education_level"`
+	Drinking         optional.String     `json:"drinking"`
+	Smoking          optional.String     `json:"smoking"`
+	RelationshipPref optional.String     `json:"relationship_preferences"`
+	LookingFor       optional.String     `json:"looking_for"`
+	Zodiac           optional.String     `json:"zodiac"`
+	Kids             optional.Int16      `json:"kids"`
+	Work             optional.String     `json:"work"`
+
+	Hobbies     []string `json:"hobbies"`
+	MovieSeries []string `json:"movie_series"`
+	Travels     []string `json:"travels"`
+	Sports      []string `json:"sports"`
+}
+type UserDetailGeography struct {
+	Lat string `json:"lat"`
+	Lng string `json:"lng"`
+}
+
+func GetUserDetailResponse(user entities.UserDetail) UserDetail {
+	hobbies := make([]string, 0, len(user.Hobbies))
+	for _, hobbie := range user.Hobbies {
+		hobbies = append(hobbies, hobbie.Hobbie)
+	}
+
+	movieSeries := make([]string, 0, len(user.MovieSeries))
+	for _, movieSerie := range user.MovieSeries {
+		movieSeries = append(movieSeries, movieSerie.MovieSerie)
+	}
+
+	travels := make([]string, 0, len(user.Travels))
+	for _, travel := range user.Travels {
+		travels = append(travels, travel.Travel)
+	}
+
+	sports := make([]string, 0, len(user.Sports))
+	for _, sport := range user.Sports {
+		sports = append(sports, sport.Sport)
+	}
+
+	return UserDetail{
+		UserId: user.UserId,
+		Geog: UserDetailGeography{
+			Lat: user.Geog.Lat,
+			Lng: user.Geog.Lng,
+		},
+		Bio:              user.Bio,
+		Gender:           string(user.Gender),
+		FromLoc:          user.FromLoc,
+		Height:           user.Height,
+		EducationLevel:   user.EducationLevel,
+		Drinking:         user.Drinking,
+		Smoking:          user.Smoking,
+		RelationshipPref: user.RelationshipPref,
+		LookingFor:       user.LookingFor,
+		Zodiac:           user.Zodiac,
+		Kids:             user.Kids,
+		Work:             user.Work,
+		Hobbies:          hobbies,
+		MovieSeries:      movieSeries,
+		Travels:          travels,
+		Sports:           sports,
+	}
+}
