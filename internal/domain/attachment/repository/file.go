@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 
 	"github.com/xyedo/blindate/internal/domain/attachment/entities"
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
@@ -21,7 +22,7 @@ func InsertFile(ctx context.Context, conn pg.Querier, file entities.File) (strin
 		file.CreatedAt,
 		file.UpdatedAt,
 		file.Version,
-	).Scan(returnedUUID)
+	).Scan(&returnedUUID)
 	if err != nil {
 		return "", err
 	}
@@ -58,6 +59,7 @@ func GetFileByIds(ctx context.Context, conn pg.Querier, ids []string) ([]entitie
 		err = rows.Scan(
 			&file.UUID,
 			&file.FileType,
+			&file.BlobLink,
 			&file.CreatedAt,
 			&file.UpdatedAt,
 			&file.Version,
@@ -66,6 +68,10 @@ func GetFileByIds(ctx context.Context, conn pg.Querier, ids []string) ([]entitie
 			return nil, err
 		}
 		files = append(files, file)
+	}
+
+	if len(files) != len(ids) {
+		return nil, errors.New("invalid")
 	}
 
 	return files, nil

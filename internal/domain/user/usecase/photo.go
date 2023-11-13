@@ -39,6 +39,7 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 		if err != nil {
 			return err
 		}
+
 		if len(userDetail.ProfilePictures) > 5 {
 			return apperror.BadPayloadWithPayloadMap(apperror.PayloadMap{
 				Payloads: []apperror.ErrorPayload{
@@ -60,10 +61,6 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 		if err != nil {
 			return err
 		}
-		err = userRepo.UpdateProfilePictureSelectedToFalseByUserId(ctx, tx, userDetail.UserId)
-		if err != nil {
-			return err
-		}
 
 		fileId, err := attachmentRepo.InsertFile(ctx, tx, attachmentEntities.File{
 			UUID:      uuid.NewString(),
@@ -73,6 +70,11 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 			UpdatedAt: time.Now(),
 			Version:   1,
 		})
+		if err != nil {
+			return err
+		}
+
+		err = userRepo.UpdateProfilePictureSelectedToFalseByUserId(ctx, tx, userDetail.UserId)
 		if err != nil {
 			return err
 		}

@@ -352,7 +352,7 @@ type DeleteInterest struct {
 	SportIds      []string
 }
 
-func (payload DeleteInterest) ValidateIds(userDetailDb UserDetail) error {
+func (payload DeleteInterest) Validate(userDetailDb UserDetail) error {
 	errPayloads := make(map[string][]string)
 	const valueNotFound = "value is not found"
 
@@ -405,7 +405,14 @@ func (payload DeleteInterest) ValidateIds(userDetailDb UserDetail) error {
 	}
 
 	if len(errPayloads) > 0 {
-		return apperror.UnprocessableEntity(apperror.Payload{})
+		return apperror.UnprocessableEntityWithPayloadMap(apperror.PayloadMap{
+			Payloads: []apperror.ErrorPayload{
+				{
+					Status:  InterestNotFound,
+					Details: errPayloads,
+				},
+			},
+		})
 	}
 
 	return nil
