@@ -39,17 +39,29 @@ func IndexMatchCandidate(ctx context.Context, requestId string, limit, page int)
 	if err != nil {
 		return nil, err
 	}
+	defer conn.Release()
 
 	user, err := userRepo.GetUserDetailById(ctx, conn, requestId)
 	if err != nil {
 		return nil, err
 	}
 
-	matchUser, err := matchRepo.FindUserMatchByStatus(ctx, conn, requestId, matchEntities.MatchStatusUnknown, limit, page)
+	matchUser, err := matchRepo.FindUserMatchByStatus(ctx, conn,
+		matchEntities.FindUserMatchByStatus{
+			UserId: user.UserId,
+			Status: matchEntities.MatchStatusUnknown,
+			Limit:  limit,
+			Page:   page,
+		},
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	matchEntities.CalculateDistance(user, matchUser)
+	err = matchUser.CalculateDistance(user)
+	if err != nil {
+		return nil, err
+	}
+
 	return matchUser, nil
 }

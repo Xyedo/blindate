@@ -47,7 +47,7 @@ func CreateCandidateMatchsById(ctx context.Context, conn pg.Querier, userId stri
 
 }
 
-func FindUserMatchByStatus(ctx context.Context, conn pg.Querier, userId string, status matchEntities.MatchStatus, limit, page int) ([]matchEntities.MatchUser, error) {
+func FindUserMatchByStatus(ctx context.Context, conn pg.Querier, payload matchEntities.FindUserMatchByStatus) (matchEntities.MatchUsers, error) {
 	const findUserMatchByStatus = `
 	SELECT 
 		m.request_from
@@ -63,12 +63,17 @@ func FindUserMatchByStatus(ctx context.Context, conn pg.Querier, userId string, 
 	OFFSET $4
 	`
 
-	offset := limit*page - limit
-	rows, err := conn.Query(ctx, findUserMatchByStatus, userId, string(status), limit, offset)
+	offset := payload.Limit*payload.Page - payload.Limit
+	rows, err := conn.Query(ctx,
+		findUserMatchByStatus,
+		payload.UserId,
+		string(payload.Status),
+		payload.Limit,
+		offset,
+	)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
 	matchUserIds := make([]string, 0)
 	for rows.Next() {
@@ -79,17 +84,19 @@ func FindUserMatchByStatus(ctx context.Context, conn pg.Querier, userId string, 
 		if err != nil {
 			return nil, err
 		}
-		if requestFrom == userId {
+		if requestFrom == payload.UserId {
 			matchUserIds = append(matchUserIds, requestTo)
 			continue
 		}
-		if requestTo == userId {
+		if requestTo == payload.UserId {
 			matchUserIds = append(matchUserIds, requestFrom)
 			continue
 		}
 
 		matchUserIds = append(matchUserIds, requestFrom, requestTo)
 	}
+	rows.Close()
+
 	const getUserDetailByIds = `
 	SELECT 
 		account_id,
