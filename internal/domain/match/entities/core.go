@@ -25,3 +25,9 @@ type MatchUser struct {
 	Distance string
 	userentities.UserDetail
 }
+
+func CalculateDistance(user userentities.UserDetail, matchUsers []MatchUser) {
+	for i := range matchUsers {
+		geo
+	}
+}

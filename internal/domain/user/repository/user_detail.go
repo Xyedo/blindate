@@ -108,10 +108,11 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 	if len(opts) > 0 && opts[0].PessimisticLocking {
 		query += "\nFOR UPDATE"
 	}
+	batch := new(pgx.Batch)
 
 	var returnedUserDetail entities.UserDetail
-	err := conn.QueryRow(ctx, query, id).
-		Scan(
+	batch.Queue(query, id).QueryRow(func(row pgx.Row) error {
+		err := row.Scan(
 			&returnedUserDetail.UserId,
 			&returnedUserDetail.Geog,
 			&returnedUserDetail.Bio,
@@ -131,16 +132,19 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 			&returnedUserDetail.UpdatedAt,
 			&returnedUserDetail.Version,
 		)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return entities.UserDetail{}, apperror.NotFound(apperror.Payload{
-				Error:  err,
-				Status: entities.UserNotFound,
-			})
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return apperror.NotFound(apperror.Payload{
+					Error:  err,
+					Status: entities.UserNotFound,
+				})
+			}
+
+			return err
 		}
 
-		return entities.UserDetail{}, err
-	}
+		return nil
+	})
 
 	if len(opts) > 0 && opts[0].WithHobbies {
 		const getHobbieByUserId = `
@@ -153,29 +157,25 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 			version 
 		FROM hobbies 
 		WHERE account_id = $1`
-		rows, err := conn.Query(ctx, getHobbieByUserId, id)
-		if err != nil {
-			return entities.UserDetail{}, err
-		}
-		defer rows.Close()
+		batch.Queue(getHobbieByUserId, id).Query(func(rows pgx.Rows) error {
+			for rows.Next() {
+				var hobbie entities.Hobbie
+				err := rows.Scan(
+					&hobbie.UUID,
+					&hobbie.UserId,
+					&hobbie.Hobbie,
+					&hobbie.CreatedAt,
+					&hobbie.UpdatedAt,
+					&hobbie.Version,
+				)
+				if err != nil {
+					return err
+				}
 
-		for rows.Next() {
-			var hobbie entities.Hobbie
-			err = rows.Scan(
-				&hobbie.UUID,
-				&hobbie.UserId,
-				&hobbie.Hobbie,
-				&hobbie.CreatedAt,
-				&hobbie.UpdatedAt,
-				&hobbie.Version,
-			)
-			if err != nil {
-				return entities.UserDetail{}, err
+				returnedUserDetail.Hobbies = append(returnedUserDetail.Hobbies, hobbie)
 			}
-
-			returnedUserDetail.Hobbies = append(returnedUserDetail.Hobbies, hobbie)
-		}
-
+			return nil
+		})
 	}
 
 	if len(opts) > 0 && opts[0].WithMovieSeries {
@@ -189,28 +189,26 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 			version 
 		FROM movie_series 
 		WHERE account_id = $1`
-		rows, err := conn.Query(ctx, getMovieSerieByUserId, id)
-		if err != nil {
-			return entities.UserDetail{}, err
-		}
-		defer rows.Close()
+		batch.Queue(getMovieSerieByUserId, id).Query(func(rows pgx.Rows) error {
+			for rows.Next() {
+				var movieSerie entities.MovieSerie
+				err := rows.Scan(
+					&movieSerie.UUID,
+					&movieSerie.UserId,
+					&movieSerie.MovieSerie,
+					&movieSerie.CreatedAt,
+					&movieSerie.UpdatedAt,
+					&movieSerie.Version,
+				)
+				if err != nil {
+					return err
+				}
 
-		for rows.Next() {
-			var movieSerie entities.MovieSerie
-			err = rows.Scan(
-				&movieSerie.UUID,
-				&movieSerie.UserId,
-				&movieSerie.MovieSerie,
-				&movieSerie.CreatedAt,
-				&movieSerie.UpdatedAt,
-				&movieSerie.Version,
-			)
-			if err != nil {
-				return entities.UserDetail{}, err
+				returnedUserDetail.MovieSeries = append(returnedUserDetail.MovieSeries, movieSerie)
 			}
+			return nil
+		})
 
-			returnedUserDetail.MovieSeries = append(returnedUserDetail.MovieSeries, movieSerie)
-		}
 	}
 
 	if len(opts) > 0 && opts[0].WithTravels {
@@ -224,28 +222,27 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 			version 
 		FROM traveling 
 		WHERE account_id = $1`
-		rows, err := conn.Query(ctx, getTravelingByUserId, id)
-		if err != nil {
-			return entities.UserDetail{}, err
-		}
-		defer rows.Close()
 
-		for rows.Next() {
-			var travel entities.Travel
-			err = rows.Scan(
-				&travel.UUID,
-				&travel.UserId,
-				&travel.Travel,
-				&travel.CreatedAt,
-				&travel.UpdatedAt,
-				&travel.Version,
-			)
-			if err != nil {
-				return entities.UserDetail{}, err
+		batch.Queue(getTravelingByUserId, id).Query(func(rows pgx.Rows) error {
+			for rows.Next() {
+				var travel entities.Travel
+				err := rows.Scan(
+					&travel.UUID,
+					&travel.UserId,
+					&travel.Travel,
+					&travel.CreatedAt,
+					&travel.UpdatedAt,
+					&travel.Version,
+				)
+				if err != nil {
+					return err
+				}
+
+				returnedUserDetail.Travels = append(returnedUserDetail.Travels, travel)
 			}
+			return nil
+		})
 
-			returnedUserDetail.Travels = append(returnedUserDetail.Travels, travel)
-		}
 	}
 
 	if len(opts) > 0 && opts[0].WithSports {
@@ -259,28 +256,28 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 			version 
 		FROM sports 
 		WHERE account_id = $1`
-		rows, err := conn.Query(ctx, getSportByUserId, id)
-		if err != nil {
-			return entities.UserDetail{}, err
-		}
-		defer rows.Close()
 
-		for rows.Next() {
-			var sport entities.Sport
-			err = rows.Scan(
-				&sport.UUID,
-				&sport.UserId,
-				&sport.Sport,
-				&sport.CreatedAt,
-				&sport.UpdatedAt,
-				&sport.Version,
-			)
-			if err != nil {
-				return entities.UserDetail{}, err
+		batch.Queue(getSportByUserId, id).Query(func(rows pgx.Rows) error {
+			for rows.Next() {
+				var sport entities.Sport
+				err := rows.Scan(
+					&sport.UUID,
+					&sport.UserId,
+					&sport.Sport,
+					&sport.CreatedAt,
+					&sport.UpdatedAt,
+					&sport.Version,
+				)
+				if err != nil {
+					return err
+				}
+
+				returnedUserDetail.Sports = append(returnedUserDetail.Sports, sport)
 			}
 
-			returnedUserDetail.Sports = append(returnedUserDetail.Sports, sport)
-		}
+			return nil
+		})
+
 	}
 	if len(opts) > 0 && opts[0].WithProfilePictures {
 		const getPhotoProfile = `
@@ -292,26 +289,30 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 		FROM profile_pictures 
 		WHERE account_id = $1
 		ORDER BY selected ASC`
-		rows, err := conn.Query(ctx, getPhotoProfile, id)
-		if err != nil {
-			return entities.UserDetail{}, err
-		}
-		defer rows.Close()
 
-		for rows.Next() {
-			var profilePic entities.ProfilePicture
-			err = rows.Scan(
-				&profilePic.UUID,
-				&profilePic.UserId,
-				&profilePic.Selected,
-				&profilePic.FileId,
-			)
-			if err != nil {
-				return entities.UserDetail{}, err
+		batch.Queue(getPhotoProfile, id).Query(func(rows pgx.Rows) error {
+			for rows.Next() {
+				var profilePic entities.ProfilePicture
+				err := rows.Scan(
+					&profilePic.UUID,
+					&profilePic.UserId,
+					&profilePic.Selected,
+					&profilePic.FileId,
+				)
+				if err != nil {
+					return err
+				}
+
+				returnedUserDetail.ProfilePictures = append(returnedUserDetail.ProfilePictures, profilePic)
 			}
+			return nil
+		})
 
-			returnedUserDetail.ProfilePictures = append(returnedUserDetail.ProfilePictures, profilePic)
-		}
+	}
+
+	err := conn.SendBatch(ctx, batch).Close()
+	if err != nil {
+		return entities.UserDetail{}, err
 	}
 
 	return returnedUserDetail, nil
