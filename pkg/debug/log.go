@@ -9,6 +9,11 @@ import (
 func Log(value any) {
 	v := reflect.ValueOf(value)
 	if v.Kind() == reflect.Pointer {
+		if v.IsNil() {
+			log.Println(nil)
+			return
+		}
+
 		Log(v.Elem())
 		return
 	}

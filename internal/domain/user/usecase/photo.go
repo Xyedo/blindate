@@ -44,7 +44,7 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 			return apperror.BadPayloadWithPayloadMap(apperror.PayloadMap{
 				Payloads: []apperror.ErrorPayload{
 					{
-						Status: entities.PhotoTooMuch,
+						Code: entities.PhotoTooMuch,
 						Details: map[string][]string{
 							"file": {"exceeding profile-photo upload"},
 						},

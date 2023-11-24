@@ -2,33 +2,33 @@ package apperror
 
 import "fmt"
 
-type StatusError string
+type Code string
 
 const (
-	StatusErrorMalformedRequestBody StatusError = "MALFORMED_REQUEST_BODY"
-	StatusErrorValidation           StatusError = "VALIDATION_ERROR"
-	StatusErrorInvalidAuth          StatusError = "INVALID_AUTHORIZATION"
+	StatusErrorMalformedRequestBody Code = "MALFORMED_REQUEST_BODY"
+	StatusErrorValidation           Code = "VALIDATION_ERROR"
+	StatusErrorInvalidAuth          Code = "INVALID_AUTHORIZATION"
 )
 const (
-	statusErrorDefaultDuplicate            StatusError = "DUPLICATE"
-	statusErrorDefaultNotFound             StatusError = "NOT_FOUND"
-	statusErrorDefaultForbidden            StatusError = "FORBIDDEN"
-	statusErrorDefaultUnauthorized         StatusError = "UNAUTHORIZED"
-	statusErrorDefaultConflicted           StatusError = "CONFLICTED"
-	statusErrorDefaultTimeout              StatusError = "TIMEOUT"
-	statusErrorDefaultBadPayload           StatusError = "BAD_PAYLOAD"
-	statusErrorDefaultUnprocessablePayload StatusError = "UNPROCESSABLE_PAYLOAD"
+	statusErrorDefaultDuplicate            Code = "DUPLICATE"
+	statusErrorDefaultNotFound             Code = "NOT_FOUND"
+	statusErrorDefaultForbidden            Code = "FORBIDDEN"
+	statusErrorDefaultUnauthorized         Code = "UNAUTHORIZED"
+	statusErrorDefaultConflicted           Code = "CONFLICTED"
+	statusErrorDefaultTimeout              Code = "TIMEOUT"
+	statusErrorDefaultBadPayload           Code = "BAD_PAYLOAD"
+	statusErrorDefaultUnprocessablePayload Code = "UNPROCESSABLE_PAYLOAD"
 )
 
 type Sentinel struct {
 	Err      error          `json:"-"`
-	Message  string         `json:"message"`
 	Payloads []ErrorPayload `json:"payload"`
 }
 
 type ErrorPayload struct {
-	Status  StatusError `json:"status"`
-	Details any         `json:"details"`
+	Code    Code   `json:"code"`
+	Message string `json:"message"`
+	Details any    `json:"details"`
 }
 
 func (s Sentinel) Error() string {
@@ -37,7 +37,7 @@ func (s Sentinel) Error() string {
 
 type Payload struct {
 	Error   error
-	Status  StatusError
+	Status  Code
 	Message string
 }
 
@@ -63,10 +63,10 @@ func Duplicate(payload Payload, indempotent bool) error {
 		Err: payloadErr,
 		Payloads: []ErrorPayload{
 			{
-				Status: payload.Status,
+				Code:    payload.Status,
+				Message: payload.Message,
 			},
 		},
-		Message: payload.Message,
 	}
 }
 func NotFound(payload Payload) error {
@@ -85,10 +85,10 @@ func NotFound(payload Payload) error {
 		Err: payload.Error,
 		Payloads: []ErrorPayload{
 			{
-				Status: payload.Status,
+				Code:    payload.Status,
+				Message: payload.Message,
 			},
 		},
-		Message: payload.Message,
 	}
 }
 
@@ -110,10 +110,10 @@ func Forbidden(payload Payload) error {
 		Err: payload.Error,
 		Payloads: []ErrorPayload{
 			{
-				Status: payload.Status,
+				Code:    payload.Status,
+				Message: payload.Message,
 			},
 		},
-		Message: payload.Message,
 	}
 }
 
@@ -135,10 +135,10 @@ func Unauthorized(payload Payload) error {
 		Err: payload.Error,
 		Payloads: []ErrorPayload{
 			{
-				Status: payload.Status,
+				Code:    payload.Status,
+				Message: payload.Message,
 			},
 		},
-		Message: payload.Message,
 	}
 }
 
@@ -160,10 +160,10 @@ func Conflicted(payload Payload) error {
 		Err: payload.Error,
 		Payloads: []ErrorPayload{
 			{
-				Status: payload.Status,
+				Code:    payload.Status,
+				Message: payload.Message,
 			},
 		},
-		Message: payload.Message,
 	}
 }
 
@@ -185,10 +185,10 @@ func Timeout(payload Payload) error {
 		Err: payload.Error,
 		Payloads: []ErrorPayload{
 			{
-				Status: payload.Status,
+				Code:    payload.Status,
+				Message: payload.Message,
 			},
 		},
-		Message: payload.Message,
 	}
 }
 
@@ -211,23 +211,19 @@ func BadPayload(payload Payload) error {
 		Err: payload.Error,
 		Payloads: []ErrorPayload{
 			{
-				Status: payload.Status,
+				Code:    payload.Status,
+				Message: payload.Message,
 			},
 		},
-		Message: payload.Message,
 	}
 }
 
 type PayloadMap struct {
 	Error    error
-	Message  string
 	Payloads []ErrorPayload
 }
 
 func BadPayloadWithPayloadMap(payload PayloadMap) error {
-	if payload.Message == "" {
-		payload.Message = "bad request"
-	}
 
 	if payload.Error != nil {
 		payload.Error = fmt.Errorf("%w:%w", ErrBadRequest, payload.Error)
@@ -238,13 +234,14 @@ func BadPayloadWithPayloadMap(payload PayloadMap) error {
 	if payload.Payloads == nil {
 		payload.Payloads = []ErrorPayload{
 			{
-				Status: statusErrorDefaultBadPayload,
+				Code:    statusErrorDefaultBadPayload,
+				Message: "bad request",
 			},
 		}
 	} else {
 		for i := range payload.Payloads {
-			if payload.Payloads[i].Status == "" {
-				payload.Payloads[i].Status = statusErrorDefaultBadPayload
+			if payload.Payloads[i].Code == "" {
+				payload.Payloads[i].Code = statusErrorDefaultBadPayload
 			}
 		}
 	}
@@ -252,7 +249,6 @@ func BadPayloadWithPayloadMap(payload PayloadMap) error {
 	return Sentinel{
 		Err:      payload.Error,
 		Payloads: payload.Payloads,
-		Message:  payload.Message,
 	}
 }
 
@@ -272,20 +268,17 @@ func UnprocessableEntity(payload Payload) error {
 	}
 
 	return Sentinel{
-		Err:     payload.Error,
-		Message: payload.Message,
+		Err: payload.Error,
 		Payloads: []ErrorPayload{
 			{
-				Status: payload.Status,
+				Message: payload.Message,
+				Code:    payload.Status,
 			},
 		},
 	}
 }
 
 func UnprocessableEntityWithPayloadMap(payload PayloadMap) error {
-	if payload.Message == "" {
-		payload.Message = "we understand your request, but its unprocessable"
-	}
 
 	if payload.Error != nil {
 		payload.Error = fmt.Errorf("%w:%w", ErrUnprocessableEntity, payload.Error)
@@ -296,20 +289,20 @@ func UnprocessableEntityWithPayloadMap(payload PayloadMap) error {
 	if payload.Payloads == nil {
 		payload.Payloads = []ErrorPayload{
 			{
-				Status: statusErrorDefaultUnprocessablePayload,
+				Message: "we understand your request, but its unprocessable",
+				Code:    statusErrorDefaultUnprocessablePayload,
 			},
 		}
 	} else {
 		for i := range payload.Payloads {
-			if payload.Payloads[i].Status == "" {
-				payload.Payloads[i].Status = statusErrorDefaultUnprocessablePayload
+			if payload.Payloads[i].Code == "" {
+				payload.Payloads[i].Code = statusErrorDefaultUnprocessablePayload
 			}
 		}
 	}
 
 	return Sentinel{
 		Err:      payload.Error,
-		Message:  payload.Message,
 		Payloads: payload.Payloads,
 	}
 }
