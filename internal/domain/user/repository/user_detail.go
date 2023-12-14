@@ -83,6 +83,7 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 	const getUserDetailById = `
 	SELECT 
 		account_id,
+		alias,
 		ST_AsText(geog) as geog,
 		bio,
 		last_online,
@@ -113,6 +114,7 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 	err := conn.QueryRow(ctx, query, id).
 		Scan(
 			&returnedUserDetail.UserId,
+			&returnedUserDetail.Alias,
 			&returnedUserDetail.Geog,
 			&returnedUserDetail.Bio,
 			&returnedUserDetail.LastOnline,
@@ -162,7 +164,7 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 		for rows.Next() {
 			var hobbie entities.Hobbie
 			err = rows.Scan(
-				&hobbie.UUID,
+				&hobbie.Id,
 				&hobbie.UserId,
 				&hobbie.Hobbie,
 				&hobbie.CreatedAt,
@@ -198,7 +200,7 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 		for rows.Next() {
 			var movieSerie entities.MovieSerie
 			err = rows.Scan(
-				&movieSerie.UUID,
+				&movieSerie.Id,
 				&movieSerie.UserId,
 				&movieSerie.MovieSerie,
 				&movieSerie.CreatedAt,
@@ -233,7 +235,7 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 		for rows.Next() {
 			var travel entities.Travel
 			err = rows.Scan(
-				&travel.UUID,
+				&travel.Id,
 				&travel.UserId,
 				&travel.Travel,
 				&travel.CreatedAt,
@@ -268,7 +270,7 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 		for rows.Next() {
 			var sport entities.Sport
 			err = rows.Scan(
-				&sport.UUID,
+				&sport.Id,
 				&sport.UserId,
 				&sport.Sport,
 				&sport.CreatedAt,
@@ -301,7 +303,7 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 		for rows.Next() {
 			var profilePic entities.ProfilePicture
 			err = rows.Scan(
-				&profilePic.UUID,
+				&profilePic.Id,
 				&profilePic.UserId,
 				&profilePic.Selected,
 				&profilePic.FileId,

@@ -7,7 +7,7 @@ const (
 )
 
 type File struct {
-	UUID      string
+	Id        string
 	FileType  string
 	BlobLink  string
 	CreatedAt time.Time

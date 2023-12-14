@@ -10,7 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"github.com/google/uuid"
+	"github.com/xyedo/blindate/internal/common/ids"
 	"github.com/xyedo/blindate/internal/domain/attachment/entities"
 	"github.com/xyedo/blindate/internal/infrastructure"
 )
@@ -46,7 +46,7 @@ type attachmentManager struct {
 
 func (a *attachmentManager) UploadAttachment(ctx context.Context, file io.Reader, attachment entities.Attachment) (string, error) {
 	//TODO: better error handling
-	key := attachment.Prefix + "/" + uuid.New().String() + attachment.Ext
+	key := attachment.Prefix + "/" + ids.Attachment() + attachment.Ext
 
 	_, err := a.uploader.Upload(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(a.bucketName),

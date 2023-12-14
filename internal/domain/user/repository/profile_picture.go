@@ -13,18 +13,18 @@ func InsertProfilePicture(ctx context.Context, conn pg.Querier, profilePicture e
 	INSERT INTO profile_picture(id, account_id, selected, file_id)
 	VALUES($1,$2,$3,$4)`
 
-	var returnedUUID string
+	var returnedId string
 	err := conn.QueryRow(ctx, insertProfilePicture,
-		profilePicture.UUID,
+		profilePicture.Id,
 		profilePicture.UserId,
 		profilePicture.Selected,
 		profilePicture.FileId,
-	).Scan(&returnedUUID)
+	).Scan(&returnedId)
 	if err != nil {
 		return "", err
 	}
 
-	return returnedUUID, nil
+	return returnedId, nil
 }
 
 func UpdateProfilePictureSelectedToFalseByUserId(ctx context.Context, conn pg.Querier, id string) error {

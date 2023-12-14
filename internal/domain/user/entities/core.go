@@ -13,6 +13,7 @@ type User struct {
 
 type UserDetail struct {
 	UserId           string
+	Alias            string
 	Geog             Geography
 	Bio              string
 	LastOnline       time.Time
@@ -39,7 +40,7 @@ type UserDetail struct {
 }
 
 type Hobbie struct {
-	UUID      string
+	Id        string
 	UserId    string
 	Hobbie    string
 	CreatedAt time.Time
@@ -48,7 +49,7 @@ type Hobbie struct {
 }
 
 type MovieSerie struct {
-	UUID       string
+	Id         string
 	UserId     string
 	MovieSerie string
 	CreatedAt  time.Time
@@ -57,7 +58,7 @@ type MovieSerie struct {
 }
 
 type Travel struct {
-	UUID      string
+	Id        string
 	UserId    string
 	Travel    string
 	CreatedAt time.Time
@@ -66,7 +67,7 @@ type Travel struct {
 }
 
 type Sport struct {
-	UUID      string
+	Id        string
 	UserId    string
 	Sport     string
 	CreatedAt time.Time
@@ -75,7 +76,7 @@ type Sport struct {
 }
 
 type ProfilePicture struct {
-	UUID         string
+	Id           string
 	UserId       string
 	Selected     bool
 	FileId       string

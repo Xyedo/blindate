@@ -1,7 +1,7 @@
 CREATE TABLE match(
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  request_from CITEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
-  request_to CITEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
+  id TEXT PRIMARY KEY,
+  request_from TEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
+  request_to TEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
   request_status VARCHAR(50) NOT NULL,
   accepted_at TIMESTAMPTZ,
   reveal_status VARCHAR(50),

@@ -1,6 +1,7 @@
 CREATE TABLE account_detail(
-  account_id CITEXT PRIMARY KEY REFERENCES account(id) ON DELETE CASCADE,
+  account_id TEXT PRIMARY KEY REFERENCES account(id) ON DELETE CASCADE,
   geog geography(POINT, 4326) NOT NULL,
+  alias TEXT NOT NULL,
   bio TEXT NOT NULL,
   last_online TIMESTAMPTZ NOT NULL,
   gender TEXT NOT NULL,

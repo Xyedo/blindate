@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/invopop/validation"
-	"github.com/invopop/validation/is"
 	apperror "github.com/xyedo/blindate/internal/common/app-error"
 	"github.com/xyedo/blindate/internal/domain/user/entities"
 	"github.com/xyedo/blindate/pkg/validator"
@@ -62,49 +61,49 @@ func (p PostInterestRequest) Validate() error {
 }
 
 type UpdateHobbieInterest struct {
-	UUID   string `json:"id"`
+	Id     string `json:"id"`
 	Hobbie string `json:"hobbie"`
 }
 
 func (u UpdateHobbieInterest) Validate() error {
 	return validation.ValidateStruct(&u,
-		validation.Field(&u.UUID, validation.Required, is.UUIDv4),
+		validation.Field(&u.Id, validation.Required),
 		validation.Field(&u.Hobbie, validation.Required),
 	)
 }
 
 type UpdateMovieSerieInterest struct {
-	UUID       string `json:"id"`
+	Id         string `json:"id"`
 	MovieSerie string `json:"movie_series"`
 }
 
 func (u UpdateMovieSerieInterest) Validate() error {
 	return validation.ValidateStruct(&u,
-		validation.Field(&u.UUID, validation.Required, is.UUIDv4),
+		validation.Field(&u.Id, validation.Required),
 		validation.Field(&u.MovieSerie, validation.Required),
 	)
 }
 
 type UpdateTravelInterest struct {
-	UUID   string `json:"id"`
+	Id     string `json:"id"`
 	Travel string `json:"travel"`
 }
 
 func (u UpdateTravelInterest) Validate() error {
 	return validation.ValidateStruct(&u,
-		validation.Field(&u.UUID, validation.Required, is.UUIDv4),
+		validation.Field(&u.Id, validation.Required),
 		validation.Field(&u.Travel, validation.Required),
 	)
 }
 
 type UpdateSportInterest struct {
-	UUID  string `json:"id"`
+	Id    string `json:"id"`
 	Sport string `json:"sport"`
 }
 
 func (u UpdateSportInterest) Validate() error {
 	return validation.ValidateStruct(&u,
-		validation.Field(&u.UUID, validation.Required, is.UUIDv4),
+		validation.Field(&u.Id, validation.Required),
 		validation.Field(&u.Sport, validation.Required),
 	)
 }
@@ -201,9 +200,9 @@ type PostDeleteInterestRequest struct {
 
 func (p PostDeleteInterestRequest) Validate() error {
 	return validation.ValidateStruct(&p,
-		validation.Field(&p.HobbieIds, validation.Each(validation.Required, is.UUIDv4)),
-		validation.Field(&p.MovieSerieIds, validation.Each(validation.Required, is.UUIDv4)),
-		validation.Field(&p.TravelIds, validation.Each(validation.Required, is.UUIDv4)),
-		validation.Field(&p.SportIds, validation.Each(validation.Required, is.UUIDv4)),
+		validation.Field(&p.HobbieIds, validation.Each(validation.Required)),
+		validation.Field(&p.MovieSerieIds, validation.Each(validation.Required)),
+		validation.Field(&p.TravelIds, validation.Each(validation.Required)),
+		validation.Field(&p.SportIds, validation.Each(validation.Required)),
 	)
 }

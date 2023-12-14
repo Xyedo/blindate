@@ -1,13 +1,17 @@
 CREATE TABLE chat (
-  id SERIAL PRIMARY KEY,
-  conversation_id UUID NOT NULL REFERENCES conversations(match_id) ON DELETE CASCADE,
-  author CITEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
+  id TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL REFERENCES conversations(match_id) ON DELETE CASCADE,
+  author TEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
   messages TEXT NOT NULL,
-  reply_to SERIAL REFERENCES chat(id) ON DELETE SET NULL,
+  reply_to TEXT REFERENCES chat(id) ON DELETE SET NULL,
   sent_at TIMESTAMPTZ NOT NULL,
   seen_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
-  version BIGINT NOT NULL DEFAULT 0 
+  version BIGINT NOT NULL DEFAULT 0
 );
+
+-- CREATE INDEX ON chat (conversation_id, created DESC, id);
+
+
 

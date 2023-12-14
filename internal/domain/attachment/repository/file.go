@@ -15,7 +15,7 @@ func InsertFile(ctx context.Context, conn pg.Querier, file entities.File) (strin
 
 	var returnedUUID string
 	err := conn.QueryRow(ctx, insertFile,
-		file.UUID,
+		file.Id,
 		file.FileType,
 		file.BlobLink,
 		file.CreatedAt,
@@ -56,7 +56,7 @@ func GetFileByIds(ctx context.Context, conn pg.Querier, ids []string) ([]entitie
 	for rows.Next() {
 		var file entities.File
 		err = rows.Scan(
-			&file.UUID,
+			&file.Id,
 			&file.FileType,
 			&file.CreatedAt,
 			&file.UpdatedAt,

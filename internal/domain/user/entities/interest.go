@@ -4,14 +4,14 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/uuid"
 	apperror "github.com/xyedo/blindate/internal/common/app-error"
+	"github.com/xyedo/blindate/internal/common/ids"
 )
 
 func (i UserDetail) ToHobbieIds() []string {
 	ids := make([]string, 0, len(i.Hobbies))
 	for _, hobbie := range i.Hobbies {
-		ids = append(ids, hobbie.UUID)
+		ids = append(ids, hobbie.Id)
 	}
 
 	return ids
@@ -20,7 +20,7 @@ func (i UserDetail) ToHobbieIds() []string {
 func (i UserDetail) ToMovieSerieIds() []string {
 	ids := make([]string, 0, len(i.MovieSeries))
 	for _, movieSerie := range i.MovieSeries {
-		ids = append(ids, movieSerie.UUID)
+		ids = append(ids, movieSerie.Id)
 	}
 
 	return ids
@@ -29,7 +29,7 @@ func (i UserDetail) ToMovieSerieIds() []string {
 func (i UserDetail) ToTravelIds() []string {
 	ids := make([]string, 0, len(i.Travels))
 	for _, travel := range i.Travels {
-		ids = append(ids, travel.UUID)
+		ids = append(ids, travel.Id)
 	}
 
 	return ids
@@ -38,7 +38,7 @@ func (i UserDetail) ToTravelIds() []string {
 func (i UserDetail) ToSportIds() []string {
 	ids := make([]string, 0, len(i.Sports))
 	for _, sport := range i.Hobbies {
-		ids = append(ids, sport.UUID)
+		ids = append(ids, sport.Id)
 	}
 
 	return ids
@@ -148,7 +148,7 @@ func (c CreateInterest) ToHobbies(userId string) []Hobbie {
 	res := make([]Hobbie, 0, len(c.Hobbies))
 	for _, hobbie := range c.Hobbies {
 		res = append(res, Hobbie{
-			UUID:      uuid.NewString(),
+			Id:        ids.Hobbie(),
 			UserId:    userId,
 			Hobbie:    hobbie,
 			CreatedAt: now,
@@ -166,7 +166,7 @@ func (c CreateInterest) ToMovieSeries(userId string) []MovieSerie {
 	res := make([]MovieSerie, 0, len(c.MovieSeries))
 	for _, movieSerie := range c.MovieSeries {
 		res = append(res, MovieSerie{
-			UUID:       uuid.NewString(),
+			Id:         ids.MovieSerie(),
 			UserId:     userId,
 			MovieSerie: movieSerie,
 			CreatedAt:  now,
@@ -183,7 +183,7 @@ func (c CreateInterest) ToTravels(userId string) []Travel {
 	res := make([]Travel, 0, len(c.Travels))
 	for _, travel := range c.Travels {
 		res = append(res, Travel{
-			UUID:      uuid.NewString(),
+			Id:        ids.Travel(),
 			UserId:    userId,
 			Travel:    travel,
 			CreatedAt: now,
@@ -201,7 +201,7 @@ func (c CreateInterest) ToSports(userId string) []Sport {
 	res := make([]Sport, 0, len(c.Sports))
 	for _, sport := range c.Sports {
 		res = append(res, Sport{
-			UUID:      uuid.NewString(),
+			Id:        ids.Sport(),
 			UserId:    userId,
 			Sport:     sport,
 			CreatedAt: now,
@@ -231,7 +231,7 @@ func (payload UpdateInterest) Validate(userDetailDb UserDetail) error {
 	uniqueHobbieIds := make(map[string]struct{})
 	uniqueHobbies := make(map[string]struct{})
 	for i := range userDetailDb.Hobbies {
-		uniqueHobbieIds[userDetailDb.Hobbies[i].UUID] = struct{}{}
+		uniqueHobbieIds[userDetailDb.Hobbies[i].Id] = struct{}{}
 		uniqueHobbies[userDetailDb.Hobbies[i].Hobbie] = struct{}{}
 	}
 
@@ -239,26 +239,26 @@ func (payload UpdateInterest) Validate(userDetailDb UserDetail) error {
 	uniqueMovieSeries := make(map[string]struct{})
 	for i := range userDetailDb.MovieSeries {
 		uniqueMovieSeries[userDetailDb.MovieSeries[i].MovieSerie] = struct{}{}
-		uniqueMovieSerieIds[userDetailDb.MovieSeries[i].UUID] = struct{}{}
+		uniqueMovieSerieIds[userDetailDb.MovieSeries[i].Id] = struct{}{}
 	}
 
 	uniqueTravelingIds := make(map[string]struct{})
 	uniqueTravelings := make(map[string]struct{})
 	for i := range userDetailDb.Travels {
 		uniqueTravelings[userDetailDb.Travels[i].Travel] = struct{}{}
-		uniqueTravelingIds[userDetailDb.Travels[i].UUID] = struct{}{}
+		uniqueTravelingIds[userDetailDb.Travels[i].Id] = struct{}{}
 	}
 
 	uniqueSportIds := make(map[string]struct{})
 	uniqueSports := make(map[string]struct{})
 	for i := range userDetailDb.Sports {
 		uniqueSports[userDetailDb.Sports[i].Sport] = struct{}{}
-		uniqueSportIds[userDetailDb.Sports[i].UUID] = struct{}{}
+		uniqueSportIds[userDetailDb.Sports[i].Id] = struct{}{}
 	}
 
 	for i := range payload.Hobbies {
 		iStr := strconv.Itoa(i)
-		if _, ok := uniqueHobbieIds[payload.Hobbies[i].UUID]; !ok {
+		if _, ok := uniqueHobbieIds[payload.Hobbies[i].Id]; !ok {
 			errNotFoundPayload["hobbies."+iStr] = append(errNotFoundPayload["hobbies."+iStr], valueNotFound)
 
 		}
@@ -269,7 +269,7 @@ func (payload UpdateInterest) Validate(userDetailDb UserDetail) error {
 
 	for i := range payload.MovieSeries {
 		iStr := strconv.Itoa(i)
-		if _, ok := uniqueMovieSerieIds[payload.MovieSeries[i].UUID]; !ok {
+		if _, ok := uniqueMovieSerieIds[payload.MovieSeries[i].Id]; !ok {
 			errNotFoundPayload["movie_series."+iStr] = append(errNotFoundPayload["movie_series."+iStr], valueNotFound)
 		}
 		if _, ok := uniqueMovieSeries[payload.MovieSeries[i].MovieSerie]; ok {
@@ -279,7 +279,7 @@ func (payload UpdateInterest) Validate(userDetailDb UserDetail) error {
 
 	for i := range payload.Travels {
 		iStr := strconv.Itoa(i)
-		if _, ok := uniqueTravelingIds[payload.Travels[i].UUID]; !ok {
+		if _, ok := uniqueTravelingIds[payload.Travels[i].Id]; !ok {
 			errNotFoundPayload["travels."+iStr] = append(errNotFoundPayload["travels."+iStr], valueNotFound)
 		}
 		if _, ok := uniqueMovieSeries[payload.Travels[i].Travel]; ok {
@@ -289,7 +289,7 @@ func (payload UpdateInterest) Validate(userDetailDb UserDetail) error {
 
 	for i := range payload.Sports {
 		iStr := strconv.Itoa(i)
-		if _, ok := uniqueSportIds[payload.Sports[i].UUID]; !ok {
+		if _, ok := uniqueSportIds[payload.Sports[i].Id]; !ok {
 			errNotFoundPayload["sports."+iStr] = append(errNotFoundPayload["sports."+iStr], valueNotFound)
 		}
 		if _, ok := uniqueSports[payload.Sports[i].Sport]; ok {
@@ -327,22 +327,22 @@ type UpdateBio struct {
 }
 
 type UpdateHobbie struct {
-	UUID   string
+	Id     string
 	Hobbie string
 }
 
 type UpdateMovieSeries struct {
-	UUID       string
+	Id         string
 	MovieSerie string
 }
 
 type UpdateTravel struct {
-	UUID   string
+	Id     string
 	Travel string
 }
 
 type UpdateSport struct {
-	UUID  string
+	Id    string
 	Sport string
 }
 type DeleteInterest struct {
@@ -358,22 +358,22 @@ func (payload DeleteInterest) ValidateIds(userDetailDb UserDetail) error {
 
 	uniqueHobbies := make(map[string]struct{})
 	for i := range userDetailDb.Hobbies {
-		uniqueHobbies[userDetailDb.Hobbies[i].UUID] = struct{}{}
+		uniqueHobbies[userDetailDb.Hobbies[i].Id] = struct{}{}
 	}
 
 	uniqueMovieSeries := make(map[string]struct{})
 	for i := range userDetailDb.MovieSeries {
-		uniqueMovieSeries[userDetailDb.MovieSeries[i].UUID] = struct{}{}
+		uniqueMovieSeries[userDetailDb.MovieSeries[i].Id] = struct{}{}
 	}
 
 	uniqueTravelings := make(map[string]struct{})
 	for i := range userDetailDb.Travels {
-		uniqueTravelings[userDetailDb.Travels[i].UUID] = struct{}{}
+		uniqueTravelings[userDetailDb.Travels[i].Id] = struct{}{}
 	}
 
 	uniqueSports := make(map[string]struct{})
 	for i := range userDetailDb.Sports {
-		uniqueSports[userDetailDb.Sports[i].UUID] = struct{}{}
+		uniqueSports[userDetailDb.Sports[i].Id] = struct{}{}
 	}
 
 	for i, hobbieId := range payload.HobbieIds {

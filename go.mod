@@ -9,12 +9,12 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.91
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.40.2
 	github.com/clerkinc/clerk-sdk-go v1.48.4
-	github.com/google/uuid v1.3.1
 	github.com/invopop/validation v0.3.0
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.11.2
+	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/nicksnyder/go-i18n/v2 v2.2.1
 	golang.org/x/text v0.13.0
 )

@@ -1,6 +1,6 @@
 CREATE TABLE hobbies (
-  id UUID PRIMARY KEY default  uuid_generate_v4(),
-  account_id CITEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
+  id TEXT PRIMARY KEY,
+  account_id TEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
   hobbie CITEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
@@ -9,8 +9,8 @@ CREATE TABLE hobbies (
 );
 
 CREATE TABLE movie_series (
-  id UUID PRIMARY KEY default  uuid_generate_v4(),
-  account_id CITEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
+  id TEXT PRIMARY KEY,
+  account_id TEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
   movie_serie CITEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
@@ -19,8 +19,8 @@ CREATE TABLE movie_series (
 );
 
 CREATE TABLE traveling (
-  id UUID PRIMARY KEY default  uuid_generate_v4(),
-  account_id CITEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
+  id TEXT PRIMARY KEY,
+  account_id TEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
   travel CITEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
@@ -29,8 +29,8 @@ CREATE TABLE traveling (
 );
 
 CREATE TABLE sports (
-  id UUID PRIMARY KEY default  uuid_generate_v4(),
-  account_id CITEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
+  id TEXT PRIMARY KEY,
+  account_id TEXT NOT NULL REFERENCES account(id) ON DELETE CASCADE,
   sport CITEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,

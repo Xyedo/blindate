@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	apperror "github.com/xyedo/blindate/internal/common/app-error"
+	"github.com/xyedo/blindate/internal/common/ids"
 	attachmentEntities "github.com/xyedo/blindate/internal/domain/attachment/entities"
 	attachmentRepo "github.com/xyedo/blindate/internal/domain/attachment/repository"
 	"github.com/xyedo/blindate/internal/domain/attachment/s3"
@@ -31,6 +31,7 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 	}
 
 	var photoId string
+	timeNow := time.Now()
 	err = pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
 		userDetail, err := userRepo.GetUserDetailById(ctx, tx, requestId, userentities.GetUserDetailOption{
 			PessimisticLocking:  true,
@@ -66,11 +67,11 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 		}
 
 		fileId, err := attachmentRepo.InsertFile(ctx, tx, attachmentEntities.File{
-			UUID:      uuid.NewString(),
+			Id:        ids.File(),
 			FileType:  attachmentEntities.FileTypePhotoProfile,
 			BlobLink:  objectKey,
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+			CreatedAt: timeNow,
+			UpdatedAt: timeNow,
 			Version:   1,
 		})
 		if err != nil {
@@ -78,7 +79,7 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 		}
 
 		returnedProfilePictureId, err := userRepo.InsertProfilePicture(ctx, tx, userentities.ProfilePicture{
-			UUID:     uuid.NewString(),
+			Id:       ids.ProfilePicture(),
 			UserId:   userDetail.UserId,
 			Selected: true,
 			FileId:   fileId,

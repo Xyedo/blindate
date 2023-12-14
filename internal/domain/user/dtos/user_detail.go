@@ -248,6 +248,7 @@ func (req PatchUserDetailRequest) ToEntity() entities.UpdateUserDetail {
 
 type UserDetail struct {
 	UserId           string              `json:"user_id"`
+	Alias            string              `json:"alias"`
 	Geog             UserDetailGeography `json:"geo"`
 	Bio              string              `json:"bio"`
 	Gender           string              `json:"gender"`
@@ -266,7 +267,7 @@ type UserDetail struct {
 	MovieSeries        []string `json:"movie_series"`
 	Travels            []string `json:"travels"`
 	Sports             []string `json:"sports"`
-	ProfilePictureURLs []string `json:"profile-picture-urls"`
+	ProfilePictureURLs []string `json:"profile_picture_urls"`
 }
 type UserDetailGeography struct {
 	Lat string `json:"lat"`
@@ -301,6 +302,7 @@ func GetUserDetailResponse(user entities.UserDetail) UserDetail {
 
 	return UserDetail{
 		UserId: user.UserId,
+		Alias:  user.Alias,
 		Geog: UserDetailGeography{
 			Lat: user.Geog.Lat,
 			Lng: user.Geog.Lng,

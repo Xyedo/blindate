@@ -61,7 +61,7 @@ func UpdateHobbies(ctx context.Context, conn pg.Querier, hobbies []entities.Upda
 			updateHobbieById,
 			hobbies[i].Hobbie,
 			now,
-			hobbies[i].UUID,
+			hobbies[i].Id,
 		)
 	}
 	res := conn.SendBatch(ctx, &batch)
@@ -157,7 +157,7 @@ func UpdateMovieSeries(ctx context.Context, conn pg.Querier, movieSeries []entit
 			updateMovieSerieById,
 			movieSeries[i].MovieSerie,
 			now,
-			movieSeries[i].UUID,
+			movieSeries[i].Id,
 		)
 	}
 	br := conn.SendBatch(ctx, &batch)
@@ -253,7 +253,7 @@ func UpdateTravelings(ctx context.Context, conn pg.Querier, travels []entities.U
 			upsertTravelingById,
 			travels[i].Travel,
 			now,
-			travels[i].UUID,
+			travels[i].Id,
 		)
 	}
 	br := conn.SendBatch(ctx, &batch)
@@ -349,7 +349,7 @@ func UpdateSports(ctx context.Context, conn pg.Querier, sports []entities.Update
 			upsertTravelingById,
 			sports[i].Sport,
 			now,
-			sports[i].UUID,
+			sports[i].Id,
 		)
 	}
 	br := conn.SendBatch(ctx, &batch)

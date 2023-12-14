@@ -98,7 +98,7 @@ func GetUserDetail(ctx context.Context, requestId, userId string) (entities.User
 					return
 				}
 
-				if idx, ok := fileIdToIdxMap[files[i].UUID]; ok {
+				if idx, ok := fileIdToIdxMap[files[i].Id]; ok {
 					userDetail.ProfilePictures[idx].SetPresignedURL(presignedURL)
 				}
 			}(i, &wg)
