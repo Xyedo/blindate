@@ -29,8 +29,7 @@ func EchoErrorHandler(err error, c echo.Context) {
 	var appErr apperror.Sentinel
 	if errors.As(err, &appErr) {
 		err := Error{
-			Message: appErr.Message,
-			Errors:  appErr.Payloads,
+			Errors: appErr.Payloads,
 		}
 		switch {
 		case errors.Is(appErr.Err, apperror.ErrBadRequest):
@@ -76,7 +75,7 @@ func EchoErrorHandler(err error, c echo.Context) {
 				Message: "malformed_body",
 				Errors: []apperror.ErrorPayload{
 					{
-						Status: apperror.StatusErrorMalformedRequestBody,
+						Code: apperror.StatusErrorMalformedRequestBody,
 						Details: map[string][]any{
 							field: {msg},
 						},
@@ -99,7 +98,7 @@ func EchoErrorHandler(err error, c echo.Context) {
 			Message: "validation_error",
 			Errors: []apperror.ErrorPayload{
 				{
-					Status:  apperror.StatusErrorValidation,
+					Code:    apperror.StatusErrorValidation,
 					Details: mapErr,
 				},
 			},

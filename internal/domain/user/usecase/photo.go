@@ -40,11 +40,12 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 		if err != nil {
 			return err
 		}
+
 		if len(userDetail.ProfilePictures) > 5 {
 			return apperror.BadPayloadWithPayloadMap(apperror.PayloadMap{
 				Payloads: []apperror.ErrorPayload{
 					{
-						Status: entities.PhotoTooMuch,
+						Code: entities.PhotoTooMuch,
 						Details: map[string][]string{
 							"file": {"exceeding profile-photo upload"},
 						},
@@ -61,10 +62,6 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 		if err != nil {
 			return err
 		}
-		err = userRepo.UpdateProfilePictureSelectedToFalseByUserId(ctx, tx, userDetail.UserId)
-		if err != nil {
-			return err
-		}
 
 		fileId, err := attachmentRepo.InsertFile(ctx, tx, attachmentEntities.File{
 			Id:        ids.File(),
@@ -74,6 +71,11 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 			UpdatedAt: timeNow,
 			Version:   1,
 		})
+		if err != nil {
+			return err
+		}
+
+		err = userRepo.UpdateProfilePictureSelectedToFalseByUserId(ctx, tx, userDetail.UserId)
 		if err != nil {
 			return err
 		}

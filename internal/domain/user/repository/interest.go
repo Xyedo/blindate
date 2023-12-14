@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/xyedo/blindate/internal/domain/user/entities"
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 )
@@ -57,23 +57,21 @@ func UpdateHobbies(ctx context.Context, conn pg.Querier, hobbies []entities.Upda
 	var batch pgx.Batch
 	now := time.Now()
 	for i := range hobbies {
-		_ = batch.Queue(
+		batch.Queue(
 			updateHobbieById,
 			hobbies[i].Hobbie,
 			now,
 			hobbies[i].Id,
-		)
+		).Exec(func(ct pgconn.CommandTag) error {
+			if ct.RowsAffected() == 0 {
+				return errors.New("invalid")
+			}
+			return nil
+		})
 	}
-	res := conn.SendBatch(ctx, &batch)
-	defer res.Close()
-
-	ct, err := res.Exec()
+	err := conn.SendBatch(ctx, &batch).Close()
 	if err != nil {
 		return err
-	}
-
-	if ct.RowsAffected() != int64(len(hobbies)) {
-		return errors.New("something went wrong")
 	}
 
 	return nil
@@ -87,12 +85,10 @@ func DeleteHobbiesByIds(ctx context.Context, conn pg.Querier, ids []string) erro
 	const deleteHobiesByIds = `
 		DELETE hobbies WHERE IN (?)
 	`
-	query, args, err := sqlx.In(deleteHobiesByIds, ids)
+	query, args, err := pg.In(deleteHobiesByIds, ids)
 	if err != nil {
 		return err
 	}
-
-	query = sqlx.Rebind(sqlx.DOLLAR, query)
 
 	ct, err := conn.Exec(ctx, query, args...)
 	if err != nil {
@@ -183,12 +179,10 @@ func DeleteMovieSeriesByIds(ctx context.Context, conn pg.Querier, ids []string) 
 	const deleteMovieSeriesByIds = `
 		DELETE movie_series WHERE IN (?)
 	`
-	query, args, err := sqlx.In(deleteMovieSeriesByIds, ids)
+	query, args, err := pg.In(deleteMovieSeriesByIds, ids)
 	if err != nil {
 		return err
 	}
-
-	query = sqlx.Rebind(sqlx.DOLLAR, query)
 
 	ct, err := conn.Exec(ctx, query, args...)
 	if err != nil {
@@ -279,12 +273,10 @@ func DeleteTravelingByIds(ctx context.Context, conn pg.Querier, ids []string) er
 	const deleteTravelingByIds = `
 		DELETE traveling WHERE IN (?)
 	`
-	query, args, err := sqlx.In(deleteTravelingByIds, ids)
+	query, args, err := pg.In(deleteTravelingByIds, ids)
 	if err != nil {
 		return err
 	}
-
-	query = sqlx.Rebind(sqlx.DOLLAR, query)
 
 	ct, err := conn.Exec(ctx, query, args...)
 	if err != nil {
@@ -375,12 +367,10 @@ func DeleteSportByIds(ctx context.Context, conn pg.Querier, ids []string) error 
 	const deleteSportByIds = `
 		DELETE sports WHERE IN (?)
 	`
-	query, args, err := sqlx.In(deleteSportByIds, ids)
+	query, args, err := pg.In(deleteSportByIds, ids)
 	if err != nil {
 		return err
 	}
-
-	query = sqlx.Rebind(sqlx.DOLLAR, query)
 
 	ct, err := conn.Exec(ctx, query, args...)
 	if err != nil {

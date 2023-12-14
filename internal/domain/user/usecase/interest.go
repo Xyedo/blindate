@@ -104,7 +104,7 @@ func DeleteInterest(ctx context.Context, requestId string, payload entities.Dele
 			return err
 		}
 
-		err = payload.ValidateIds(userDetail)
+		err = payload.Validate(userDetail)
 		if err != nil {
 			return err
 		}

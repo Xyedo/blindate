@@ -10,14 +10,13 @@ func Route(e *echo.Group) {
 	users := e.Group("/users")
 
 	users.GET("/:id/detail", getUserDetailByIdHandler)
-	users.PUT("/:id/detail/photo", putUserDetailPhotoHandler, matchRequestParamId)
+	users.PUT("/:id/detail/photos", putUserDetailPhotoHandler, matchRequestParamId)
 	users.POST("/:id/detail", postUserDetailHandler, matchRequestParamId)
 	users.PATCH("/:id/detail", patchUserDetailByIdHandler, matchRequestParamId)
 
 	users.POST("/:id/detail/interest", postInterestHandler, matchRequestParamId)
 	users.PATCH("/:id/detail/interest", patchInterestHandler, matchRequestParamId)
 	users.POST("/:id/detail/interest/delete", postDeleteInterestHandler, matchRequestParamId)
-
 }
 
 func matchRequestParamId(next echo.HandlerFunc) echo.HandlerFunc {

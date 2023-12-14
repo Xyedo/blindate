@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"errors"
 
 	"github.com/xyedo/blindate/internal/domain/user/entities"
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
@@ -10,8 +9,9 @@ import (
 
 func InsertProfilePicture(ctx context.Context, conn pg.Querier, profilePicture entities.ProfilePicture) (string, error) {
 	const insertProfilePicture = `
-	INSERT INTO profile_picture(id, account_id, selected, file_id)
-	VALUES($1,$2,$3,$4)`
+	INSERT INTO profile_pictures(id, account_id, selected, file_id)
+	VALUES($1,$2,$3,$4)
+	RETURNING id`
 
 	var returnedId string
 	err := conn.QueryRow(ctx, insertProfilePicture,
@@ -34,12 +34,9 @@ func UpdateProfilePictureSelectedToFalseByUserId(ctx context.Context, conn pg.Qu
 	WHERE account_id = $1
 	`
 
-	tag, err := conn.Exec(ctx, query, id)
+	_, err := conn.Exec(ctx, query, id)
 	if err != nil {
 		return err
-	}
-	if tag.RowsAffected() == 0 {
-		return errors.New("invalid")
 	}
 
 	return nil

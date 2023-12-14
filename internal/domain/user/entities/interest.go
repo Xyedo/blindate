@@ -121,14 +121,14 @@ func (payload CreateInterest) Validate(userDetailDb UserDetail) error {
 	errPayload := make([]apperror.ErrorPayload, 0, 2)
 	if len(errUniquePayloads) > 0 {
 		errPayload = append(errPayload, apperror.ErrorPayload{
-			Status:  InterestDuplicate,
+			Code:    InterestDuplicate,
 			Details: errUniquePayloads,
 		})
 	}
 
 	if len(errTooMuchPayload) > 0 {
 		errPayload = append(errPayload, apperror.ErrorPayload{
-			Status:  InterestTooLarge,
+			Code:    InterestTooLarge,
 			Details: errTooMuchPayload,
 		})
 	}
@@ -300,14 +300,14 @@ func (payload UpdateInterest) Validate(userDetailDb UserDetail) error {
 	errPayload := make([]apperror.ErrorPayload, 0, 2)
 	if len(errUniquePayloads) > 0 {
 		errPayload = append(errPayload, apperror.ErrorPayload{
-			Status:  InterestDuplicate,
+			Code:    InterestDuplicate,
 			Details: errUniquePayloads,
 		})
 	}
 
 	if len(errNotFoundPayload) > 0 {
 		errPayload = append(errPayload, apperror.ErrorPayload{
-			Status:  InterestNotFound,
+			Code:    InterestNotFound,
 			Details: errNotFoundPayload,
 		})
 	}
@@ -352,7 +352,7 @@ type DeleteInterest struct {
 	SportIds      []string
 }
 
-func (payload DeleteInterest) ValidateIds(userDetailDb UserDetail) error {
+func (payload DeleteInterest) Validate(userDetailDb UserDetail) error {
 	errPayloads := make(map[string][]string)
 	const valueNotFound = "value is not found"
 
@@ -405,7 +405,14 @@ func (payload DeleteInterest) ValidateIds(userDetailDb UserDetail) error {
 	}
 
 	if len(errPayloads) > 0 {
-		return apperror.UnprocessableEntity(apperror.Payload{})
+		return apperror.UnprocessableEntityWithPayloadMap(apperror.PayloadMap{
+			Payloads: []apperror.ErrorPayload{
+				{
+					Code:    InterestNotFound,
+					Details: errPayloads,
+				},
+			},
+		})
 	}
 
 	return nil

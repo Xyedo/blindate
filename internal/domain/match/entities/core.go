@@ -22,6 +22,7 @@ type Match struct {
 }
 
 type MatchUser struct {
-	Distance string
+	Distance float64
 	userentities.UserDetail
 }
+type MatchUsers []MatchUser

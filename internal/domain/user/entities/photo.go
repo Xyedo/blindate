@@ -43,7 +43,7 @@ func SanitizeMimeType(file io.ReadSeeker, validMimeTypes []string) (string, erro
 		return "", apperror.BadPayloadWithPayloadMap(apperror.PayloadMap{
 			Payloads: []apperror.ErrorPayload{
 				{
-					Status: PhotoInvalidType,
+					Code: PhotoInvalidType,
 					Details: map[string][]string{
 						"file": {"invalid MIME-type"},
 					},
