@@ -14,6 +14,7 @@ type GetUserDetailOption struct {
 }
 
 type CreateUserDetail struct {
+	Alias            string
 	Gender           string
 	Geog             Geography
 	Bio              string
@@ -23,13 +24,14 @@ type CreateUserDetail struct {
 	Drinking         optional.String
 	Smoking          optional.String
 	RelationshipPref optional.String
-	LookingFor       optional.String
+	LookingFor       string
 	Zodiac           optional.String
 	Kids             optional.Int16
 	Work             optional.String
 }
 
 type UpdateUserDetail struct {
+	Alias            optional.String
 	Gender           optional.String
 	Geog             optional.Option[Geography]
 	Bio              optional.String

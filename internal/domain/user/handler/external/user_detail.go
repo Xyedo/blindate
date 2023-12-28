@@ -23,21 +23,25 @@ func postUserDetailHandler(c echo.Context) error {
 		return err
 	}
 
-	returnedId, err := usecase.CreateUserDetail(c.Request().Context(), c.Param("id"), entities.CreateUserDetail{
-		Gender:           request.Gender,
-		Geog:             entities.Geography(request.Location),
-		Bio:              request.Bio,
-		FromLoc:          request.FromLoc,
-		Height:           request.Height,
-		EducationLevel:   request.EducationLevel,
-		Drinking:         request.Drinking,
-		Smoking:          request.Smoking,
-		RelationshipPref: request.RelationshipPref,
-		LookingFor:       request.LookingFor,
-		Zodiac:           request.Zodiac,
-		Kids:             request.Kids,
-		Work:             request.Work,
-	})
+	returnedId, err := usecase.CreateUserDetail(c.Request().Context(),
+		c.Param("id"),
+		entities.CreateUserDetail{
+			Alias:            request.Alias,
+			Gender:           request.Gender,
+			Geog:             entities.Geography(request.Location),
+			Bio:              request.Bio,
+			FromLoc:          request.FromLoc,
+			Height:           request.Height,
+			EducationLevel:   request.EducationLevel,
+			Drinking:         request.Drinking,
+			Smoking:          request.Smoking,
+			RelationshipPref: request.RelationshipPref,
+			LookingFor:       request.LookingFor,
+			Zodiac:           request.Zodiac,
+			Kids:             request.Kids,
+			Work:             request.Work,
+		},
+	)
 	if err != nil {
 		return err
 	}
@@ -60,7 +64,7 @@ func getUserDetailByIdHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, map[string]any{
-		"data": dtos.GetUserDetailResponse(userDetail),
+		"data": dtos.NewUserDetailResponse(userDetail),
 	})
 }
 

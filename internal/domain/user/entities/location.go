@@ -4,12 +4,13 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 )
 
 type Geography struct {
-	Lat string
-	Lng string
+	Lat float64
+	Lng float64
 }
 
 func (g *Geography) Scan(v any) error {
@@ -26,14 +27,23 @@ func (g *Geography) Scan(v any) error {
 		return errors.New("fields is less than 2")
 	}
 
-	g.Lat = geogFields[0]
-	g.Lng = geogFields[1]
+	var err error
+
+	g.Lat, err = strconv.ParseFloat(geogFields[0], 64)
+	if err != nil {
+		return err
+	}
+
+	g.Lng, err = strconv.ParseFloat(geogFields[1], 64)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
 func (g Geography) Value() (driver.Value, error) {
-	return fmt.Sprintf("POINT(%s %s)", g.Lat, g.Lng), nil
+	return fmt.Sprintf("POINT(%f %f)", g.Lat, g.Lng), nil
 }
 
 type GetLocationOption struct {

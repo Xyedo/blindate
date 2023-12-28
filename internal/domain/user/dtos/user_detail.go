@@ -1,16 +1,15 @@
 package dtos
 
 import (
-	"strings"
-
 	"github.com/invopop/validation"
-	"github.com/invopop/validation/is"
 	apperror "github.com/xyedo/blindate/internal/common/app-error"
+	"github.com/xyedo/blindate/internal/common/mod"
 	"github.com/xyedo/blindate/internal/domain/user/entities"
 	"github.com/xyedo/blindate/pkg/optional"
 )
 
 type PostUserDetailRequest struct {
+	Alias            string          `json:"alias"`
 	Gender           string          `json:"gender"`
 	Location         Location        `json:"location"`
 	Bio              string          `json:"bio"`
@@ -20,20 +19,22 @@ type PostUserDetailRequest struct {
 	Drinking         optional.String `json:"drinking"`
 	Smoking          optional.String `json:"smoking"`
 	RelationshipPref optional.String `json:"relationship_pref"`
-	LookingFor       optional.String `json:"looking_for"`
+	LookingFor       string          `json:"looking_for"`
 	Zodiac           optional.String `json:"zodiac"`
 	Kids             optional.Int16  `json:"kids"`
 	Work             optional.String `json:"work"`
 }
 
 func (req *PostUserDetailRequest) Mod() *PostUserDetailRequest {
-	req.Bio = strings.TrimSpace(req.Bio)
+	mod.Trim(&req.Bio)
+	mod.TrimWhiteSpace(&req.Alias)
 
 	return req
 }
 
 func (req PostUserDetailRequest) Validate() error {
 	return validation.ValidateStruct(&req,
+		validation.Field(&req.Alias, validation.Required, validation.Length(5, 200)),
 		validation.Field(&req.Gender, validation.Required,
 			validation.In(
 				string(entities.GenderFemale),
@@ -82,6 +83,14 @@ func (req PostUserDetailRequest) Validate() error {
 				string(entities.RelationshipPreferenceSerious),
 			),
 		),
+		validation.Field(&req.LookingFor,
+			validation.Required,
+			validation.In(
+				string(entities.GenderFemale),
+				string(entities.GenderMale),
+				string(entities.GenderOther),
+			),
+		),
 		validation.Field(&req.Zodiac,
 			validation.In(
 				string(entities.ZodiacAries),
@@ -104,18 +113,19 @@ func (req PostUserDetailRequest) Validate() error {
 }
 
 type Location struct {
-	Lat string `json:"lat"`
-	Lng string `json:"lng"`
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
 }
 
 func (l Location) Validate() error {
 	return validation.ValidateStruct(&l,
-		validation.Field(&l.Lat, validation.Required, is.Latitude),
-		validation.Field(&l.Lng, validation.Required, is.Longitude),
+		validation.Field(&l.Lat, validation.Required, validation.Max(90), validation.Min(-90)),
+		validation.Field(&l.Lng, validation.Required, validation.Min(-180), validation.Max(180)),
 	)
 }
 
 type PatchUserDetailRequest struct {
+	Alias            optional.String           `json:"alias"`
 	Gender           optional.String           `json:"gender"`
 	Location         optional.Option[Location] `json:"location"`
 	Bio              optional.String           `json:"bio"`
@@ -132,7 +142,8 @@ type PatchUserDetailRequest struct {
 }
 
 func (req PatchUserDetailRequest) Validate() error {
-	if !req.Gender.IsSet() &&
+	if !req.Alias.IsSet() &&
+		!req.Gender.IsSet() &&
 		!req.Location.IsSet() &&
 		!req.Bio.IsSet() &&
 		!req.FromLoc.IsSet() &&
@@ -151,6 +162,7 @@ func (req PatchUserDetailRequest) Validate() error {
 		})
 	}
 	return validation.ValidateStruct(&req,
+		validation.Field(&req.Alias, validation.Required.When(req.Alias.IsSet()), validation.Length(5, 200)),
 		validation.Field(&req.Gender, validation.Required.When(req.Gender.IsSet()),
 			validation.In(
 				string(entities.GenderFemale),
@@ -197,6 +209,14 @@ func (req PatchUserDetailRequest) Validate() error {
 				string(entities.RelationshipPreferenceONS),
 				string(entities.RelationshipPreferenceCasual),
 				string(entities.RelationshipPreferenceSerious),
+			),
+		),
+		validation.Field(&req.LookingFor,
+			validation.Required.When(req.Alias.IsSet()),
+			validation.In(
+				string(entities.GenderFemale),
+				string(entities.GenderMale),
+				string(entities.GenderOther),
 			),
 		),
 		validation.Field(&req.Zodiac,
@@ -258,7 +278,7 @@ type UserDetail struct {
 	Drinking         optional.String     `json:"drinking"`
 	Smoking          optional.String     `json:"smoking"`
 	RelationshipPref optional.String     `json:"relationship_preferences"`
-	LookingFor       optional.String     `json:"looking_for"`
+	LookingFor       string              `json:"looking_for"`
 	Zodiac           optional.String     `json:"zodiac"`
 	Kids             optional.Int16      `json:"kids"`
 	Work             optional.String     `json:"work"`
@@ -270,11 +290,11 @@ type UserDetail struct {
 	ProfilePictureURLs []string `json:"profile_picture_urls"`
 }
 type UserDetailGeography struct {
-	Lat string `json:"lat"`
-	Lng string `json:"lng"`
+	Lat float64 `json:"lat"`
+	Lng float64 `json:"lng"`
 }
 
-func GetUserDetailResponse(user entities.UserDetail) UserDetail {
+func NewUserDetailResponse(user entities.UserDetail) UserDetail {
 	hobbies := make([]string, 0, len(user.Hobbies))
 	for _, hobbie := range user.Hobbies {
 		hobbies = append(hobbies, hobbie.Hobbie)

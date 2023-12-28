@@ -24,7 +24,7 @@ type UserDetail struct {
 	Drinking         optional.String
 	Smoking          optional.String
 	RelationshipPref optional.String
-	LookingFor       optional.String
+	LookingFor       string
 	Zodiac           optional.String
 	Kids             optional.Int16
 	Work             optional.String

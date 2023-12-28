@@ -24,6 +24,7 @@ func CreateUserDetail(ctx context.Context, requestId string, payload entities.Cr
 		id, err := userRepo.StoreUserDetail(ctx, tx,
 			entities.UserDetail{
 				UserId:           requestId,
+				Alias:            payload.Alias,
 				Geog:             payload.Geog,
 				Bio:              payload.Bio,
 				LastOnline:       time.Now(),

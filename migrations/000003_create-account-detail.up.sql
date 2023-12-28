@@ -11,7 +11,7 @@ CREATE TABLE account_detail(
   drinking TEXT,
   smoking TEXT,
   relationship_pref TEXT,
-  looking_for TEXT,
+  looking_for TEXT NOT NULL,
   zodiac TEXT,
   kids SMALLINT,
   work VARCHAR(50),
