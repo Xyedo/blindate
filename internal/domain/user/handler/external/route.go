@@ -24,7 +24,6 @@ func matchRequestParamId(next echo.HandlerFunc) echo.HandlerFunc {
 		paramUserId := c.Param("id")
 
 		requestId := c.Request().Context().Value(auth.RequestId).(string)
-
 		if requestId != paramUserId {
 			return apperror.NotFound(apperror.Payload{})
 		}

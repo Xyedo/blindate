@@ -31,17 +31,6 @@ func NewEcho() *Server {
 	apiv1 := e.Group("/v1")
 	internalRouteHandler(apiv1)
 
-	// if infrastructure.Config.Env == "dev" {
-	// 	apiv1.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-	// 		return func(c echo.Context) error {
-	// 			ctx := context.WithValue(c.Request().Context(), auth.RequestId, infrastructure.Config.Clerk.TestId)
-	// 			c.SetRequest(c.Request().WithContext(ctx))
-	// 			return next(c)
-	// 		}
-	// 	})
-	// } else {
-	// 	apiv1.Use(echomiddleware.Guard)
-	// }
 	apiv1.Use(echomiddleware.Guard)
 
 	userHandler.Route(apiv1)

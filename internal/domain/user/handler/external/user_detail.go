@@ -63,7 +63,7 @@ func getUserDetailByIdHandler(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusCreated, map[string]any{
+	return c.JSON(http.StatusOK, map[string]any{
 		"data": dtos.NewUserDetailResponse(userDetail),
 	})
 }

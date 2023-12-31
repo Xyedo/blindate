@@ -16,6 +16,7 @@ func StoreUserDetail(ctx context.Context, conn pg.Querier, payload entities.User
 	const storeUserDetail = `
 		INSERT INTO account_detail(
 			account_id,
+			alias,
 			geog,
 			bio,
 			last_online,
@@ -35,7 +36,7 @@ func StoreUserDetail(ctx context.Context, conn pg.Querier, payload entities.User
 			version
 		)
 		VALUES (
-			$1,ST_GeomFromText($2),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18
+			$1,$2,ST_GeomFromText($3),$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19
 		)
 		returning account_id
 	`
@@ -43,6 +44,7 @@ func StoreUserDetail(ctx context.Context, conn pg.Querier, payload entities.User
 	err := conn.
 		QueryRow(ctx, storeUserDetail,
 			payload.UserId,
+			payload.Alias,
 			payload.Geog,
 			payload.Bio,
 			time.Now(),
@@ -327,23 +329,25 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 func UpdateUserDetailById(ctx context.Context, conn pg.Querier, id string, payload entities.UpdateUserDetail) error {
 	const updateBasicInfoById = `
 	UPDATE account_detail SET 
-		gender = CASE WHEN $1 THEN $2 ELSE gender END,
-		geog = CASE WHEN $3 THEN ST_GeomFromText($4) ELSE geog END,
-		from_loc = CASE WHEN $5 THEN $6 ELSE from_loc END,
-		height = CASE WHEN $7 THEN $8 ELSE height END,
-		education_level =  CASE WHEN $9 THEN $10 ELSE education_level END,
-		drinking =  CASE WHEN $11 THEN $12 ELSE drinking END,
-		smoking =  CASE WHEN $13 THEN $14 ELSE smoking END,
-		relationship_pref =  CASE WHEN $15 THEN $16 ELSE relationship_pref END,
-		looking_for =  CASE WHEN $17 THEN $18 ELSE looking_for END,
-		zodiac =  CASE WHEN $19 THEN $20 ELSE zodiac END,
-		kids =  CASE WHEN $21 THEN $22 ELSE kids END,
-		work =  CASE WHEN $23 THEN $24 ELSE work END,
-		updated_at =  $25,
+		alias = CASE WHEN $1 THEN $2 ELSE alias END,
+		gender = CASE WHEN $3 THEN $4 ELSE gender END,
+		geog = CASE WHEN $5 THEN ST_GeomFromText($6) ELSE geog END,
+		from_loc = CASE WHEN $7 THEN $8 ELSE from_loc END,
+		height = CASE WHEN $9 THEN $10 ELSE height END,
+		education_level =  CASE WHEN $11 THEN $12 ELSE education_level END,
+		drinking =  CASE WHEN $13 THEN $14 ELSE drinking END,
+		smoking =  CASE WHEN $15 THEN $16 ELSE smoking END,
+		relationship_pref =  CASE WHEN $17 THEN $18 ELSE relationship_pref END,
+		looking_for =  CASE WHEN $19 THEN $20 ELSE looking_for END,
+		zodiac =  CASE WHEN $21 THEN $22 ELSE zodiac END,
+		kids =  CASE WHEN $23 THEN $24 ELSE kids END,
+		work =  CASE WHEN $25 THEN $26 ELSE work END,
+		updated_at =  $27,
 		version =  version +1
-	WHERE account_id = $26
+	WHERE account_id = $28
 `
 	res, err := conn.Exec(ctx, updateBasicInfoById,
+		payload.Alias.IsSet(), payload.Alias,
 		payload.Gender.IsSet(), payload.Gender,
 		payload.Geog.IsPresent(), payload.Geog.MustGet(),
 		payload.FromLoc.IsSet(), payload.FromLoc,

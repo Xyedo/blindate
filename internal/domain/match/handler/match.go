@@ -55,5 +55,6 @@ func putTransitionRequestStatus(c echo.Context) error {
 	}
 
 	requestId := ctx.Value(auth.RequestId).(string)
+
 	return usecase.TransitionRequestStatus(ctx, requestId, c.Param("matchId"), request.Swipe)
 }

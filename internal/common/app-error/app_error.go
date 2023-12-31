@@ -8,6 +8,7 @@ const (
 	StatusErrorMalformedRequestBody Code = "MALFORMED_REQUEST_BODY"
 	StatusErrorValidation           Code = "VALIDATION_ERROR"
 	StatusErrorInvalidAuth          Code = "INVALID_AUTHORIZATION"
+	StatusErrorExpiredAuth          Code = "EXPIRED_AUTH"
 )
 const (
 	statusErrorDefaultDuplicate            Code = "DUPLICATE"

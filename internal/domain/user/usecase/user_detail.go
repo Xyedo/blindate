@@ -105,6 +105,12 @@ func GetUserDetail(ctx context.Context, requestId, userId string) (entities.User
 			}(i, &wg)
 		}
 		wg.Wait()
+
+		for _, err := range errs {
+			if err != nil {
+				return entities.UserDetail{}, err
+			}
+		}
 	}
 
 	return userDetail, nil
@@ -149,6 +155,12 @@ func GetUserDetails(ctx context.Context, userIds []string) (entities.UserDetails
 			}(i, &wg)
 		}
 		wg.Wait()
+		
+		for _, err := range errs {
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	return userDetails, nil

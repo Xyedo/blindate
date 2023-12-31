@@ -17,11 +17,12 @@ func StoreHobbiesByUserId(ctx context.Context, conn pg.Querier, userId string, h
 	}
 	copyCount, err := conn.CopyFrom(ctx,
 		pgx.Identifier{"hobbies"},
-		[]string{"account_id", "hobbie", "created_at", "updated_at", "version"},
+		[]string{"id", "account_id", "hobbie", "created_at", "updated_at", "version"},
 		pgx.CopyFromSlice(
 			len(hobbies),
 			func(i int) ([]any, error) {
 				return []any{
+					hobbies[i].Id,
 					userId,
 					hobbies[i].Hobbie,
 					hobbies[i].CreatedAt,
@@ -109,11 +110,12 @@ func StoreMovieSeriesByUserId(ctx context.Context, conn pg.Querier, userId strin
 
 	copyCount, err := conn.CopyFrom(ctx,
 		pgx.Identifier{"movie_series"},
-		[]string{"account_id", "movie_serie", "created_at", "updated_at", "version"},
+		[]string{"id", "account_id", "movie_serie", "created_at", "updated_at", "version"},
 		pgx.CopyFromSlice(
 			len(movieSeries),
 			func(i int) ([]any, error) {
 				return []any{
+					movieSeries[i].Id,
 					userId,
 					movieSeries[i].MovieSerie,
 					movieSeries[i].CreatedAt,
@@ -203,11 +205,12 @@ func StoreTravelingsByUserId(ctx context.Context, conn pg.Querier, userId string
 
 	copyCount, err := conn.CopyFrom(ctx,
 		pgx.Identifier{"traveling"},
-		[]string{"account_id", "travel", "created_at", "updated_at", "version"},
+		[]string{"id", "account_id", "travel", "created_at", "updated_at", "version"},
 		pgx.CopyFromSlice(
 			len(travels),
 			func(i int) ([]any, error) {
 				return []any{
+					travels[i].Id,
 					userId,
 					travels[i].Travel,
 					travels[i].CreatedAt,
@@ -297,11 +300,12 @@ func StoreSportsByUserId(ctx context.Context, conn pg.Querier, userId string, sp
 
 	copyCount, err := conn.CopyFrom(ctx,
 		pgx.Identifier{"sports"},
-		[]string{"account_id", "sport", "created_at", "updated_at", "version"},
+		[]string{"id", "account_id", "sport", "created_at", "updated_at", "version"},
 		pgx.CopyFromSlice(
 			len(sports),
 			func(i int) ([]any, error) {
 				return []any{
+					sports[i].Id,
 					userId,
 					sports[i].Sport,
 					sports[i].CreatedAt,

@@ -119,8 +119,8 @@ type Location struct {
 
 func (l Location) Validate() error {
 	return validation.ValidateStruct(&l,
-		validation.Field(&l.Lat, validation.Required, validation.Max(90), validation.Min(-90)),
-		validation.Field(&l.Lng, validation.Required, validation.Min(-180), validation.Max(180)),
+		validation.Field(&l.Lat, validation.Required, validation.Max(float64(90.0)), validation.Min(float64(-90.0))),
+		validation.Field(&l.Lng, validation.Required, validation.Min(float64(-180.0)), validation.Max(float64(180.0))),
 	)
 }
 

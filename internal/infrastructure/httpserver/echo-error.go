@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -184,12 +185,17 @@ func jsonDecoderError(err error) (field, message string) {
 		return "", ""
 	}
 }
-func validationErrorMapping(validatorError validation.Errors) map[string][]any {
-	mapErr := make(map[string][]any)
+
+func validationErrorMapping(validatorError validation.Errors) map[string][]string {
+	mapErr := make(map[string][]string)
 	for key, err := range validatorError {
 		if errs, ok := err.(validation.Errors); ok {
-			newMap := validationErrorMapping(errs)
-			mapErr = mergeMapWithKey(key, mapErr, newMap)
+			maps.Copy(mapErr,
+				mergeMapWithKey(key,
+					validationErrorMapping(errs),
+				),
+			)
+
 		} else {
 			mapErr[key] = append(mapErr[key], err.Error())
 		}
@@ -198,16 +204,13 @@ func validationErrorMapping(validatorError validation.Errors) map[string][]any {
 	return mapErr
 }
 
-func mergeMapWithKey(key string, maps ...map[string][]any) map[string][]any {
-	res := make(map[string][]any)
-	for _, m := range maps {
-		for k, v := range m {
-			mergedKey := key + "." + k
-			res[mergedKey] = append(res[mergedKey], v...)
-		}
+func mergeMapWithKey(key string, m map[string][]string) map[string][]string {
+	res := make(map[string][]string)
+
+	for k, v := range m {
+		mergedKey := key + "." + k
+		res[mergedKey] = append(res[mergedKey], v...)
 	}
-	if len(res) == 0 {
-		return nil
-	}
+
 	return res
 }
