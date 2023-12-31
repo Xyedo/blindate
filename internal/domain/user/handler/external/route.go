@@ -28,6 +28,7 @@ func matchRequestParamId(next echo.HandlerFunc) echo.HandlerFunc {
 		if requestId != paramUserId {
 			return apperror.NotFound(apperror.Payload{})
 		}
+
 		return next(c)
 	}
 }

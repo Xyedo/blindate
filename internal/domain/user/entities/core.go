@@ -11,6 +11,8 @@ type User struct {
 	IsDeleted bool
 }
 
+type UserDetails []UserDetail
+
 type UserDetail struct {
 	UserId           string
 	Alias            string

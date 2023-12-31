@@ -41,6 +41,19 @@ type Payload struct {
 	Message string
 }
 
+func New(payload Payload, details ...any) error {
+	return Sentinel{
+		Err: payload.Error,
+		Payloads: []ErrorPayload{
+			{
+				Code:    payload.Status,
+				Message: payload.Message,
+				Details: details,
+			},
+		},
+	}
+}
+
 func Duplicate(payload Payload, indempotent bool) error {
 	if payload.Message == "" {
 		payload.Message = "duplicate"
@@ -279,7 +292,6 @@ func UnprocessableEntity(payload Payload) error {
 }
 
 func UnprocessableEntityWithPayloadMap(payload PayloadMap) error {
-
 	if payload.Error != nil {
 		payload.Error = fmt.Errorf("%w:%w", ErrUnprocessableEntity, payload.Error)
 	} else {

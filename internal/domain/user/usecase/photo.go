@@ -3,7 +3,6 @@ package usecase
 import (
 	"context"
 	"mime/multipart"
-	"path/filepath"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -45,7 +44,7 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 			return apperror.BadPayloadWithPayloadMap(apperror.PayloadMap{
 				Payloads: []apperror.ErrorPayload{
 					{
-						Code: entities.PhotoTooMuch,
+						Code: entities.ErrCodePhotoTooMuch,
 						Details: map[string][]string{
 							"file": {"exceeding profile-photo upload"},
 						},
@@ -55,9 +54,9 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 		}
 		objectKey, err := s3.Manager.UploadAttachment(ctx, photo, attachmentEntities.Attachment{
 			File:        photo,
-			ContentType: contentType,
+			ContentType: contentType.String(),
 			Prefix:      "/user/" + requestId + "/photos",
-			Ext:         filepath.Ext(header.Filename),
+			Ext:         contentType.Extension(),
 		})
 		if err != nil {
 			return err

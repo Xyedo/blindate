@@ -9,6 +9,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.91
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.40.2
 	github.com/clerkinc/clerk-sdk-go v1.48.4
+	github.com/gabriel-vasile/mimetype v1.4.3
 	github.com/invopop/validation v0.3.0
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/jmoiron/sqlx v1.3.5

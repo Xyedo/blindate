@@ -18,11 +18,11 @@ type Match struct {
 	RevealedAt            optional.Time
 	CreatedAt             time.Time
 	UpdatedAt             time.Time
-	Version               int ``
+	UpdatedBy             optional.String
+	Version               int
 }
 
 type MatchUser struct {
 	Distance float64
 	userentities.UserDetail
 }
-type MatchUsers []MatchUser

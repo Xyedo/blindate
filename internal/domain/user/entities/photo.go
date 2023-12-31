@@ -1,49 +1,60 @@
 package entities
 
 import (
-	"errors"
 	"io"
-	"net/http"
 
+	"github.com/gabriel-vasile/mimetype"
 	apperror "github.com/xyedo/blindate/internal/common/app-error"
 )
 
 func (u UserDetail) ToFileIds() ([]string, map[string]int) {
 	ids := make([]string, 0, len(u.ProfilePictures))
-	fileIdIdx := make(map[string]int, len(u.ProfilePictures))
+	fileIdToIdx := make(map[string]int, len(u.ProfilePictures))
 	for i := range u.ProfilePictures {
 		ids = append(ids, u.ProfilePictures[i].FileId)
-		fileIdIdx[u.ProfilePictures[i].FileId] = i
+		fileIdToIdx[u.ProfilePictures[i].FileId] = i
 	}
-	return ids, fileIdIdx
+	return ids, fileIdToIdx
 }
-func SanitizeMimeType(file io.ReadSeeker, validMimeTypes []string) (string, error) {
-	buff := make([]byte, 512)
-	bytesRead, err := file.Read(buff)
-	if err != nil && !errors.Is(err, io.EOF) {
-		return "", err
+
+func (users UserDetails) ToFileIds() ([]string, map[string][2]int) {
+	ids := make([]string, 0, len(users))
+	fileIdToIdx := make(map[string][2]int, len(users))
+
+	for i, user := range users {
+		for j, profilePic := range user.ProfilePictures {
+			ids = append(ids, profilePic.FileId)
+			fileIdToIdx[profilePic.FileId] = [2]int{i, j}
+		}
 	}
 
-	_, err = file.Seek(0, io.SeekStart)
+	return ids, fileIdToIdx
+}
+
+func SanitizeMimeType(file io.ReadSeeker, validMimeTypes []string) (*mimetype.MIME, error) {
+	_, err := file.Seek(0, io.SeekStart)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	contentType := http.DetectContentType(buff[:bytesRead])
+	contentType, err := mimetype.DetectReader(file)
+	if err != nil {
+		return nil, err
+	}
 
 	var isValidType bool
 	for _, validMimeType := range validMimeTypes {
-		if contentType == validMimeType {
+		if contentType.String() == validMimeType {
 			isValidType = true
 			break
 		}
 	}
 
 	if !isValidType {
-		return "", apperror.BadPayloadWithPayloadMap(apperror.PayloadMap{
+		return nil, apperror.BadPayloadWithPayloadMap(apperror.PayloadMap{
 			Payloads: []apperror.ErrorPayload{
 				{
-					Code: PhotoInvalidType,
+					Code: ErrCodePhotoInvalidType,
 					Details: map[string][]string{
 						"file": {"invalid MIME-type"},
 					},
@@ -54,7 +65,7 @@ func SanitizeMimeType(file io.ReadSeeker, validMimeTypes []string) (string, erro
 
 	_, err = file.Seek(0, io.SeekStart)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	return contentType, nil

@@ -5,6 +5,17 @@ import (
 	"database/sql/driver"
 )
 
+func NewString(values ...string) String {
+	var b String
+	b.set = true
+
+	if len(values) > 0 {
+		b.value = &values[0]
+	}
+
+	return b
+}
+
 type String struct {
 	Option[string]
 }

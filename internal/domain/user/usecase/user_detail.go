@@ -80,7 +80,7 @@ func GetUserDetail(ctx context.Context, requestId, userId string) (entities.User
 	}
 
 	if len(userDetail.ProfilePictures) > 0 {
-		fileIds, fileIdToIdxMap := userDetail.ToFileIds()
+		fileIds, fileIdToIdx := userDetail.ToFileIds()
 		files, err := attachmentRepo.GetFileByIds(ctx, conn, fileIds)
 		if err != nil {
 			return entities.UserDetail{}, err
@@ -99,7 +99,7 @@ func GetUserDetail(ctx context.Context, requestId, userId string) (entities.User
 					return
 				}
 
-				if idx, ok := fileIdToIdxMap[files[i].Id]; ok {
+				if idx, ok := fileIdToIdx[files[i].Id]; ok {
 					userDetail.ProfilePictures[idx].SetPresignedURL(presignedURL)
 				}
 			}(i, &wg)
@@ -108,7 +108,50 @@ func GetUserDetail(ctx context.Context, requestId, userId string) (entities.User
 	}
 
 	return userDetail, nil
+}
 
+func GetUserDetails(ctx context.Context, userIds []string) (entities.UserDetails, error) {
+	conn, err := pg.GetConnectionPool(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	defer conn.Release()
+
+	userDetails, err := userRepo.FindUserDetailByIds(ctx, conn, userIds)
+	if err != nil {
+		return nil, err
+	}
+
+	fileIds, fileIdToIdx := userDetails.ToFileIds()
+	if len(fileIds) > 0 {
+		files, err := attachmentRepo.GetFileByIds(ctx, conn, fileIds)
+		if err != nil {
+			return nil, err
+		}
+
+		var wg sync.WaitGroup
+		errs := make([]error, len(files))
+
+		wg.Add(len(files))
+		for i := 0; i < len(files); i++ {
+			go func(i int, wg *sync.WaitGroup) {
+				defer wg.Done()
+				presignedURL, err := s3.Manager.GetPresignedUrl(ctx, files[i].BlobLink, 1*time.Hour)
+				if err != nil {
+					errs[i] = err
+					return
+				}
+
+				if idxs, ok := fileIdToIdx[files[i].Id]; ok {
+					userDetails[idxs[0]].ProfilePictures[idxs[1]].SetPresignedURL(presignedURL)
+				}
+			}(i, &wg)
+		}
+		wg.Wait()
+	}
+
+	return userDetails, nil
 }
 
 func UpdateUserDetailById(ctx context.Context, requestId string, payload entities.UpdateUserDetail) error {

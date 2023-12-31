@@ -56,7 +56,7 @@ func GetUserById(ctx context.Context, conn pg.Querier, id string, opts ...entiti
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return entities.User{}, apperror.NotFound(apperror.Payload{
-				Status: entities.UserNotFound,
+				Status: entities.ErrCodeUserNotFound,
 				Error:  err,
 			})
 		}
@@ -78,7 +78,7 @@ func SoftDeleteUserById(ctx context.Context, conn pg.Querier, id string) error {
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return apperror.NotFound(apperror.Payload{
-				Status: entities.UserNotFound,
+				Status: entities.ErrCodeUserNotFound,
 				Error:  err,
 			})
 		}

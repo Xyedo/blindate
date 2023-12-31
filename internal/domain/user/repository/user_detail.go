@@ -138,7 +138,7 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 			if errors.Is(err, pgx.ErrNoRows) {
 				return apperror.NotFound(apperror.Payload{
 					Error:  err,
-					Status: entities.UserNotFound,
+					Status: entities.ErrCodeUserNotFound,
 				})
 			}
 
@@ -368,4 +368,275 @@ func UpdateUserDetailById(ctx context.Context, conn pg.Querier, id string, paylo
 	}
 
 	return nil
+}
+
+func FindUserDetailByIds(ctx context.Context, conn pg.Querier, ids []string) (entities.UserDetails, error) {
+	if len(ids) == 0 {
+		return nil, nil
+	}
+
+	const getUserDetailByIds = `
+	SELECT 
+		account_id,
+		ST_AsText(geog) as geog,
+		bio,
+		last_online,
+		gender,
+		from_loc,
+		height,
+		education_level,
+		drinking,
+		smoking,
+		relationship_pref,
+		looking_for,
+		zodiac,
+		kids,
+		work,
+		created_at,
+		updated_at,
+		version
+	FROM account_detail
+	WHERE account_id IN (?)
+`
+	const getHobbieByUserIds = `
+		SELECT 
+			id,
+			account_id, 
+			hobbie,
+			created_at,
+			updated_at, 
+			version 
+		FROM hobbies 
+		WHERE account_id IN (?)`
+	const getMovieSerieByUserIds = `
+		SELECT 
+			id, 
+			account_id,
+			movie_serie,
+			created_at,
+			updated_at, 
+			version 
+		FROM movie_series 
+		WHERE account_id IN (?)`
+	const getTravelingByUserIds = `
+		SELECT 
+			id, 
+			account_id,
+			travel,
+			created_at,
+			updated_at, 
+			version 
+		FROM traveling 
+		WHERE account_id IN (?)`
+	const getSportByUserIds = `
+		SELECT 
+			id, 
+			account_id,
+			sport,
+			created_at,
+			updated_at, 
+			version 
+		FROM sports 
+		WHERE account_id IN (?)`
+	const getPhotoProfiles = `
+		SELECT 
+			id, 
+			account_id,
+			selected,
+			file_id
+		FROM profile_pictures 
+		WHERE account_id IN (?)
+		ORDER BY selected ASC`
+
+	q, args, err := pg.In(getUserDetailByIds, ids)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := conn.Query(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+
+	userDetails := make([]entities.UserDetail, 0, len(ids))
+	userIdToRowIdx := make(map[string]int, len(ids))
+	for rows.Next() {
+		var user entities.UserDetail
+		err = rows.Scan(
+			&user.UserId,
+			&user.Geog,
+			&user.Bio,
+			&user.LastOnline,
+			&user.Gender,
+			&user.FromLoc,
+			&user.Height,
+			&user.EducationLevel,
+			&user.Drinking,
+			&user.Smoking,
+			&user.RelationshipPref,
+			&user.LookingFor,
+			&user.Zodiac,
+			&user.Kids,
+			&user.Work,
+			&user.CreatedAt,
+			&user.UpdatedAt,
+			&user.Version,
+		)
+		if err != nil {
+			return nil, err
+		}
+		userDetails = append(userDetails, user)
+		userIdToRowIdx[user.UserId] = len(userDetails) - 1
+	}
+	rows.Close()
+
+	var batch pgx.Batch
+	q, args, err = pg.In(getHobbieByUserIds, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	batch.Queue(q, args...).
+		Query(func(rows pgx.Rows) error {
+			for rows.Next() {
+				var hobbie entities.Hobbie
+				err := rows.Scan(
+					&hobbie.Id,
+					&hobbie.UserId,
+					&hobbie.Hobbie,
+					&hobbie.CreatedAt,
+					&hobbie.UpdatedAt,
+					&hobbie.Version,
+				)
+				if err != nil {
+					return err
+				}
+				idx, ok := userIdToRowIdx[hobbie.UserId]
+				if !ok {
+					continue
+				}
+
+				userDetails[idx].Hobbies = append(userDetails[idx].Hobbies, hobbie)
+			}
+			return nil
+		})
+	q, args, err = pg.In(getMovieSerieByUserIds, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	batch.Queue(q, args...).
+		Query(func(rows pgx.Rows) error {
+			for rows.Next() {
+				var movieSerie entities.MovieSerie
+				err := rows.Scan(
+					&movieSerie.Id,
+					&movieSerie.UserId,
+					&movieSerie.MovieSerie,
+					&movieSerie.CreatedAt,
+					&movieSerie.UpdatedAt,
+					&movieSerie.Version,
+				)
+				if err != nil {
+					return err
+				}
+				idx, ok := userIdToRowIdx[movieSerie.UserId]
+				if !ok {
+					continue
+				}
+
+				userDetails[idx].MovieSeries = append(userDetails[idx].MovieSeries, movieSerie)
+			}
+			return nil
+		})
+
+	q, args, err = pg.In(getTravelingByUserIds, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	batch.Queue(q, args...).
+		Query(func(rows pgx.Rows) error {
+			for rows.Next() {
+				var travel entities.Travel
+				err := rows.Scan(
+					&travel.Id,
+					&travel.UserId,
+					&travel.Travel,
+					&travel.CreatedAt,
+					&travel.UpdatedAt,
+					&travel.Version,
+				)
+				if err != nil {
+					return err
+				}
+				idx, ok := userIdToRowIdx[travel.UserId]
+				if !ok {
+					continue
+				}
+				userDetails[idx].Travels = append(userDetails[idx].Travels, travel)
+			}
+			return nil
+		})
+	q, args, err = pg.In(getSportByUserIds, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	batch.Queue(q, args...).
+		Query(func(rows pgx.Rows) error {
+			for rows.Next() {
+				var sport entities.Sport
+				err := rows.Scan(
+					&sport.Id,
+					&sport.UserId,
+					&sport.Sport,
+					&sport.CreatedAt,
+					&sport.UpdatedAt,
+					&sport.Version,
+				)
+				if err != nil {
+					return err
+				}
+				idx, ok := userIdToRowIdx[sport.UserId]
+				if !ok {
+					continue
+				}
+				userDetails[idx].Sports = append(userDetails[idx].Sports, sport)
+			}
+
+			return nil
+		})
+	q, args, err = pg.In(getPhotoProfiles, ids)
+	if err != nil {
+		return nil, err
+	}
+
+	batch.Queue(q, args...).
+		Query(func(rows pgx.Rows) error {
+			for rows.Next() {
+				var profilePic entities.ProfilePicture
+				err := rows.Scan(
+					&profilePic.Id,
+					&profilePic.UserId,
+					&profilePic.Selected,
+					&profilePic.FileId,
+				)
+				if err != nil {
+					return err
+				}
+				idx, ok := userIdToRowIdx[profilePic.UserId]
+				if !ok {
+					continue
+				}
+				userDetails[idx].ProfilePictures = append(userDetails[idx].ProfilePictures, profilePic)
+			}
+			return nil
+		})
+
+	err = conn.SendBatch(ctx, &batch).Close()
+	if err != nil {
+		return nil, err
+	}
+
+	return userDetails, nil
 }

@@ -6,13 +6,20 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	apperror "github.com/xyedo/blindate/internal/common/app-error"
 	matchEntities "github.com/xyedo/blindate/internal/domain/match/entities"
-	"github.com/xyedo/blindate/internal/domain/user/entities"
-	userEntities "github.com/xyedo/blindate/internal/domain/user/entities"
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
+	"github.com/xyedo/blindate/pkg/optional"
 )
 
 func CreateCandidateMatchsById(ctx context.Context, conn pg.Querier, userId string, candidateMatchsIds []string) error {
+	if len(candidateMatchsIds) == 0 {
+		return apperror.NotFound(apperror.Payload{
+			Status:  matchEntities.ErrCodeMatchCandidateEmpty,
+			Message: "empty candidate, pls try again later!",
+		})
+	}
+
 	rowAffected, err := conn.CopyFrom(ctx,
 		pgx.Identifier{"match"},
 		[]string{
@@ -21,6 +28,7 @@ func CreateCandidateMatchsById(ctx context.Context, conn pg.Querier, userId stri
 			"request_status",
 			"created_at",
 			"updated_at",
+			"updated_by",
 			"version",
 		},
 		pgx.CopyFromSlice(len(candidateMatchsIds), func(i int) ([]any, error) {
@@ -30,6 +38,7 @@ func CreateCandidateMatchsById(ctx context.Context, conn pg.Querier, userId stri
 				matchEntities.MatchStatusUnknown,
 				time.Now(),
 				time.Now(),
+				nil,
 				1,
 			}, nil
 		}),
@@ -47,7 +56,7 @@ func CreateCandidateMatchsById(ctx context.Context, conn pg.Querier, userId stri
 
 }
 
-func FindUserMatchByStatus(ctx context.Context, conn pg.Querier, payload matchEntities.FindUserMatchByStatus) (matchEntities.MatchUsers, error) {
+func FindMatchUserIdsByStatus(ctx context.Context, conn pg.Querier, payload matchEntities.FindUserMatchByStatus) ([]string, error) {
 	const findUserMatchByStatus = `
 	SELECT 
 		m.request_from
@@ -57,20 +66,26 @@ func FindUserMatchByStatus(ctx context.Context, conn pg.Querier, payload matchEn
 	ad.account_id = m.request_from OR
 	ad.account_id = m.request_to
 	WHERE 
-	ad.account_id = $1 AND
-	m.status = $2
-	LIMIT $3
-	OFFSET $4
+	ad.account_id = ?  AND
+	m.status IN (?) AND
+	CASE 
+		WHEN m.status = 'REQUESTED' THEN m.updated_by != ? 
+		ELSE TRUE 
+	END
+	LIMIT ?
+	OFFSET ?
 	`
 
 	offset := payload.Limit*payload.Page - payload.Limit
-	rows, err := conn.Query(ctx,
+	query, args, err := pg.In(
 		findUserMatchByStatus,
-		payload.UserId,
-		string(payload.Status),
-		payload.Limit,
-		offset,
+		payload.UserId, payload.Statuses, payload.UserId, payload.Limit, offset,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := conn.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -95,270 +110,118 @@ func FindUserMatchByStatus(ctx context.Context, conn pg.Querier, payload matchEn
 
 		matchUserIds = append(matchUserIds, requestFrom, requestTo)
 	}
-	rows.Close()
+	defer rows.Close()
 
-	const getUserDetailByIds = `
+	return matchUserIds, nil
+}
+
+func GetMatchById(ctx context.Context, conn pg.Querier, id string, opts ...matchEntities.GetMatchOption) (matchEntities.Match, error) {
+	const getMatchById = `
 	SELECT 
-		account_id,
-		ST_AsText(geog) as geog,
-		bio,
-		last_online,
-		gender,
-		from_loc,
-		height,
-		education_level,
-		drinking,
-		smoking,
-		relationship_pref,
-		looking_for,
-		zodiac,
-		kids,
-		work,
+		id,
+		request_from,
+		request_to,
+		request_status,
+		accepted_at,
+		reveal_status,
+		revealed_declined_count,
+		revealed_at,
 		created_at,
 		updated_at,
+		upddated_by,
 		version
-	FROM account_detail
-	WHERE account_id IN (?)
-`
-	const getHobbieByUserIds = `
-		SELECT 
-			id,
-			account_id, 
-			hobbie,
-			created_at,
-			updated_at, 
-			version 
-		FROM hobbies 
-		WHERE account_id IN (?)`
-	const getMovieSerieByUserIds = `
-		SELECT 
-			id, 
-			account_id,
-			movie_serie,
-			created_at,
-			updated_at, 
-			version 
-		FROM movie_series 
-		WHERE account_id IN (?)`
-	const getTravelingByUserIds = `
-		SELECT 
-			id, 
-			account_id,
-			travel,
-			created_at,
-			updated_at, 
-			version 
-		FROM traveling 
-		WHERE account_id IN (?)`
-	const getSportByUserIds = `
-		SELECT 
-			id, 
-			account_id,
-			sport,
-			created_at,
-			updated_at, 
-			version 
-		FROM sports 
-		WHERE account_id IN (?)`
-	const getPhotoProfiles = `
-		SELECT 
-			id, 
-			account_id,
-			selected,
-			file_id
-		FROM profile_pictures 
-		WHERE account_id IN (?)
-		ORDER BY selected ASC`
+	FROM match
+	WHERE id = $1 
+	`
 
-	q, args, err := pg.In(getUserDetailByIds, matchUserIds)
-	if err != nil {
-		return nil, err
-	}
-	rows, err = conn.Query(ctx, q, args...)
-	if err != nil {
-		return nil, err
+	query := getMatchById
+	if len(opts) > 0 && opts[0].PessimisticLocking {
+		query += "\nFOR UPDATE"
 	}
 
-	matchUsers := make([]matchEntities.MatchUser, 0, len(matchUserIds))
-	userIdToRowIdx := make(map[string]int, len(matchUserIds))
-	for rows.Next() {
-		var matchUser matchEntities.MatchUser
-		err = rows.Scan(
-			&matchUser.UserId,
-			&matchUser.Geog,
-			&matchUser.Bio,
-			&matchUser.LastOnline,
-			&matchUser.Gender,
-			&matchUser.FromLoc,
-			&matchUser.Height,
-			&matchUser.EducationLevel,
-			&matchUser.Drinking,
-			&matchUser.Smoking,
-			&matchUser.RelationshipPref,
-			&matchUser.LookingFor,
-			&matchUser.Zodiac,
-			&matchUser.Kids,
-			&matchUser.Work,
-			&matchUser.CreatedAt,
-			&matchUser.UpdatedAt,
-			&matchUser.Version,
+	var match matchEntities.Match
+	var revealStatus optional.String
+	err := conn.
+		QueryRow(ctx, query, id).
+		Scan(
+			&match.Id,
+			&match.RequestFrom,
+			&match.RequestTo,
+			&match.RequestStatus,
+			&match.AcceptedAt,
+			&revealStatus,
+			&match.RevealedDeclinedCount,
+			&match.RevealedAt,
+			&match.CreatedAt,
+			&match.UpdatedAt,
+			&match.UpdatedBy,
+			&match.Version,
 		)
-		if err != nil {
-			return nil, err
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return matchEntities.Match{}, apperror.NotFound(apperror.Payload{
+				Error:  err,
+				Status: matchEntities.ErrCodeMatchNotFound,
+			})
 		}
-		matchUsers = append(matchUsers, matchUser)
-		userIdToRowIdx[matchUser.UserId] = len(matchUsers) - 1
-	}
-	rows.Close()
 
-	var batch pgx.Batch
-	q, args, err = pg.In(getHobbieByUserIds, matchUserIds)
+		return matchEntities.Match{}, err
+	}
+
+	revealStatus.If(func(s string) {
+		match.RevealStatus.Set(matchEntities.MatchStatus(s))
+	})
+
+	return match, nil
+}
+
+func UpdateMatch(ctx context.Context, conn pg.Querier, match matchEntities.Match) error {
+	const updateMatch = `
+	UPDATE match SET
+		request_from = $2,
+		request_to = $3,
+		request_status = $4,
+		accepted_at = $5,
+		reveal_status = $6,
+		revealed_declined_count = $7,
+		revealed_at =$8,
+		created_at =$9,
+		updated_at = $10,
+		updated_by = $11,
+		version = $12
+	WHERE id = $1
+	RETURNING id 
+	`
+
+	var revealStatus optional.String
+	match.RevealStatus.If(func(ms matchEntities.MatchStatus) {
+		revealStatus.Set(string(ms))
+	})
+	var returnedId string
+	err := conn.
+		QueryRow(ctx,
+			updateMatch,
+			match.Id,
+			match.RequestFrom,
+			match.RequestTo,
+			string(match.RequestStatus),
+			match.AcceptedAt,
+			revealStatus,
+			match.RevealedDeclinedCount,
+			match.RevealedAt,
+			match.CreatedAt,
+			match.UpdatedAt,
+			match.UpdatedBy,
+			match.Version,
+		).Scan(&returnedId)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	batch.Queue(q, args...).
-		Query(func(rows pgx.Rows) error {
-			for rows.Next() {
-				var hobbie userEntities.Hobbie
-				err := rows.Scan(
-					&hobbie.Id,
-					&hobbie.UserId,
-					&hobbie.Hobbie,
-					&hobbie.CreatedAt,
-					&hobbie.UpdatedAt,
-					&hobbie.Version,
-				)
-				if err != nil {
-					return err
-				}
-				idx, ok := userIdToRowIdx[hobbie.UserId]
-				if !ok {
-					continue
-				}
-
-				matchUsers[idx].Hobbies = append(matchUsers[idx].Hobbies, hobbie)
-			}
-			return nil
-		})
-	q, args, err = pg.In(getMovieSerieByUserIds, matchUserIds)
-	if err != nil {
-		return nil, err
+	if returnedId != match.Id {
+		return errors.New("invalid")
 	}
 
-	batch.Queue(q, args...).
-		Query(func(rows pgx.Rows) error {
-			for rows.Next() {
-				var movieSerie userEntities.MovieSerie
-				err := rows.Scan(
-					&movieSerie.Id,
-					&movieSerie.UserId,
-					&movieSerie.MovieSerie,
-					&movieSerie.CreatedAt,
-					&movieSerie.UpdatedAt,
-					&movieSerie.Version,
-				)
-				if err != nil {
-					return err
-				}
-				idx, ok := userIdToRowIdx[movieSerie.UserId]
-				if !ok {
-					continue
-				}
+	return nil
 
-				matchUsers[idx].MovieSeries = append(matchUsers[idx].MovieSeries, movieSerie)
-			}
-			return nil
-		})
-
-	q, args, err = pg.In(getTravelingByUserIds, matchUserIds)
-	if err != nil {
-		return nil, err
-	}
-
-	batch.Queue(q, args...).
-		Query(func(rows pgx.Rows) error {
-			for rows.Next() {
-				var travel userEntities.Travel
-				err := rows.Scan(
-					&travel.Id,
-					&travel.UserId,
-					&travel.Travel,
-					&travel.CreatedAt,
-					&travel.UpdatedAt,
-					&travel.Version,
-				)
-				if err != nil {
-					return err
-				}
-				idx, ok := userIdToRowIdx[travel.UserId]
-				if !ok {
-					continue
-				}
-				matchUsers[idx].Travels = append(matchUsers[idx].Travels, travel)
-			}
-			return nil
-		})
-	q, args, err = pg.In(getSportByUserIds, matchUserIds)
-	if err != nil {
-		return nil, err
-	}
-
-	batch.Queue(q, args...).
-		Query(func(rows pgx.Rows) error {
-			for rows.Next() {
-				var sport entities.Sport
-				err := rows.Scan(
-					&sport.Id,
-					&sport.UserId,
-					&sport.Sport,
-					&sport.CreatedAt,
-					&sport.UpdatedAt,
-					&sport.Version,
-				)
-				if err != nil {
-					return err
-				}
-				idx, ok := userIdToRowIdx[sport.UserId]
-				if !ok {
-					continue
-				}
-				matchUsers[idx].Sports = append(matchUsers[idx].Sports, sport)
-			}
-
-			return nil
-		})
-	q, args, err = pg.In(getPhotoProfiles, matchUserIds)
-	if err != nil {
-		return nil, err
-	}
-
-	batch.Queue(q, args...).
-		Query(func(rows pgx.Rows) error {
-			for rows.Next() {
-				var profilePic userEntities.ProfilePicture
-				err := rows.Scan(
-					&profilePic.Id,
-					&profilePic.UserId,
-					&profilePic.Selected,
-					&profilePic.FileId,
-				)
-				if err != nil {
-					return err
-				}
-				idx, ok := userIdToRowIdx[profilePic.UserId]
-				if !ok {
-					continue
-				}
-				matchUsers[idx].ProfilePictures = append(matchUsers[idx].ProfilePictures, profilePic)
-			}
-			return nil
-		})
-
-	err = conn.SendBatch(ctx, &batch).Close()
-	if err != nil {
-		return nil, err
-	}
-
-	return matchUsers, nil
 }

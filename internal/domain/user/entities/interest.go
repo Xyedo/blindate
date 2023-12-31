@@ -121,14 +121,14 @@ func (payload CreateInterest) Validate(userDetailDb UserDetail) error {
 	errPayload := make([]apperror.ErrorPayload, 0, 2)
 	if len(errUniquePayloads) > 0 {
 		errPayload = append(errPayload, apperror.ErrorPayload{
-			Code:    InterestDuplicate,
+			Code:    ErrCodeInterestDuplicate,
 			Details: errUniquePayloads,
 		})
 	}
 
 	if len(errTooMuchPayload) > 0 {
 		errPayload = append(errPayload, apperror.ErrorPayload{
-			Code:    InterestTooLarge,
+			Code:    ErrCodeInterestTooLarge,
 			Details: errTooMuchPayload,
 		})
 	}
@@ -300,14 +300,14 @@ func (payload UpdateInterest) Validate(userDetailDb UserDetail) error {
 	errPayload := make([]apperror.ErrorPayload, 0, 2)
 	if len(errUniquePayloads) > 0 {
 		errPayload = append(errPayload, apperror.ErrorPayload{
-			Code:    InterestDuplicate,
+			Code:    ErrCodeInterestDuplicate,
 			Details: errUniquePayloads,
 		})
 	}
 
 	if len(errNotFoundPayload) > 0 {
 		errPayload = append(errPayload, apperror.ErrorPayload{
-			Code:    InterestNotFound,
+			Code:    ErrCodeInterestNotFound,
 			Details: errNotFoundPayload,
 		})
 	}
@@ -408,7 +408,7 @@ func (payload DeleteInterest) Validate(userDetailDb UserDetail) error {
 		return apperror.UnprocessableEntityWithPayloadMap(apperror.PayloadMap{
 			Payloads: []apperror.ErrorPayload{
 				{
-					Code:    InterestNotFound,
+					Code:    ErrCodeInterestNotFound,
 					Details: errPayloads,
 				},
 			},

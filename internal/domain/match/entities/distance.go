@@ -5,14 +5,19 @@ import (
 	userentities "github.com/xyedo/blindate/internal/domain/user/entities"
 )
 
-func (matchUsers MatchUsers) CalculateDistance(user userentities.UserDetail) error {
-	for i := range matchUsers {
-		matchUsers[i].Distance = geo.
-			NewPointFromLatLng(matchUsers[i].Geog.Lat, matchUsers[i].Geog.Lng).
-			DistanceFrom(
-				geo.NewPoint(user.Geog.Lat, user.Geog.Lng),
-			)
+func NewMatchUsers(matchGeo userentities.Geography, userDetails userentities.UserDetails) []MatchUser {
+	matchUsers := make([]MatchUser, 0, len(userDetails))
+
+	for _, userDetail := range userDetails {
+		matchUsers = append(matchUsers, MatchUser{
+			UserDetail: userDetail,
+			Distance: geo.
+				NewPointFromLatLng(userDetail.Geog.Lat, userDetail.Geog.Lng).
+				DistanceFrom(
+					geo.NewPoint(matchGeo.Lat, matchGeo.Lng),
+				),
+		})
 	}
 
-	return nil
+	return matchUsers
 }

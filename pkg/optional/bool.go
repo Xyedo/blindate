@@ -5,6 +5,17 @@ import (
 	"database/sql/driver"
 )
 
+func NewBool(values ...bool) Bool {
+	var b Bool
+	b.set = true
+
+	if len(values) > 0 {
+		b.value = &values[0]
+	}
+
+	return b
+}
+
 type Bool struct {
 	Option[bool]
 }

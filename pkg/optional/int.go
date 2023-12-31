@@ -5,6 +5,17 @@ import (
 	"database/sql/driver"
 )
 
+func NewInt64(values ...int64) Int64 {
+	var b Int64
+	b.set = true
+
+	if len(values) > 0 {
+		b.value = &values[0]
+	}
+
+	return b
+}
+
 type Int64 struct {
 	Option[int64]
 }
@@ -28,6 +39,16 @@ func (b *Int64) Scan(value interface{}) error {
 		b.Set(sqlInt64.Int64)
 	}
 	return nil
+}
+func NewInt32(values ...int32) Int32 {
+	var b Int32
+	b.set = true
+
+	if len(values) > 0 {
+		b.value = &values[0]
+	}
+
+	return b
 }
 
 type Int32 struct {
@@ -53,6 +74,16 @@ func (i *Int32) Scan(value interface{}) error {
 		i.Set(sqlInt32.Int32)
 	}
 	return nil
+}
+func NewInt16(values ...int16) Int16 {
+	var b Int16
+	b.set = true
+
+	if len(values) > 0 {
+		b.value = &values[0]
+	}
+
+	return b
 }
 
 type Int16 struct {
