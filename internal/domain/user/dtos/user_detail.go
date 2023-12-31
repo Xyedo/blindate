@@ -266,6 +266,11 @@ func (req PatchUserDetailRequest) ToEntity() entities.UpdateUserDetail {
 	}
 }
 
+type UserInterest struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
+}
+
 type UserDetail struct {
 	UserId           string              `json:"user_id"`
 	Alias            string              `json:"alias"`
@@ -283,11 +288,11 @@ type UserDetail struct {
 	Kids             optional.Int16      `json:"kids"`
 	Work             optional.String     `json:"work"`
 
-	Hobbies            []string `json:"hobbies"`
-	MovieSeries        []string `json:"movie_series"`
-	Travels            []string `json:"travels"`
-	Sports             []string `json:"sports"`
-	ProfilePictureURLs []string `json:"profile_picture_urls"`
+	Hobbies            []UserInterest `json:"hobbies"`
+	MovieSeries        []UserInterest `json:"movie_series"`
+	Travels            []UserInterest `json:"travels"`
+	Sports             []UserInterest `json:"sports"`
+	ProfilePictureURLs []string       `json:"profile_picture_urls"`
 }
 type UserDetailGeography struct {
 	Lat float64 `json:"lat"`
@@ -295,24 +300,36 @@ type UserDetailGeography struct {
 }
 
 func NewUserDetailResponse(user entities.UserDetail) UserDetail {
-	hobbies := make([]string, 0, len(user.Hobbies))
+	hobbies := make([]UserInterest, 0, len(user.Hobbies))
 	for _, hobbie := range user.Hobbies {
-		hobbies = append(hobbies, hobbie.Hobbie)
+		hobbies = append(hobbies, UserInterest{
+			Id:   hobbie.Id,
+			Name: hobbie.Hobbie,
+		})
 	}
 
-	movieSeries := make([]string, 0, len(user.MovieSeries))
+	movieSeries := make([]UserInterest, 0, len(user.MovieSeries))
 	for _, movieSerie := range user.MovieSeries {
-		movieSeries = append(movieSeries, movieSerie.MovieSerie)
+		movieSeries = append(movieSeries, UserInterest{
+			Id:   movieSerie.Id,
+			Name: movieSerie.MovieSerie,
+		})
 	}
 
-	travels := make([]string, 0, len(user.Travels))
+	travels := make([]UserInterest, 0, len(user.Travels))
 	for _, travel := range user.Travels {
-		travels = append(travels, travel.Travel)
+		travels = append(travels, UserInterest{
+			Id:   travel.Id,
+			Name: travel.Travel,
+		})
 	}
 
-	sports := make([]string, 0, len(user.Sports))
+	sports := make([]UserInterest, 0, len(user.Sports))
 	for _, sport := range user.Sports {
-		sports = append(sports, sport.Sport)
+		sports = append(sports, UserInterest{
+			Id:   sport.Id,
+			Name: sport.Sport,
+		})
 	}
 
 	profilePicURLs := make([]string, 0, len(user.ProfilePictures))
