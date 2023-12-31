@@ -228,71 +228,76 @@ func (payload UpdateInterest) Validate(userDetailDb UserDetail) error {
 		valueNotUnique = "value is not unique"
 	)
 
-	uniqueHobbieIds := make(map[string]struct{})
+	uniqueHobbieIds := make(map[string]string)
 	uniqueHobbies := make(map[string]struct{})
 	for i := range userDetailDb.Hobbies {
-		uniqueHobbieIds[userDetailDb.Hobbies[i].Id] = struct{}{}
+		uniqueHobbieIds[userDetailDb.Hobbies[i].Id] = userDetailDb.Hobbies[i].Hobbie
 		uniqueHobbies[userDetailDb.Hobbies[i].Hobbie] = struct{}{}
 	}
 
-	uniqueMovieSerieIds := make(map[string]struct{})
+	uniqueMovieSerieIds := make(map[string]string)
 	uniqueMovieSeries := make(map[string]struct{})
 	for i := range userDetailDb.MovieSeries {
 		uniqueMovieSeries[userDetailDb.MovieSeries[i].MovieSerie] = struct{}{}
-		uniqueMovieSerieIds[userDetailDb.MovieSeries[i].Id] = struct{}{}
+		uniqueMovieSerieIds[userDetailDb.MovieSeries[i].Id] = userDetailDb.MovieSeries[i].MovieSerie
 	}
 
-	uniqueTravelingIds := make(map[string]struct{})
+	uniqueTravelingIds := make(map[string]string)
 	uniqueTravelings := make(map[string]struct{})
 	for i := range userDetailDb.Travels {
 		uniqueTravelings[userDetailDb.Travels[i].Travel] = struct{}{}
-		uniqueTravelingIds[userDetailDb.Travels[i].Id] = struct{}{}
+		uniqueTravelingIds[userDetailDb.Travels[i].Id] = userDetailDb.Travels[i].Travel
 	}
 
-	uniqueSportIds := make(map[string]struct{})
+	uniqueSportIds := make(map[string]string)
 	uniqueSports := make(map[string]struct{})
 	for i := range userDetailDb.Sports {
 		uniqueSports[userDetailDb.Sports[i].Sport] = struct{}{}
-		uniqueSportIds[userDetailDb.Sports[i].Id] = struct{}{}
+		uniqueSportIds[userDetailDb.Sports[i].Id] = userDetailDb.Sports[i].Sport
 	}
 
-	for i := range payload.Hobbies {
+	for i, hobbie := range payload.Hobbies {
 		iStr := strconv.Itoa(i)
-		if _, ok := uniqueHobbieIds[payload.Hobbies[i].Id]; !ok {
+		hobbieDb, idFound := uniqueHobbieIds[hobbie.Id]
+		if !idFound {
 			errNotFoundPayload["hobbies."+iStr] = append(errNotFoundPayload["hobbies."+iStr], valueNotFound)
-
+			continue
 		}
-		if _, ok := uniqueHobbies[payload.Hobbies[i].Hobbie]; ok {
+
+		if _, ok := uniqueHobbies[hobbie.Hobbie]; ok && hobbieDb != hobbie.Hobbie {
 			errUniquePayloads["hobbies."+iStr] = append(errUniquePayloads["hobbies."+iStr], valueNotUnique)
 		}
 	}
 
-	for i := range payload.MovieSeries {
+	for i, movieSerie := range payload.MovieSeries {
 		iStr := strconv.Itoa(i)
-		if _, ok := uniqueMovieSerieIds[payload.MovieSeries[i].Id]; !ok {
+		movieSerieDb, idFound := uniqueMovieSerieIds[movieSerie.Id]
+		if !idFound {
 			errNotFoundPayload["movie_series."+iStr] = append(errNotFoundPayload["movie_series."+iStr], valueNotFound)
 		}
-		if _, ok := uniqueMovieSeries[payload.MovieSeries[i].MovieSerie]; ok {
+		if _, ok := uniqueMovieSeries[movieSerie.MovieSerie]; ok && movieSerieDb != movieSerie.MovieSerie {
 			errUniquePayloads["movie_series."+iStr] = append(errUniquePayloads["movie_series."+iStr], valueNotUnique)
 		}
 	}
 
-	for i := range payload.Travels {
+	for i, travel := range payload.Travels {
 		iStr := strconv.Itoa(i)
-		if _, ok := uniqueTravelingIds[payload.Travels[i].Id]; !ok {
+		travelDb, idFound := uniqueTravelingIds[travel.Id]
+		if !idFound {
 			errNotFoundPayload["travels."+iStr] = append(errNotFoundPayload["travels."+iStr], valueNotFound)
 		}
-		if _, ok := uniqueMovieSeries[payload.Travels[i].Travel]; ok {
+		if _, ok := uniqueTravelingIds[travel.Travel]; ok && travelDb != travel.Travel {
 			errUniquePayloads["travels."+iStr] = append(errUniquePayloads["travels."+iStr], valueNotUnique)
 		}
 	}
 
-	for i := range payload.Sports {
+	for i, sport := range payload.Sports {
 		iStr := strconv.Itoa(i)
-		if _, ok := uniqueSportIds[payload.Sports[i].Id]; !ok {
+		sportDb, idFound := uniqueSportIds[sport.Id]
+		if !idFound {
 			errNotFoundPayload["sports."+iStr] = append(errNotFoundPayload["sports."+iStr], valueNotFound)
 		}
-		if _, ok := uniqueSports[payload.Sports[i].Sport]; ok {
+		if _, ok := uniqueSports[sport.Sport]; ok && sportDb != sport.Sport {
 			errUniquePayloads["sports."+iStr] = append(errUniquePayloads["sports."+iStr], valueNotUnique)
 		}
 	}
@@ -378,28 +383,28 @@ func (payload DeleteInterest) Validate(userDetailDb UserDetail) error {
 
 	for i, hobbieId := range payload.HobbieIds {
 		iStr := strconv.Itoa(i)
-		if _, ok := uniqueHobbies[hobbieId]; ok {
+		if _, ok := uniqueHobbies[hobbieId]; !ok {
 			errPayloads["hobbies."+iStr] = append(errPayloads["hobbies."+iStr], valueNotFound)
 		}
 	}
 
 	for i, movieSerieId := range payload.MovieSerieIds {
 		iStr := strconv.Itoa(i)
-		if _, ok := uniqueMovieSeries[movieSerieId]; ok {
+		if _, ok := uniqueMovieSeries[movieSerieId]; !ok {
 			errPayloads["movie_series."+iStr] = append(errPayloads["movie_series."+iStr], valueNotFound)
 		}
 	}
 
 	for i, travelId := range payload.TravelIds {
 		iStr := strconv.Itoa(i)
-		if _, ok := uniqueMovieSeries[travelId]; ok {
+		if _, ok := uniqueTravelings[travelId]; !ok {
 			errPayloads["travels."+iStr] = append(errPayloads["travels."+iStr], valueNotFound)
 		}
 	}
 
 	for i, sportId := range payload.SportIds {
 		iStr := strconv.Itoa(i)
-		if _, ok := uniqueSports[sportId]; ok {
+		if _, ok := uniqueSports[sportId]; !ok {
 			errPayloads["sports."+iStr] = append(errPayloads["sports."+iStr], valueNotFound)
 		}
 	}

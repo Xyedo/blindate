@@ -70,12 +70,8 @@ func UpdateHobbies(ctx context.Context, conn pg.Querier, hobbies []entities.Upda
 			return nil
 		})
 	}
-	err := conn.SendBatch(ctx, &batch).Close()
-	if err != nil {
-		return err
-	}
+	return conn.SendBatch(ctx, &batch).Close()
 
-	return nil
 }
 
 func DeleteHobbiesByIds(ctx context.Context, conn pg.Querier, ids []string) error {
@@ -84,7 +80,7 @@ func DeleteHobbiesByIds(ctx context.Context, conn pg.Querier, ids []string) erro
 	}
 
 	const deleteHobiesByIds = `
-		DELETE hobbies WHERE IN (?)
+		DELETE FROM hobbies WHERE id IN (?)
 	`
 	query, args, err := pg.In(deleteHobiesByIds, ids)
 	if err != nil {
@@ -156,21 +152,14 @@ func UpdateMovieSeries(ctx context.Context, conn pg.Querier, movieSeries []entit
 			movieSeries[i].MovieSerie,
 			now,
 			movieSeries[i].Id,
-		)
+		).Exec(func(ct pgconn.CommandTag) error {
+			if ct.RowsAffected() == 0 {
+				return errors.New("invalid")
+			}
+			return nil
+		})
 	}
-	br := conn.SendBatch(ctx, &batch)
-	defer br.Close()
-
-	ct, err := br.Exec()
-	if err != nil {
-		return err
-	}
-
-	if ct.RowsAffected() != int64(len(movieSeries)) {
-		return errors.New("something went wrong")
-	}
-
-	return nil
+	return conn.SendBatch(ctx, &batch).Close()
 }
 
 func DeleteMovieSeriesByIds(ctx context.Context, conn pg.Querier, ids []string) error {
@@ -179,7 +168,7 @@ func DeleteMovieSeriesByIds(ctx context.Context, conn pg.Querier, ids []string) 
 	}
 
 	const deleteMovieSeriesByIds = `
-		DELETE movie_series WHERE IN (?)
+		DELETE FROM movie_series WHERE id IN (?)
 	`
 	query, args, err := pg.In(deleteMovieSeriesByIds, ids)
 	if err != nil {
@@ -251,21 +240,15 @@ func UpdateTravelings(ctx context.Context, conn pg.Querier, travels []entities.U
 			travels[i].Travel,
 			now,
 			travels[i].Id,
-		)
+		).Exec(func(ct pgconn.CommandTag) error {
+			if ct.RowsAffected() == 0 {
+				return errors.New("invalid")
+			}
+			return nil
+		})
 	}
-	br := conn.SendBatch(ctx, &batch)
-	defer br.Close()
+	return conn.SendBatch(ctx, &batch).Close()
 
-	ct, err := br.Exec()
-	if err != nil {
-		return err
-	}
-
-	if ct.RowsAffected() != int64(len(travels)) {
-		return errors.New("something went wrong")
-	}
-
-	return nil
 }
 
 func DeleteTravelingByIds(ctx context.Context, conn pg.Querier, ids []string) error {
@@ -274,7 +257,7 @@ func DeleteTravelingByIds(ctx context.Context, conn pg.Querier, ids []string) er
 	}
 
 	const deleteTravelingByIds = `
-		DELETE traveling WHERE IN (?)
+		DELETE FROM traveling WHERE id IN (?)
 	`
 	query, args, err := pg.In(deleteTravelingByIds, ids)
 	if err != nil {
@@ -346,21 +329,16 @@ func UpdateSports(ctx context.Context, conn pg.Querier, sports []entities.Update
 			sports[i].Sport,
 			now,
 			sports[i].Id,
-		)
-	}
-	br := conn.SendBatch(ctx, &batch)
-	defer br.Close()
-
-	ct, err := br.Exec()
-	if err != nil {
-		return err
+		).Exec(func(ct pgconn.CommandTag) error {
+			if ct.RowsAffected() == 0 {
+				return errors.New("invalid")
+			}
+			return nil
+		})
 	}
 
-	if ct.RowsAffected() != int64(len(sports)) {
-		return errors.New("something went wrong")
-	}
+	return conn.SendBatch(ctx, &batch).Close()
 
-	return nil
 }
 
 func DeleteSportByIds(ctx context.Context, conn pg.Querier, ids []string) error {
@@ -369,7 +347,7 @@ func DeleteSportByIds(ctx context.Context, conn pg.Querier, ids []string) error 
 	}
 
 	const deleteSportByIds = `
-		DELETE sports WHERE IN (?)
+		DELETE FROM sports WHERE id IN (?)
 	`
 	query, args, err := pg.In(deleteSportByIds, ids)
 	if err != nil {
