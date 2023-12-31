@@ -60,77 +60,41 @@ func (p PostInterestRequest) Validate() error {
 	)
 }
 
-type UpdateHobbieInterest struct {
-	Id     string `json:"id"`
-	Hobbie string `json:"hobbie"`
+type UpdateInterest struct {
+	Id   string `json:"id"`
+	Name string `json:"name"`
 }
 
-func (u UpdateHobbieInterest) Validate() error {
+func (u UpdateInterest) Validate() error {
 	return validation.ValidateStruct(&u,
 		validation.Field(&u.Id, validation.Required),
-		validation.Field(&u.Hobbie, validation.Required),
-	)
-}
-
-type UpdateMovieSerieInterest struct {
-	Id         string `json:"id"`
-	MovieSerie string `json:"movie_series"`
-}
-
-func (u UpdateMovieSerieInterest) Validate() error {
-	return validation.ValidateStruct(&u,
-		validation.Field(&u.Id, validation.Required),
-		validation.Field(&u.MovieSerie, validation.Required),
-	)
-}
-
-type UpdateTravelInterest struct {
-	Id     string `json:"id"`
-	Travel string `json:"travel"`
-}
-
-func (u UpdateTravelInterest) Validate() error {
-	return validation.ValidateStruct(&u,
-		validation.Field(&u.Id, validation.Required),
-		validation.Field(&u.Travel, validation.Required),
-	)
-}
-
-type UpdateSportInterest struct {
-	Id    string `json:"id"`
-	Sport string `json:"sport"`
-}
-
-func (u UpdateSportInterest) Validate() error {
-	return validation.ValidateStruct(&u,
-		validation.Field(&u.Id, validation.Required),
-		validation.Field(&u.Sport, validation.Required),
+		validation.Field(&u.Name, validation.Required),
 	)
 }
 
 type PatchInterestRequest struct {
-	Hobbies     []UpdateHobbieInterest     `json:"hobbies"`
-	MovieSeries []UpdateMovieSerieInterest `json:"movie_series"`
-	Travels     []UpdateTravelInterest     `json:"travels"`
-	Sports      []UpdateSportInterest      `json:"sports"`
+	Hobbies     []UpdateInterest `json:"hobbies"`
+	MovieSeries []UpdateInterest `json:"movie_series"`
+	Travels     []UpdateInterest `json:"travels"`
+	Sports      []UpdateInterest `json:"sports"`
 }
 
 func (p *PatchInterestRequest) Mod() *PatchInterestRequest {
 
 	for i := range p.Hobbies {
-		p.Hobbies[i].Hobbie = strings.TrimSpace(p.Hobbies[i].Hobbie)
+		p.Hobbies[i].Name = strings.TrimSpace(p.Hobbies[i].Name)
 	}
 
 	for i := range p.MovieSeries {
-		p.MovieSeries[i].MovieSerie = strings.TrimSpace(p.MovieSeries[i].MovieSerie)
+		p.MovieSeries[i].Name = strings.TrimSpace(p.MovieSeries[i].Name)
 	}
 
 	for i := range p.Travels {
-		p.Travels[i].Travel = strings.TrimSpace(p.Travels[i].Travel)
+		p.Travels[i].Name = strings.TrimSpace(p.Travels[i].Name)
 	}
 
 	for i := range p.Sports {
-		p.Sports[i].Sport = strings.TrimSpace(p.Sports[i].Sport)
+		p.Sports[i].Name = strings.TrimSpace(p.Sports[i].Name)
 	}
 
 	return p
@@ -145,19 +109,19 @@ func (p PatchInterestRequest) Validate() error {
 	return validation.ValidateStruct(&p,
 		validation.Field(&p.Hobbies,
 			validation.Length(1, 10),
-			validation.By(validator.UniqueByStructFields(func(i int) any { return p.Hobbies[i].Hobbie })),
+			validation.By(validator.UniqueByStructFields(func(i int) any { return p.Hobbies[i].Name })),
 		),
 		validation.Field(&p.MovieSeries,
 			validation.Length(1, 10),
-			validation.By(validator.UniqueByStructFields(func(i int) any { return p.MovieSeries[i].MovieSerie })),
+			validation.By(validator.UniqueByStructFields(func(i int) any { return p.MovieSeries[i].Name })),
 		),
 		validation.Field(&p.Travels,
 			validation.Length(1, 10),
-			validation.By(validator.UniqueByStructFields(func(i int) any { return p.Travels[i].Travel })),
+			validation.By(validator.UniqueByStructFields(func(i int) any { return p.Travels[i].Name })),
 		),
 		validation.Field(&p.Sports,
 			validation.Length(1, 10),
-			validation.By(validator.UniqueByStructFields(func(i int) any { return p.Sports[i].Sport })),
+			validation.By(validator.UniqueByStructFields(func(i int) any { return p.Sports[i].Name })),
 		),
 	)
 }
@@ -165,22 +129,34 @@ func (p PatchInterestRequest) Validate() error {
 func (p PatchInterestRequest) ToEntity() entities.UpdateInterest {
 	hobbies := make([]entities.UpdateHobbie, 0, len(p.Hobbies))
 	for i := range p.Hobbies {
-		hobbies = append(hobbies, entities.UpdateHobbie(p.Hobbies[i]))
+		hobbies = append(hobbies, entities.UpdateHobbie{
+			Id:     p.Hobbies[i].Id,
+			Hobbie: p.Hobbies[i].Name,
+		})
 	}
 
 	movieSeries := make([]entities.UpdateMovieSeries, 0, len(p.MovieSeries))
 	for i := range p.MovieSeries {
-		movieSeries = append(movieSeries, entities.UpdateMovieSeries(p.MovieSeries[i]))
+		movieSeries = append(movieSeries, entities.UpdateMovieSeries{
+			Id:         p.MovieSeries[i].Id,
+			MovieSerie: p.MovieSeries[i].Name,
+		})
 	}
 
 	travels := make([]entities.UpdateTravel, 0, len(p.Travels))
 	for i := range p.Travels {
-		travels = append(travels, entities.UpdateTravel(p.Travels[i]))
+		travels = append(travels, entities.UpdateTravel{
+			Id:     p.Travels[i].Id,
+			Travel: p.Travels[i].Name,
+		})
 	}
 
 	sports := make([]entities.UpdateSport, 0, len(p.Sports))
-	for i := range p.Travels {
-		sports = append(sports, entities.UpdateSport(p.Sports[i]))
+	for i := range p.Sports {
+		sports = append(sports, entities.UpdateSport{
+			Id:    p.Sports[i].Id,
+			Sport: p.Sports[i].Name,
+		})
 	}
 
 	return entities.UpdateInterest{
