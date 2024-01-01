@@ -250,6 +250,7 @@ func (req PatchUserDetailRequest) ToEntity() entities.UpdateUserDetail {
 	})
 
 	return entities.UpdateUserDetail{
+		Alias:            req.Alias,
 		Gender:           req.Gender,
 		Geog:             geog,
 		Bio:              req.Bio,

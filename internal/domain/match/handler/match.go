@@ -11,8 +11,9 @@ import (
 
 func postCreateNewCandidateMatch(c echo.Context) error {
 	ctx := c.Request().Context()
+	requestId := ctx.Value(auth.RequestId).(string)
 
-	err := usecase.CreateCandidateMatch(ctx, c.Param("id"))
+	err := usecase.CreateCandidateMatch(ctx, requestId)
 	if err != nil {
 		return err
 	}
@@ -35,7 +36,8 @@ func getIndexMatchs(c echo.Context) error {
 		return err
 	}
 
-	matchedUsers, err := usecase.IndexMatchCandidate(ctx, c.Param("id"), queryParams.Limit, queryParams.Page)
+	requestId := ctx.Value(auth.RequestId).(string)
+	matchedUsers, err := usecase.IndexMatchCandidate(ctx, requestId, queryParams.Limit, queryParams.Page)
 	if err != nil {
 		return err
 	}

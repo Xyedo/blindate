@@ -11,7 +11,7 @@ func FindNonMatchClosestUser(ctx context.Context, conn pg.Querier, payload entit
 	const findClosestUserById = `
 	SELECT
 		ad.account_id,
-		ad.geom <-> ST_GeomFromText($2) as distance
+		ad.geog <-> ST_GeomFromText($2) as distance
 	FROM account_detail ad
 	WHERE 
 		ad.account_id != $1 AND
@@ -19,19 +19,18 @@ func FindNonMatchClosestUser(ctx context.Context, conn pg.Querier, payload entit
 			SELECT 1
 			FROM match m
 			WHERE 
-				m.request_to = ad.id OR
-				m.request_from = ad.id
+				m.request_to = ad.account_id OR
+				m.request_from = ad.account_id
 		)
 	ORDER BY distance
 	OFFSET $3
 	LIMIT $4
 	`
 
-	offset := payload.Page * payload.Limit
 	rows, err := conn.Query(ctx, findClosestUserById,
 		payload.UserId,
 		payload.Geog,
-		offset,
+		payload.Pagination.Offset(),
 		payload.Limit,
 	)
 	if err != nil {

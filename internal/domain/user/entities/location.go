@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/xyedo/blindate/pkg/pagination"
 )
 
 type Geography struct {
@@ -58,8 +60,7 @@ type CreateLocation struct {
 type FindClosestUser struct {
 	UserId string
 	Geog   Geography
-	Page   int
-	Limit  int
+	pagination.Pagination
 }
 
 type ClosestUser struct {

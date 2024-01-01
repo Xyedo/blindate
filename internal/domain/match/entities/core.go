@@ -7,6 +7,7 @@ import (
 	"github.com/xyedo/blindate/pkg/optional"
 )
 
+type Matchs []Match
 type Match struct {
 	Id                    string
 	RequestFrom           string
@@ -24,5 +25,6 @@ type Match struct {
 
 type MatchUser struct {
 	Distance float64
+	MatchId  string
 	userentities.UserDetail
 }

@@ -33,3 +33,7 @@ func File() string {
 func Attachment() string {
 	return "attachment_" + nanoid()
 }
+
+func Match() string {
+	return "match_" + nanoid()
+}

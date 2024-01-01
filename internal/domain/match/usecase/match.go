@@ -6,13 +6,16 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	apperror "github.com/xyedo/blindate/internal/common/app-error"
-	matchEntities "github.com/xyedo/blindate/internal/domain/match/entities"
+	conversationEntities "github.com/xyedo/blindate/internal/domain/conversation/entities"
+	conversationRepo "github.com/xyedo/blindate/internal/domain/conversation/repository"
+	"github.com/xyedo/blindate/internal/domain/match/entities"
 	"github.com/xyedo/blindate/internal/domain/match/repository"
 	matchRepo "github.com/xyedo/blindate/internal/domain/match/repository"
 	userEntities "github.com/xyedo/blindate/internal/domain/user/entities"
 	userRepo "github.com/xyedo/blindate/internal/domain/user/repository"
 	userUsecase "github.com/xyedo/blindate/internal/domain/user/usecase"
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
+	"github.com/xyedo/blindate/pkg/pagination"
 )
 
 func CreateCandidateMatch(ctx context.Context, requestId string) error {
@@ -25,8 +28,10 @@ func CreateCandidateMatch(ctx context.Context, requestId string) error {
 		closestUserIds, err := userRepo.FindNonMatchClosestUser(ctx, tx, userEntities.FindClosestUser{
 			UserId: user.UserId,
 			Geog:   user.Geog,
-			Page:   1,
-			Limit:  20,
+			Pagination: pagination.Pagination{
+				Page:  1,
+				Limit: 10,
+			},
 		})
 
 		if err != nil {
@@ -37,36 +42,44 @@ func CreateCandidateMatch(ctx context.Context, requestId string) error {
 	})
 }
 
-func IndexMatchCandidate(ctx context.Context, requestId string, limit, page int) ([]matchEntities.MatchUser, error) {
+func IndexMatchCandidate(ctx context.Context, requestId string, limit, page int) ([]entities.MatchUser, error) {
 	conn, err := pg.GetConnectionPool(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer conn.Release()
 
-	user, err := userRepo.GetUserDetailById(ctx, conn, requestId)
+	requestUser, err := userRepo.GetUserDetailById(ctx, conn, requestId)
 	if err != nil {
 		return nil, err
 	}
 
-	matchUserIds, err := matchRepo.FindMatchUserIdsByStatus(ctx, conn,
-		matchEntities.FindUserMatchByStatus{
-			UserId:   user.UserId,
-			Statuses: []matchEntities.MatchStatus{matchEntities.MatchStatusUnknown, matchEntities.MatchStatusRequested},
-			Limit:    limit,
-			Page:     page,
+	matchs, err := matchRepo.FindMatchsByStatus(ctx, conn,
+		entities.FindUserMatchByStatus{
+			UserId: requestUser.UserId,
+			Statuses: []entities.MatchStatus{
+				entities.MatchStatusUnknown,
+				entities.MatchStatusRequested,
+			},
+			Limit: limit,
+			Page:  page,
 		},
 	)
 	if err != nil {
 		return nil, err
 	}
 
+	matchUserIds, matchUserIdToMatchId := matchs.ToUserIds(requestId)
 	userDetails, err := userUsecase.GetUserDetails(ctx, matchUserIds)
 	if err != nil {
 		return nil, err
 	}
 
-	return matchEntities.NewMatchUsers(user.Geog, userDetails), nil
+	return entities.NewMatchUsers(
+		requestUser,
+		userDetails,
+		matchUserIdToMatchId,
+	), nil
 }
 
 func TransitionRequestStatus(ctx context.Context, requestId, matchId string, swipe bool) error {
@@ -76,7 +89,7 @@ func TransitionRequestStatus(ctx context.Context, requestId, matchId string, swi
 			return err
 		}
 
-		match, err := matchRepo.GetMatchById(ctx, tx, matchId, matchEntities.GetMatchOption{
+		match, err := matchRepo.GetMatchById(ctx, tx, matchId, entities.GetMatchOption{
 			PessimisticLocking: true,
 		})
 		if err != nil {
@@ -89,28 +102,39 @@ func TransitionRequestStatus(ctx context.Context, requestId, matchId string, swi
 		}
 
 		switch match.RequestStatus {
-		case matchEntities.MatchStatusUnknown:
+		case entities.MatchStatusUnknown:
 			if swipe {
-				match.RequestStatus = matchEntities.MatchStatusRequested
+				match.RequestStatus = entities.MatchStatusRequested
 			} else {
-				match.RequestStatus = matchEntities.MatchStatusDeclined
+				match.RequestStatus = entities.MatchStatusDeclined
 			}
 
-		case matchEntities.MatchStatusRequested:
+		case entities.MatchStatusRequested:
 			if match.UpdatedBy.MustGet() == requester.UserId {
 				return apperror.BadPayload(apperror.Payload{
-					Status:  matchEntities.ErrCodeMatchStatusInvalid,
+					Status:  entities.ErrCodeMatchStatusInvalid,
 					Message: "invalid status",
 				})
 			}
 
 			if swipe {
-				match.RequestStatus = matchEntities.MatchStatusAccepted
+				match.RequestStatus = entities.MatchStatusAccepted
+
+				err = conversationRepo.CreateConversation(ctx, tx, conversationEntities.Conversation{
+					MatchId:   match.Id,
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+					Version:   1,
+				})
+				if err != nil {
+					return err
+				}
+
 			} else {
-				match.RequestStatus = matchEntities.MatchStatusDeclined
+				match.RequestStatus = entities.MatchStatusDeclined
 			}
 
-		case matchEntities.MatchStatusDeclined, matchEntities.MatchStatusAccepted:
+		case entities.MatchStatusDeclined, entities.MatchStatusAccepted:
 			return nil
 		}
 

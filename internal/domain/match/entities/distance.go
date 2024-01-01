@@ -5,16 +5,22 @@ import (
 	userentities "github.com/xyedo/blindate/internal/domain/user/entities"
 )
 
-func NewMatchUsers(matchGeo userentities.Geography, userDetails userentities.UserDetails) []MatchUser {
-	matchUsers := make([]MatchUser, 0, len(userDetails))
+func NewMatchUsers(requestUser userentities.UserDetail, matchUserDetails userentities.UserDetails, matchUserIdToMatchId map[string]string) []MatchUser {
+	matchUsers := make([]MatchUser, 0, len(matchUserDetails))
 
-	for _, userDetail := range userDetails {
+	for _, matchUserDetail := range matchUserDetails {
+		matchId, ok := matchUserIdToMatchId[matchUserDetail.UserId]
+		if !ok {
+			panic("should not happened")
+		}
+
 		matchUsers = append(matchUsers, MatchUser{
-			UserDetail: userDetail,
+			MatchId:    matchId,
+			UserDetail: matchUserDetail,
 			Distance: geo.
-				NewPointFromLatLng(userDetail.Geog.Lat, userDetail.Geog.Lng).
+				NewPointFromLatLng(matchUserDetail.Geog.Lat, matchUserDetail.Geog.Lng).
 				DistanceFrom(
-					geo.NewPoint(matchGeo.Lat, matchGeo.Lng),
+					geo.NewPoint(requestUser.Geog.Lat, requestUser.Geog.Lng),
 				),
 		})
 	}

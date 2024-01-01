@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	matchHandler "github.com/xyedo/blindate/internal/domain/match/handler"
 	userHandler "github.com/xyedo/blindate/internal/domain/user/handler/external"
 	internalUserHandler "github.com/xyedo/blindate/internal/domain/user/handler/intrnl"
 
@@ -19,6 +20,7 @@ func NewEcho() *Server {
 	e.HTTPErrorHandler = EchoErrorHandler
 
 	e.Use(
+		middleware.Logger(),
 		middleware.Recover(),
 		middleware.CORS(),
 		middleware.BodyLimit("4M"),
@@ -29,11 +31,14 @@ func NewEcho() *Server {
 	})
 
 	apiv1 := e.Group("/v1")
-	internalRouteHandler(apiv1)
+	{
+		internalRouteHandler(apiv1)
 
-	apiv1.Use(echomiddleware.Guard)
+		apiv1.Use(echomiddleware.Guard)
 
-	userHandler.Route(apiv1)
+		userHandler.Route(apiv1)
+		matchHandler.Route(apiv1)
+	}
 
 	return &Server{
 		server: &http.Server{

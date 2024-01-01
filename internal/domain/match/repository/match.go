@@ -7,13 +7,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	apperror "github.com/xyedo/blindate/internal/common/app-error"
+	"github.com/xyedo/blindate/internal/common/ids"
 	matchEntities "github.com/xyedo/blindate/internal/domain/match/entities"
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 	"github.com/xyedo/blindate/pkg/optional"
 )
 
-func CreateCandidateMatchsById(ctx context.Context, conn pg.Querier, userId string, candidateMatchsIds []string) error {
-	if len(candidateMatchsIds) == 0 {
+func CreateCandidateMatchsById(ctx context.Context, conn pg.Querier, userId string, candidateUserIds []string) error {
+	if len(candidateUserIds) == 0 {
 		return apperror.NotFound(apperror.Payload{
 			Status:  matchEntities.ErrCodeMatchCandidateEmpty,
 			Message: "empty candidate, pls try again later!",
@@ -23,6 +24,7 @@ func CreateCandidateMatchsById(ctx context.Context, conn pg.Querier, userId stri
 	rowAffected, err := conn.CopyFrom(ctx,
 		pgx.Identifier{"match"},
 		[]string{
+			"id",
 			"request_from",
 			"request_to",
 			"request_status",
@@ -31,10 +33,11 @@ func CreateCandidateMatchsById(ctx context.Context, conn pg.Querier, userId stri
 			"updated_by",
 			"version",
 		},
-		pgx.CopyFromSlice(len(candidateMatchsIds), func(i int) ([]any, error) {
+		pgx.CopyFromSlice(len(candidateUserIds), func(i int) ([]any, error) {
 			return []any{
+				ids.Match(),
 				userId,
-				candidateMatchsIds[i],
+				candidateUserIds[i],
 				matchEntities.MatchStatusUnknown,
 				time.Now(),
 				time.Now(),
@@ -48,7 +51,7 @@ func CreateCandidateMatchsById(ctx context.Context, conn pg.Querier, userId stri
 		return err
 	}
 
-	if rowAffected != int64(len(candidateMatchsIds)) {
+	if rowAffected != int64(len(candidateUserIds)) {
 		return errors.New("something went wrong")
 	}
 
@@ -56,20 +59,30 @@ func CreateCandidateMatchsById(ctx context.Context, conn pg.Querier, userId stri
 
 }
 
-func FindMatchUserIdsByStatus(ctx context.Context, conn pg.Querier, payload matchEntities.FindUserMatchByStatus) ([]string, error) {
+func FindMatchsByStatus(ctx context.Context, conn pg.Querier, payload matchEntities.FindUserMatchByStatus) (matchEntities.Matchs, error) {
 	const findUserMatchByStatus = `
 	SELECT 
-		m.request_from
-		m.request_to
+		m.id,
+		m.request_from,
+		m.request_to,
+		m.request_status,
+		m.accepted_at,
+		m.reveal_status,
+		m.revealed_declined_count,
+		m.revealed_at,
+		m.created_at,
+		m.updated_at,
+		m.updated_by,
+		m.version
 	FROM match m
 	JOIN account_detail ad ON
 	ad.account_id = m.request_from OR
 	ad.account_id = m.request_to
 	WHERE 
 	ad.account_id = ?  AND
-	m.status IN (?) AND
+	m.request_status IN (?) AND
 	CASE 
-		WHEN m.status = 'REQUESTED' THEN m.updated_by != ? 
+		WHEN m.request_status = 'REQUESTED' THEN m.updated_by != ? 
 		ELSE TRUE 
 	END
 	LIMIT ?
@@ -89,30 +102,37 @@ func FindMatchUserIdsByStatus(ctx context.Context, conn pg.Querier, payload matc
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	matchUserIds := make([]string, 0)
+	matchs := make([]matchEntities.Match, 0)
 	for rows.Next() {
-		var (
-			requestFrom, requestTo string
+		var match matchEntities.Match
+		var revealStatus optional.String
+		err := rows.Scan(
+			&match.Id,
+			&match.RequestFrom,
+			&match.RequestTo,
+			&match.RequestStatus,
+			&match.AcceptedAt,
+			&revealStatus,
+			&match.RevealedDeclinedCount,
+			&match.RevealedAt,
+			&match.CreatedAt,
+			&match.UpdatedAt,
+			&match.UpdatedBy,
+			&match.Version,
 		)
-		err := rows.Scan(&requestFrom, &requestTo)
 		if err != nil {
 			return nil, err
 		}
-		if requestFrom == payload.UserId {
-			matchUserIds = append(matchUserIds, requestTo)
-			continue
-		}
-		if requestTo == payload.UserId {
-			matchUserIds = append(matchUserIds, requestFrom)
-			continue
-		}
+		revealStatus.If(func(s string) {
+			match.RevealStatus.Set(matchEntities.MatchStatus(s))
+		})
 
-		matchUserIds = append(matchUserIds, requestFrom, requestTo)
+		matchs = append(matchs, match)
 	}
-	defer rows.Close()
 
-	return matchUserIds, nil
+	return matchs, nil
 }
 
 func GetMatchById(ctx context.Context, conn pg.Querier, id string, opts ...matchEntities.GetMatchOption) (matchEntities.Match, error) {
@@ -128,7 +148,7 @@ func GetMatchById(ctx context.Context, conn pg.Querier, id string, opts ...match
 		revealed_at,
 		created_at,
 		updated_at,
-		upddated_by,
+		updated_by,
 		version
 	FROM match
 	WHERE id = $1 
