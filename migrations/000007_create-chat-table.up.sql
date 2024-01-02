@@ -6,12 +6,11 @@ CREATE TABLE chat (
   reply_to TEXT REFERENCES chat(id) ON DELETE SET NULL,
   sent_at TIMESTAMPTZ NOT NULL,
   seen_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL,
   version BIGINT NOT NULL DEFAULT 0
 );
 
--- CREATE INDEX ON chat (conversation_id, created DESC, id);
+CREATE INDEX ON chat (conversation_id, sent_at DESC, id);
 
 
 

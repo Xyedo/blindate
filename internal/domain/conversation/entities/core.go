@@ -1,6 +1,10 @@
 package entities
 
-import "time"
+import (
+	"time"
+
+	"github.com/xyedo/blindate/pkg/optional"
+)
 
 type Conversation struct {
 	MatchId   string
@@ -9,5 +13,20 @@ type Conversation struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Version   int64
+
+	//computed value
+	Recepient RecepientUser
+	Chats     []Chat
 }
 
+type Chat struct {
+	Id             string
+	ConversationId string
+	Author         string
+	Messages       string
+	ReplyTo        optional.String
+	SentAt         time.Time
+	SeenAt         optional.Time
+	UpdatedAt      time.Time
+	Version        int
+}
