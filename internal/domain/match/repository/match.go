@@ -59,7 +59,9 @@ func CreateCandidateMatchsById(ctx context.Context, conn pg.Querier, userId stri
 
 }
 
-func FindMatchsByStatus(ctx context.Context, conn pg.Querier, payload matchEntities.FindUserMatchByStatus) (matchEntities.Matchs, error) {
+// FindMatchsByStatus
+// return match, hasNext, error
+func FindMatchsByStatus(ctx context.Context, conn pg.Querier, payload matchEntities.FindUserMatchByStatus) (matchEntities.Matchs, bool, error) {
 	const findUserMatchByStatus = `
 	SELECT 
 		m.id,
@@ -89,18 +91,21 @@ func FindMatchsByStatus(ctx context.Context, conn pg.Querier, payload matchEntit
 	OFFSET ?
 	`
 
-	offset := payload.Limit*payload.Page - payload.Limit
 	query, args, err := pg.In(
 		findUserMatchByStatus,
-		payload.UserId, payload.Statuses, payload.UserId, payload.Limit, offset,
+		payload.UserId,
+		payload.Statuses,
+		payload.UserId,
+		payload.Pagination.Limit+1,
+		payload.Pagination.Offset(),
 	)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	rows, err := conn.Query(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	defer rows.Close()
 
@@ -123,7 +128,7 @@ func FindMatchsByStatus(ctx context.Context, conn pg.Querier, payload matchEntit
 			&match.Version,
 		)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		revealStatus.If(func(s string) {
 			match.RevealStatus.Set(matchEntities.MatchStatus(s))
@@ -132,7 +137,12 @@ func FindMatchsByStatus(ctx context.Context, conn pg.Querier, payload matchEntit
 		matchs = append(matchs, match)
 	}
 
-	return matchs, nil
+	var hasNext bool
+	if len(matchs) > payload.Pagination.Limit {
+		hasNext = true
+	}
+
+	return matchs[:payload.Pagination.Limit], hasNext, nil
 }
 
 func GetMatchById(ctx context.Context, conn pg.Querier, id string, opts ...matchEntities.GetMatchOption) (matchEntities.Match, error) {

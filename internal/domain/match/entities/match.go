@@ -1,10 +1,11 @@
 package entities
 
+import "github.com/xyedo/blindate/pkg/pagination"
+
 type FindUserMatchByStatus struct {
-	UserId   string
-	Statuses []MatchStatus
-	Limit    int
-	Page     int
+	UserId     string
+	Statuses   []MatchStatus
+	Pagination pagination.Pagination
 }
 type GetMatchOption struct {
 	PessimisticLocking bool

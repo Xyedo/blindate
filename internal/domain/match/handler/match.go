@@ -7,6 +7,7 @@ import (
 	"github.com/xyedo/blindate/internal/domain/match/dtos"
 	"github.com/xyedo/blindate/internal/domain/match/usecase"
 	"github.com/xyedo/blindate/internal/infrastructure/auth"
+	"github.com/xyedo/blindate/pkg/pagination"
 )
 
 func postCreateNewCandidateMatch(c echo.Context) error {
@@ -37,14 +38,18 @@ func getIndexMatchs(c echo.Context) error {
 	}
 
 	requestId := ctx.Value(auth.RequestId).(string)
-	matchedUsers, err := usecase.IndexMatchCandidate(ctx, requestId, queryParams.Limit, queryParams.Page)
+	matchedUsers, hasNext, err := usecase.IndexMatchCandidate(ctx, requestId, pagination.Pagination(queryParams))
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, map[string]any{
-		"data": matchedUsers,
-	})
+	return c.JSON(http.StatusOK,
+		dtos.NewIndexMatchResponse(
+			hasNext,
+			pagination.Pagination(queryParams),
+			matchedUsers,
+		),
+	)
 }
 
 func putTransitionRequestStatus(c echo.Context) error {

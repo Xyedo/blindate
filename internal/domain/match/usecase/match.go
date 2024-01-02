@@ -42,44 +42,43 @@ func CreateCandidateMatch(ctx context.Context, requestId string) error {
 	})
 }
 
-func IndexMatchCandidate(ctx context.Context, requestId string, limit, page int) ([]entities.MatchUser, error) {
+func IndexMatchCandidate(ctx context.Context, requestId string, pagination pagination.Pagination) ([]entities.MatchUser, bool, error) {
 	conn, err := pg.GetConnectionPool(ctx)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	defer conn.Release()
 
 	requestUser, err := userRepo.GetUserDetailById(ctx, conn, requestId)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	matchs, err := matchRepo.FindMatchsByStatus(ctx, conn,
+	matchs, hasNext, err := matchRepo.FindMatchsByStatus(ctx, conn,
 		entities.FindUserMatchByStatus{
 			UserId: requestUser.UserId,
 			Statuses: []entities.MatchStatus{
 				entities.MatchStatusUnknown,
 				entities.MatchStatusRequested,
 			},
-			Limit: limit,
-			Page:  page,
+			Pagination: pagination,
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	matchUserIds, matchUserIdToMatchId := matchs.ToUserIds(requestId)
 	userDetails, err := userUsecase.GetUserDetails(ctx, matchUserIds)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	return entities.NewMatchUsers(
 		requestUser,
 		userDetails,
 		matchUserIdToMatchId,
-	), nil
+	), hasNext, nil
 }
 
 func TransitionRequestStatus(ctx context.Context, requestId, matchId string, swipe bool) error {

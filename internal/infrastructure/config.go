@@ -15,6 +15,7 @@ type config struct {
 	Host    string
 	Port    int
 	Env     string
+	BaseURL string
 	AWS     AWS
 	Postgre Postgre
 	Clerk   Clerk
@@ -71,6 +72,7 @@ func (c config) validate() error {
 		validation.Field(&c.Host, validation.Required),
 		validation.Field(&c.Port, validation.Required),
 		validation.Field(&c.Env, validation.Required),
+		validation.Field(&c.BaseURL, validation.Required),
 		validation.Field(&c.AWS),
 		validation.Field(&c.Postgre),
 		validation.Field(&c.Clerk),
@@ -85,6 +87,7 @@ func LoadConfig(filenames ...string) {
 	flag.StringVar(&Config.Host, "host", os.Getenv("APP_HOST"), "application host")
 	flag.IntVar(&Config.Port, "port", appPort, "API server port")
 	flag.StringVar(&Config.Env, "env", os.Getenv("APP_ENV"), "get env")
+	flag.StringVar(&Config.BaseURL, "base-url", os.Getenv("APP_BASE_URL"), "get env")
 
 	//AWS S3
 	flag.StringVar(&Config.AWS.AccessKeyId, "aws-access-key-id", os.Getenv("AWS_ACCESS_KEY_ID"), "S3 bucket name")

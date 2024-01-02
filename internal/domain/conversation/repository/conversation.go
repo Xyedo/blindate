@@ -44,7 +44,9 @@ func CreateConversation(ctx context.Context, conn pg.Querier, payload entities.C
 	return nil
 }
 
-func FindConversationsByUserId(ctx context.Context, conn pg.Querier, userId string, pagination pagination.Pagination) (entities.ConversationIndex, error) {
+// FindConversationsByUserId
+// return conversationIndex, hasNext for pagination, error
+func FindConversationsByUserId(ctx context.Context, conn pg.Querier, userId string, pagination pagination.Pagination) (entities.ConversationIndex, bool, error) {
 	const findConversationsByUserId = `
 	SELECT
 		conv.match_id,
@@ -97,9 +99,9 @@ func FindConversationsByUserId(ctx context.Context, conn pg.Querier, userId stri
 	LIMIT $3
 	`
 
-	rows, err := conn.Query(ctx, findConversationsByUserId, userId, pagination.Offset(), pagination.Limit)
+	rows, err := conn.Query(ctx, findConversationsByUserId, userId, pagination.Offset(), pagination.Limit+1)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 	defer rows.Close()
 
@@ -127,16 +129,23 @@ func FindConversationsByUserId(ctx context.Context, conn pg.Querier, userId stri
 			&conversation.LastChat.Version,
 		)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 
 		conversationIndex = append(conversationIndex, conversation)
 	}
 
-	return conversationIndex, nil
+	var hasNext bool
+	if len(conversationIndex) > pagination.Limit {
+		hasNext = true
+	}
+
+	return conversationIndex[:pagination.Limit], hasNext, nil
 }
 
-func FindChatsByConversationId(ctx context.Context, conn pg.Querier, payload entities.IndexChatPayload) (entities.Conversation, error) {
+// FindConversationsByUserId
+// return conversation, hasNext, hasPrev for pagination, error
+func FindChatsByConversationId(ctx context.Context, conn pg.Querier, payload entities.IndexChatPayload) (entities.Conversation, bool, bool, error) {
 	const findConverastionById = `
 	SELECT
 		conv.match_id,
@@ -198,6 +207,7 @@ func FindChatsByConversationId(ctx context.Context, conn pg.Querier, payload ent
 			AND (sent_at, id) < ($3,$2)
 			AND (sent_at, id) > ($5,$4)
 		LIMIT $6
+		ORDER BY sent_at DESC, id DESC
 	`
 	batch.
 		Queue(
@@ -236,11 +246,75 @@ func FindChatsByConversationId(ctx context.Context, conn pg.Querier, payload ent
 			return nil
 		})
 
-	err := conn.SendBatch(ctx, &batch).Close()
-	if err != nil {
-		return entities.Conversation{}, err
+	var hasNext bool
+	if payload.Next.ChatId.IsPresent() && payload.Next.SentAt.IsPresent() {
+		const checkHasNext = `
+			SELECT count(1)
+		FROM chat
+		WHERE 
+			conversation_id = $1 
+			AND (sent_at, id) < ($3,$2)
+		LIMIT $4
+		ORDER BY sent_at DESC, id DESC
+		`
+
+		batch.
+			Queue(checkHasNext,
+				payload.ConversationId,
+				payload.Next.ChatId,
+				payload.Next.SentAt,
+				payload.Limit,
+			).
+			QueryRow(func(row pgx.Row) error {
+				var count int64
+				err := row.Scan(&count)
+				if err != nil {
+					return err
+				}
+
+				hasNext = count != 0
+				return nil
+			})
+
 	}
 
-	return conversation, nil
+	var hasPrev bool
+	if payload.Prev.ChatId.IsPresent() && payload.Prev.SentAt.IsPresent() {
+		const checkHasPrev = `
+			SELECT count(1)
+		FROM chat
+		WHERE 
+			conversation_id = $1 
+			AND (sent_at, id) > ($3,$2)
+		LIMIT $4
+		ORDER BY sent_at DESC, id DESC
+		`
+
+		batch.
+			Queue(checkHasPrev,
+				payload.ConversationId,
+				payload.Prev.ChatId,
+				payload.Prev.SentAt,
+				payload.Limit,
+			).
+			QueryRow(func(row pgx.Row) error {
+				var count int64
+				err := row.Scan(&count)
+				if err != nil {
+					return err
+				}
+
+				hasPrev = count != 0
+				return nil
+			})
+
+	}
+
+	err := conn.SendBatch(ctx, &batch).Close()
+	if err != nil {
+		return entities.Conversation{}, false, false, err
+	}
+
+	return conversation, hasNext, hasPrev, nil
 
 }

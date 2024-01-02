@@ -14,18 +14,18 @@ import (
 	"github.com/xyedo/blindate/pkg/pagination"
 )
 
-func IndexConversation(ctx context.Context, requestId string, page, limit int) (entities.ConversationIndex, error) {
+func IndexConversation(ctx context.Context, requestId string, page, limit int) (entities.ConversationIndex, bool, error) {
 	conn, err := pg.GetConnectionPool(ctx)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	_, err = userRepo.GetUserDetailById(ctx, conn, requestId)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	convos, err := repository.FindConversationsByUserId(ctx, conn,
+	convos, hasNext, err := repository.FindConversationsByUserId(ctx, conn,
 		requestId,
 		pagination.Pagination{
 			Page:  page,
@@ -33,14 +33,14 @@ func IndexConversation(ctx context.Context, requestId string, page, limit int) (
 		},
 	)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	fileIds, fileIdToConvosIdx := convos.ToFileIds()
 	if len(fileIds) > 0 {
 		files, err := attachmentRepo.GetFileByIds(ctx, conn, fileIds)
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 
 		var wg sync.WaitGroup
@@ -65,46 +65,46 @@ func IndexConversation(ctx context.Context, requestId string, page, limit int) (
 
 		for _, err := range errs {
 			if err != nil {
-				return nil, err
+				return nil, false, err
 			}
 		}
 	}
 
-	return convos, nil
+	return convos, hasNext, nil
 }
 
-func IndexChatByConversationId(ctx context.Context, payload entities.IndexChatPayload) (entities.Conversation, error) {
+func IndexChatByConversationId(ctx context.Context, payload entities.IndexChatPayload) (entities.Conversation, bool, bool, error) {
 	conn, err := pg.GetConnectionPool(ctx)
 	if err != nil {
-		return entities.Conversation{}, err
+		return entities.Conversation{}, false, false, err
 	}
 
 	_, err = userRepo.GetUserDetailById(ctx, conn, payload.RequestId)
 	if err != nil {
-		return entities.Conversation{}, err
+		return entities.Conversation{}, false, false, err
 	}
 
-	conv, err := repository.FindChatsByConversationId(ctx, conn, payload)
+	conv, hasNext, hasPrev, err := repository.FindChatsByConversationId(ctx, conn, payload)
 	if err != nil {
-		return entities.Conversation{}, err
+		return entities.Conversation{}, false, false, err
 	}
 
 	fileId, ok := conv.Recepient.FileId.Get()
 	if !ok {
-		return conv, nil
+		return conv, hasNext, hasPrev, nil
 	}
 
 	files, err := attachmentRepo.GetFileByIds(ctx, conn, []string{fileId})
 	if err != nil {
-		return entities.Conversation{}, err
+		return entities.Conversation{}, false, false, err
 	}
 
 	presignedURL, err := s3.Manager.GetPresignedUrl(ctx, files[0].BlobLink, 1*time.Hour)
 	if err != nil {
-		return entities.Conversation{}, err
+		return entities.Conversation{}, false, false, err
 	}
 
 	conv.Recepient.Url = presignedURL
 
-	return conv, nil
+	return conv, hasNext, hasPrev, nil
 }
