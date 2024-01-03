@@ -274,7 +274,9 @@ func (payload UpdateInterest) Validate(userDetailDb UserDetail) error {
 		movieSerieDb, idFound := uniqueMovieSerieIds[movieSerie.Id]
 		if !idFound {
 			errNotFoundPayload["movie_series."+iStr] = append(errNotFoundPayload["movie_series."+iStr], valueNotFound)
+			continue
 		}
+
 		if _, ok := uniqueMovieSeries[movieSerie.MovieSerie]; ok && movieSerieDb != movieSerie.MovieSerie {
 			errUniquePayloads["movie_series."+iStr] = append(errUniquePayloads["movie_series."+iStr], valueNotUnique)
 		}
@@ -285,7 +287,9 @@ func (payload UpdateInterest) Validate(userDetailDb UserDetail) error {
 		travelDb, idFound := uniqueTravelingIds[travel.Id]
 		if !idFound {
 			errNotFoundPayload["travels."+iStr] = append(errNotFoundPayload["travels."+iStr], valueNotFound)
+			continue
 		}
+
 		if _, ok := uniqueTravelingIds[travel.Travel]; ok && travelDb != travel.Travel {
 			errUniquePayloads["travels."+iStr] = append(errUniquePayloads["travels."+iStr], valueNotUnique)
 		}
@@ -296,6 +300,7 @@ func (payload UpdateInterest) Validate(userDetailDb UserDetail) error {
 		sportDb, idFound := uniqueSportIds[sport.Id]
 		if !idFound {
 			errNotFoundPayload["sports."+iStr] = append(errNotFoundPayload["sports."+iStr], valueNotFound)
+			continue
 		}
 		if _, ok := uniqueSports[sport.Sport]; ok && sportDb != sport.Sport {
 			errUniquePayloads["sports."+iStr] = append(errUniquePayloads["sports."+iStr], valueNotUnique)

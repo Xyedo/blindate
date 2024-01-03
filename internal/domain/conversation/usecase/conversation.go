@@ -19,6 +19,7 @@ func IndexConversation(ctx context.Context, requestId string, page, limit int) (
 	if err != nil {
 		return nil, false, err
 	}
+	defer conn.Release()
 
 	_, err = userRepo.GetUserDetailById(ctx, conn, requestId)
 	if err != nil {
@@ -78,6 +79,7 @@ func IndexChatByConversationId(ctx context.Context, payload entities.IndexChatPa
 	if err != nil {
 		return entities.Conversation{}, false, false, err
 	}
+	defer conn.Release()
 
 	_, err = userRepo.GetUserDetailById(ctx, conn, payload.RequestId)
 	if err != nil {
