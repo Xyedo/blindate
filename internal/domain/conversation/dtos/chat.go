@@ -87,23 +87,6 @@ func (params IndexChatQueryParams) ToEntity(requestId, conversationId string) en
 	}
 }
 
-func validateCursor(value any) error {
-	value, isNil := validation.Indirect(value)
-	if isNil || validation.IsEmpty(value) {
-		return nil
-	}
-
-	_, err := pagination.NewCursorFromBase64(value.(string))
-	if err != nil {
-		if errors.Is(err, pagination.ErrInvalidCursorFormat) {
-			return errors.New("invalid format")
-		}
-		return err
-	}
-
-	return nil
-}
-
 type IndexChatPayload struct {
 	HasNext, HasPrev bool
 	Conv             entities.Conversation
@@ -186,4 +169,21 @@ func NewIndexChatResponse(payload IndexChatPayload) IndexChatResponse {
 			Chats:     chats,
 		},
 	}
+}
+
+func validateCursor(value any) error {
+	value, isNil := validation.Indirect(value)
+	if isNil || validation.IsEmpty(value) {
+		return nil
+	}
+
+	_, err := pagination.NewCursorFromBase64(value.(string))
+	if err != nil {
+		if errors.Is(err, pagination.ErrInvalidCursorFormat) {
+			return errors.New("invalid format")
+		}
+		return err
+	}
+
+	return nil
 }
