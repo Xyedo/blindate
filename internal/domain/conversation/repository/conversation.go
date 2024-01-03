@@ -246,6 +246,17 @@ func FindChatsByConversationId(ctx context.Context, conn pg.Querier, payload ent
 			return nil
 		})
 
+	err := conn.SendBatch(ctx, &batch).Close()
+	if err != nil {
+		return entities.Conversation{}, false, false, err
+	}
+
+	if len(conversation.Chats) == 0 {
+		return conversation, false, false, nil
+	}
+
+	batch = pgx.Batch{}
+
 	var hasNext bool
 	if payload.Next.ChatId.IsPresent() && payload.Next.SentAt.IsPresent() {
 		const checkHasNext = `
@@ -258,11 +269,13 @@ func FindChatsByConversationId(ctx context.Context, conn pg.Querier, payload ent
 		ORDER BY sent_at DESC, id DESC
 		`
 
+		lastChat := conversation.Chats[len(conversation.Chats)-1]
+
 		batch.
 			Queue(checkHasNext,
 				payload.ConversationId,
-				payload.Next.ChatId,
-				payload.Next.SentAt,
+				lastChat.Id,
+				lastChat.SentAt,
 				payload.Limit,
 			).
 			QueryRow(func(row pgx.Row) error {
@@ -287,14 +300,13 @@ func FindChatsByConversationId(ctx context.Context, conn pg.Querier, payload ent
 			conversation_id = $1 
 			AND (sent_at, id) > ($3,$2)
 		LIMIT $4
-		ORDER BY sent_at DESC, id DESC
 		`
-
+		firstChat := conversation.Chats[0]
 		batch.
 			Queue(checkHasPrev,
 				payload.ConversationId,
-				payload.Prev.ChatId,
-				payload.Prev.SentAt,
+				firstChat.Id,
+				firstChat.SentAt,
 				payload.Limit,
 			).
 			QueryRow(func(row pgx.Row) error {
@@ -310,7 +322,7 @@ func FindChatsByConversationId(ctx context.Context, conn pg.Querier, payload ent
 
 	}
 
-	err := conn.SendBatch(ctx, &batch).Close()
+	err = conn.SendBatch(ctx, &batch).Close()
 	if err != nil {
 		return entities.Conversation{}, false, false, err
 	}
