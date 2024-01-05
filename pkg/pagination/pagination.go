@@ -51,7 +51,7 @@ func NewCursorFromBase64(b64 string) (Cursor, error) {
 		return Cursor{}, err
 	}
 
-	splitted := strings.Split(string(b), "-")
+	splitted := strings.Split(string(b), ".")
 	if len(splitted) != 2 {
 		return Cursor{}, ErrInvalidCursorFormat
 	}
@@ -71,7 +71,7 @@ func NewBase64FromCursor(cursor Cursor) string {
 	s1 := cursor.Id
 	s2 := cursor.Date.Format(time.RFC3339)
 
-	s := strings.Join([]string{s1, s2}, "-")
+	s := strings.Join([]string{s1, s2}, ".")
 
 	return base64.StdEncoding.EncodeToString([]byte(s))
 }
