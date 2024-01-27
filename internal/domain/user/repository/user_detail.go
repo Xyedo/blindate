@@ -382,6 +382,7 @@ func FindUserDetailByIds(ctx context.Context, conn pg.Querier, ids []string) (en
 	const getUserDetailByIds = `
 	SELECT 
 		account_id,
+		alias,
 		ST_AsText(geog) as geog,
 		bio,
 		last_online,
@@ -467,6 +468,7 @@ func FindUserDetailByIds(ctx context.Context, conn pg.Querier, ids []string) (en
 		var user entities.UserDetail
 		err = rows.Scan(
 			&user.UserId,
+			&user.Alias,
 			&user.Geog,
 			&user.Bio,
 			&user.LastOnline,

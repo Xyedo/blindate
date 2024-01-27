@@ -135,12 +135,11 @@ func FindConversationsByUserId(ctx context.Context, conn pg.Querier, userId stri
 		conversationIndex = append(conversationIndex, conversation)
 	}
 
-	var hasNext bool
 	if len(conversationIndex) > pagination.Limit {
-		hasNext = true
+		return conversationIndex[:pagination.Limit], true, nil
 	}
 
-	return conversationIndex[:pagination.Limit], hasNext, nil
+	return conversationIndex, false, nil
 }
 
 // FindConversationsByUserId
@@ -260,7 +259,7 @@ func FindChatsByConversationId(ctx context.Context, conn pg.Querier, payload ent
 	var hasNext bool
 	if payload.Next.ChatId.IsPresent() && payload.Next.SentAt.IsPresent() {
 		const checkHasNext = `
-			SELECT count(1)
+		SELECT count(1)
 		FROM chat
 		WHERE 
 			conversation_id = $1 

@@ -116,6 +116,24 @@ func GetUserDetail(ctx context.Context, requestId, userId string) (entities.User
 	return userDetail, nil
 }
 
+func UpdateUserDetailById(ctx context.Context, requestId string, payload entities.UpdateUserDetail) error {
+	return pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
+		_, err := userRepo.GetUserDetailById(ctx, tx,
+			requestId,
+			entities.GetUserDetailOption{
+				PessimisticLocking: true,
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		return userRepo.UpdateUserDetailById(ctx, tx, requestId, payload)
+	})
+}
+
+// GetUserDetails
+// its For External Domain want to Get User Details
 func GetUserDetails(ctx context.Context, userIds []string) (entities.UserDetails, error) {
 	conn, err := pg.GetConnectionPool(ctx)
 	if err != nil {
@@ -155,7 +173,7 @@ func GetUserDetails(ctx context.Context, userIds []string) (entities.UserDetails
 			}(i, &wg)
 		}
 		wg.Wait()
-		
+
 		for _, err := range errs {
 			if err != nil {
 				return nil, err
@@ -164,20 +182,4 @@ func GetUserDetails(ctx context.Context, userIds []string) (entities.UserDetails
 	}
 
 	return userDetails, nil
-}
-
-func UpdateUserDetailById(ctx context.Context, requestId string, payload entities.UpdateUserDetail) error {
-	return pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
-		_, err := userRepo.GetUserDetailById(ctx, tx,
-			requestId,
-			entities.GetUserDetailOption{
-				PessimisticLocking: true,
-			},
-		)
-		if err != nil {
-			return err
-		}
-
-		return userRepo.UpdateUserDetailById(ctx, tx, requestId, payload)
-	})
 }
