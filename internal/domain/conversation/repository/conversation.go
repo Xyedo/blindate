@@ -99,7 +99,12 @@ func FindConversationsByUserId(ctx context.Context, conn pg.Querier, userId stri
 	LIMIT $3
 	`
 
-	rows, err := conn.Query(ctx, findConversationsByUserId, userId, pagination.Offset(), pagination.Limit+1)
+	rows, err := conn.Query(ctx,
+		findConversationsByUserId,
+		userId,
+		pagination.Offset(),
+		pagination.Limit+1,
+	)
 	if err != nil {
 		return nil, false, err
 	}
@@ -136,7 +141,7 @@ func FindConversationsByUserId(ctx context.Context, conn pg.Querier, userId stri
 	}
 
 	if len(conversationIndex) > pagination.Limit {
-		return conversationIndex[:pagination.Limit], true, nil
+		return conversationIndex[:pagination.Limit+1], true, nil
 	}
 
 	return conversationIndex, false, nil

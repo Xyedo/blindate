@@ -2,15 +2,19 @@ package entities
 
 import (
 	apperror "github.com/xyedo/blindate/internal/common/app-error"
-	userentities "github.com/xyedo/blindate/internal/domain/user/entities"
 )
 
-func (m Match) ValidateResource(requester userentities.UserDetail) error {
-	if !(m.RequestFrom == requester.UserId || m.RequestTo == requester.UserId) {
-		return apperror.Forbidden(apperror.Payload{
+func (m Match) ValidateResource(requestId string) (string, error) {
+	if !(m.RequestFrom == requestId || m.RequestTo == requestId) {
+		return "", apperror.Forbidden(apperror.Payload{
 			Status: ErrCodeMatchIdInvalid,
 		})
 	}
 
-	return nil
+	if m.RequestFrom == requestId {
+		return m.RequestTo, nil
+	}
+
+	return m.RequestFrom, nil
+
 }

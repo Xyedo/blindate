@@ -137,12 +137,8 @@ func FindMatchsByStatus(ctx context.Context, conn pg.Querier, payload matchEntit
 		matchs = append(matchs, match)
 	}
 
-	if len(matchs) == 0 {
-		return matchs, false, nil
-	}
-
 	if len(matchs) > payload.Pagination.Limit {
-		return matchs[:payload.Pagination.Limit], true, nil
+		return matchs[:payload.Pagination.Limit+1], true, nil
 	}
 
 	return matchs, false, nil

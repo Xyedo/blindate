@@ -5,6 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/xyedo/blindate/internal/domain/match/dtos"
+	"github.com/xyedo/blindate/internal/domain/match/entities"
 	"github.com/xyedo/blindate/internal/domain/match/usecase"
 	"github.com/xyedo/blindate/internal/infrastructure/auth"
 	"github.com/xyedo/blindate/pkg/pagination"
@@ -38,7 +39,13 @@ func getIndexMatchs(c echo.Context) error {
 	}
 
 	requestId := ctx.Value(auth.RequestId).(string)
-	matchedUsers, hasNext, err := usecase.IndexMatchCandidate(ctx, requestId, pagination.Pagination(queryParams))
+	matchedUsers, hasNext, err := usecase.IndexMatch(ctx, requestId, entities.IndexMatch{
+		Pagination: pagination.Pagination{
+			Page:  queryParams.Page,
+			Limit: queryParams.Limit,
+		},
+		Status: queryParams.Status,
+	})
 	if err != nil {
 		return err
 	}
@@ -46,10 +53,27 @@ func getIndexMatchs(c echo.Context) error {
 	return c.JSON(http.StatusOK,
 		dtos.NewIndexMatchResponse(
 			hasNext,
-			pagination.Pagination(queryParams),
+			pagination.Pagination{
+				Page:  queryParams.Page,
+				Limit: queryParams.Limit,
+			},
 			matchedUsers,
 		),
 	)
+}
+
+func getMatchById(c echo.Context) error {
+	ctx := c.Request().Context()
+
+	requestId := ctx.Value(auth.RequestId).(string)
+	matchUser, err := usecase.GetMatchById(ctx, requestId, c.Param("matchId"))
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(http.StatusOK, map[string]any{
+		"data": dtos.NewShowMatchResponse(matchUser),
+	})
 }
 
 func putTransitionRequestStatus(c echo.Context) error {
@@ -63,5 +87,8 @@ func putTransitionRequestStatus(c echo.Context) error {
 
 	requestId := ctx.Value(auth.RequestId).(string)
 
-	return usecase.TransitionRequestStatus(ctx, requestId, c.Param("matchId"), request.Swipe)
+	return usecase.TransitionRequestStatus(ctx, requestId,
+		c.Param("matchId"),
+		request.Swipe,
+	)
 }

@@ -20,7 +20,7 @@ func (p Pagination) Offset() int {
 }
 
 func (p Pagination) Next(hasNexts ...bool) *string {
-	if len(hasNexts) > 0 && hasNexts[0] {
+	if len(hasNexts) > 0 && !hasNexts[0] {
 		return nil
 	}
 	r := fmt.Sprintf("?page=%d&limit=%d", p.Page+1, p.Limit)
@@ -28,7 +28,7 @@ func (p Pagination) Next(hasNexts ...bool) *string {
 }
 
 func (p Pagination) Prev(hasPrevs ...bool) *string {
-	if len(hasPrevs) > 0 && hasPrevs[0] {
+	if len(hasPrevs) > 0 && !hasPrevs[0] {
 		return nil
 	}
 

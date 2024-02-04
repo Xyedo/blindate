@@ -8,8 +8,9 @@ import (
 )
 
 type IndexMatchsQueryParams struct {
-	Page  int `query:"page"`
-	Limit int `query:"limit"`
+	Page   int                       `query:"page"`
+	Limit  int                       `query:"limit"`
+	Status entities.FilterIndexMatch `query:"status"`
 }
 
 func (params *IndexMatchsQueryParams) Mod() *IndexMatchsQueryParams {
@@ -19,6 +20,9 @@ func (params *IndexMatchsQueryParams) Mod() *IndexMatchsQueryParams {
 	if params.Limit == 0 {
 		params.Limit = 10
 	}
+	if params.Status == "" {
+		params.Status = entities.FilterIndexMatchCandidate
+	}
 
 	return params
 }
@@ -27,6 +31,13 @@ func (params IndexMatchsQueryParams) Validate() error {
 	return validation.ValidateStruct(&params,
 		validation.Field(&params.Page, validation.Required, validation.Min(1)),
 		validation.Field(&params.Limit, validation.Required, validation.Min(1)),
+		validation.Field(&params.Status,
+			validation.In(
+				entities.FilterIndexMatchCandidate,
+				entities.FilterIndexMatchAccepted,
+				entities.FilterIndexMatchLikes,
+			),
+		),
 	)
 }
 
@@ -34,10 +45,12 @@ type IndexMatchResponse struct {
 	Metadata IndexMatchResponseMetadata `json:"metadata"`
 	Data     []IndexMatchElement        `json:"data"`
 }
+
 type IndexMatchResponseMetadata struct {
 	Prev *string `json:"prev"`
 	Next *string `json:"next"`
 }
+
 type IndexMatchElement struct {
 	Id       string  `json:"id"`
 	Distance float64 `json:"distance"`

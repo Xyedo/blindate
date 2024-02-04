@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	geo "github.com/paulmach/go.geo"
 	apperror "github.com/xyedo/blindate/internal/common/app-error"
 	conversationEntities "github.com/xyedo/blindate/internal/domain/conversation/entities"
 	conversationRepo "github.com/xyedo/blindate/internal/domain/conversation/repository"
@@ -42,7 +43,7 @@ func CreateCandidateMatch(ctx context.Context, requestId string) error {
 	})
 }
 
-func IndexMatchCandidate(ctx context.Context, requestId string, pagination pagination.Pagination) ([]entities.MatchUser, bool, error) {
+func IndexMatch(ctx context.Context, requestId string, payload entities.IndexMatch) ([]entities.MatchUser, bool, error) {
 	conn, err := pg.GetConnectionPool(ctx)
 	if err != nil {
 		return nil, false, err
@@ -56,12 +57,9 @@ func IndexMatchCandidate(ctx context.Context, requestId string, pagination pagin
 
 	matchs, hasNext, err := matchRepo.FindMatchsByStatus(ctx, conn,
 		entities.FindUserMatchByStatus{
-			UserId: requestUser.UserId,
-			Statuses: []entities.MatchStatus{
-				entities.MatchStatusUnknown,
-				entities.MatchStatusRequested,
-			},
-			Pagination: pagination,
+			UserId:     requestUser.UserId,
+			Statuses:   payload.MatchStatuses(),
+			Pagination: payload.Pagination,
 		},
 	)
 	if err != nil {
@@ -81,6 +79,50 @@ func IndexMatchCandidate(ctx context.Context, requestId string, pagination pagin
 	), hasNext, nil
 }
 
+func GetMatchById(ctx context.Context, requestId, matchId string) (entities.MatchUser, error) {
+	conn, err := pg.GetConnectionPool(ctx)
+	if err != nil {
+		return entities.MatchUser{}, err
+	}
+	defer conn.Release()
+
+	requestUser, err := userRepo.GetUserDetailById(ctx, conn, requestId)
+	if err != nil {
+		return entities.MatchUser{}, err
+	}
+
+	match, err := matchRepo.GetMatchById(ctx, conn, matchId)
+	if err != nil {
+		return entities.MatchUser{}, err
+	}
+
+	recepientId, err := match.ValidateResource(requestId)
+	if err != nil {
+		return entities.MatchUser{}, err
+	}
+
+	err = match.ValidateShow(requestId)
+	if err != nil {
+		return entities.MatchUser{}, err
+	}
+
+	recepientUser, err := userUsecase.GetUserDetail(ctx, recepientId, recepientId)
+	if err != nil {
+		return entities.MatchUser{}, err
+	}
+
+	return entities.MatchUser{
+		MatchId: matchId,
+		Status:  match.RequestStatus,
+		Distance: geo.
+			NewPointFromLatLng(recepientUser.Geog.Lat, recepientUser.Geog.Lng).
+			DistanceFrom(
+				geo.NewPoint(requestUser.Geog.Lat, requestUser.Geog.Lng),
+			),
+		UserDetail: recepientUser,
+	}, nil
+}
+
 func TransitionRequestStatus(ctx context.Context, requestId, matchId string, swipe bool) error {
 	return pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
 		requester, err := userRepo.GetUserDetailById(ctx, tx, requestId)
@@ -95,7 +137,7 @@ func TransitionRequestStatus(ctx context.Context, requestId, matchId string, swi
 			return err
 		}
 
-		err = match.ValidateResource(requester)
+		_, err = match.ValidateResource(requestId)
 		if err != nil {
 			return err
 		}
@@ -143,4 +185,5 @@ func TransitionRequestStatus(ctx context.Context, requestId, matchId string, swi
 
 		return matchRepo.UpdateMatch(ctx, tx, match)
 	})
+
 }

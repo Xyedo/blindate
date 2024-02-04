@@ -25,6 +25,7 @@ type Match struct {
 
 type MatchUser struct {
 	Distance float64
+	Status   MatchStatus
 	MatchId  string
 	userentities.UserDetail
 }

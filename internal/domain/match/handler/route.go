@@ -8,5 +8,6 @@ func Route(e *echo.Group) {
 	matchs.POST("", postCreateNewCandidateMatch)
 	matchs.GET("", getIndexMatchs)
 
+	matchs.GET("/:matchId", getMatchById)
 	matchs.PUT("/:matchId/request-transition", putTransitionRequestStatus)
 }

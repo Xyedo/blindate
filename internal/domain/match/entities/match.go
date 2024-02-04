@@ -10,6 +10,31 @@ type FindUserMatchByStatus struct {
 type GetMatchOption struct {
 	PessimisticLocking bool
 }
+type FilterIndexMatch string
+
+const (
+	FilterIndexMatchCandidate FilterIndexMatch = "candidate"
+	FilterIndexMatchLikes     FilterIndexMatch = "likes"
+	FilterIndexMatchAccepted  FilterIndexMatch = "accepted"
+)
+
+type IndexMatch struct {
+	pagination.Pagination
+	Status FilterIndexMatch
+}
+
+func (i IndexMatch) MatchStatuses() []MatchStatus {
+	switch i.Status {
+	case FilterIndexMatchAccepted:
+		return []MatchStatus{MatchStatusAccepted}
+	case FilterIndexMatchCandidate:
+		return []MatchStatus{MatchStatusUnknown, MatchStatusRequested}
+	case FilterIndexMatchLikes:
+		return []MatchStatus{MatchStatusRequested}
+	default:
+		panic("unregistered status")
+	}
+}
 
 func (matchs Matchs) ToUserIds(requestId string) ([]string, map[string]string) {
 	userIdToMatchId := make(map[string]string, 0)

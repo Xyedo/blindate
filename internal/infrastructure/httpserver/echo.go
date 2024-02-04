@@ -7,6 +7,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	conversationHandler "github.com/xyedo/blindate/internal/domain/conversation/handler"
 	matchHandler "github.com/xyedo/blindate/internal/domain/match/handler"
 	userHandler "github.com/xyedo/blindate/internal/domain/user/handler/external"
 	internalUserHandler "github.com/xyedo/blindate/internal/domain/user/handler/intrnl"
@@ -38,6 +39,7 @@ func NewEcho() *Server {
 
 		userHandler.Route(apiv1)
 		matchHandler.Route(apiv1)
+		conversationHandler.Route(apiv1)
 	}
 
 	return &Server{
