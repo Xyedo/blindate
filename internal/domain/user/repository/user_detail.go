@@ -12,7 +12,7 @@ import (
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 )
 
-func StoreUserDetail(ctx context.Context, conn pg.Querier, payload entities.UserDetail) (string, error) {
+func (User) StoreUserDetail(ctx context.Context, conn pg.Querier, payload entities.UserDetail) (string, error) {
 	const storeUserDetail = `
 		INSERT INTO account_detail(
 			account_id,
@@ -81,7 +81,7 @@ func StoreUserDetail(ctx context.Context, conn pg.Querier, payload entities.User
 
 }
 
-func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...entities.GetUserDetailOption) (entities.UserDetail, error) {
+func (User) GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...entities.GetUserDetailOption) (entities.UserDetail, error) {
 	const getUserDetailById = `
 	SELECT 
 		account_id,
@@ -326,7 +326,7 @@ func GetUserDetailById(ctx context.Context, conn pg.Querier, id string, opts ...
 
 }
 
-func UpdateUserDetailById(ctx context.Context, conn pg.Querier, id string, payload entities.UpdateUserDetail) error {
+func (User) UpdateUserDetailById(ctx context.Context, conn pg.Querier, id string, payload entities.UpdateUserDetail) error {
 	const updateBasicInfoById = `
 	UPDATE account_detail SET 
 		alias = CASE WHEN $1 THEN $2 ELSE alias END,
@@ -374,7 +374,7 @@ func UpdateUserDetailById(ctx context.Context, conn pg.Querier, id string, paylo
 	return nil
 }
 
-func FindUserDetailByIds(ctx context.Context, conn pg.Querier, ids []string) (entities.UserDetails, error) {
+func (User) FindUserDetailByIds(ctx context.Context, conn pg.Querier, ids []string) (entities.UserDetails, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}

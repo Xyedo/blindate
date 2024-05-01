@@ -5,10 +5,9 @@ import (
 
 	"github.com/labstack/echo/v4"
 	apperror "github.com/xyedo/blindate/internal/common/app-error"
-	"github.com/xyedo/blindate/internal/domain/user/usecase"
 )
 
-func putUserDetailPhotoHandler(c echo.Context) error {
+func (u *User) putUserDetailPhotoHandler(c echo.Context) error {
 	header, err := c.FormFile("photo")
 	if err != nil {
 		return err
@@ -19,7 +18,7 @@ func putUserDetailPhotoHandler(c echo.Context) error {
 		})
 	}
 
-	photoId, err := usecase.AddPhoto(c.Request().Context(), c.Param("id"), header)
+	photoId, err := u.usecase.AddPhoto(c.Request().Context(), c.Param("id"), header)
 	if err != nil {
 		return err
 	}

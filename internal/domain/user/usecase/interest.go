@@ -5,13 +5,12 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/xyedo/blindate/internal/domain/user/entities"
-	"github.com/xyedo/blindate/internal/domain/user/repository"
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 )
 
-func CreateInterest(ctx context.Context, requestId string, payload entities.CreateInterest) error {
+func (uc *User) CreateInterest(ctx context.Context, requestId string, payload entities.CreateInterest) error {
 	return pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
-		userDetail, err := repository.GetUserDetailById(ctx, tx, requestId, entities.GetUserDetailOption{
+		userDetail, err := uc.repo.GetUserDetailById(ctx, tx, requestId, entities.GetUserDetailOption{
 			PessimisticLocking: true,
 			WithHobbies:        true,
 			WithMovieSeries:    true,
@@ -27,22 +26,22 @@ func CreateInterest(ctx context.Context, requestId string, payload entities.Crea
 			return err
 		}
 
-		err = repository.StoreHobbiesByUserId(ctx, tx, requestId, payload.ToHobbies(requestId))
+		err = uc.repo.StoreHobbiesByUserId(ctx, tx, requestId, payload.ToHobbies(requestId))
 		if err != nil {
 			return err
 		}
 
-		err = repository.StoreMovieSeriesByUserId(ctx, tx, requestId, payload.ToMovieSeries(requestId))
+		err = uc.repo.StoreMovieSeriesByUserId(ctx, tx, requestId, payload.ToMovieSeries(requestId))
 		if err != nil {
 			return err
 		}
 
-		err = repository.StoreTravelingsByUserId(ctx, tx, requestId, payload.ToTravels(requestId))
+		err = uc.repo.StoreTravelingsByUserId(ctx, tx, requestId, payload.ToTravels(requestId))
 		if err != nil {
 			return err
 		}
 
-		err = repository.StoreSportsByUserId(ctx, tx, requestId, payload.ToSports(requestId))
+		err = uc.repo.StoreSportsByUserId(ctx, tx, requestId, payload.ToSports(requestId))
 		if err != nil {
 			return err
 		}
@@ -52,9 +51,9 @@ func CreateInterest(ctx context.Context, requestId string, payload entities.Crea
 
 }
 
-func UpdateInterest(ctx context.Context, requestId string, payload entities.UpdateInterest) error {
+func (uc *User) UpdateInterest(ctx context.Context, requestId string, payload entities.UpdateInterest) error {
 	return pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
-		userDetail, err := repository.GetUserDetailById(ctx, tx, requestId, entities.GetUserDetailOption{
+		userDetail, err := uc.repo.GetUserDetailById(ctx, tx, requestId, entities.GetUserDetailOption{
 			PessimisticLocking: true,
 			WithHobbies:        true,
 			WithMovieSeries:    true,
@@ -70,19 +69,19 @@ func UpdateInterest(ctx context.Context, requestId string, payload entities.Upda
 			return err
 		}
 
-		err = repository.UpdateHobbies(ctx, tx, payload.Hobbies)
+		err = uc.repo.UpdateHobbies(ctx, tx, payload.Hobbies)
 		if err != nil {
 			return err
 		}
-		err = repository.UpdateMovieSeries(ctx, tx, payload.MovieSeries)
+		err = uc.repo.UpdateMovieSeries(ctx, tx, payload.MovieSeries)
 		if err != nil {
 			return err
 		}
-		err = repository.UpdateTravelings(ctx, tx, payload.Travels)
+		err = uc.repo.UpdateTravelings(ctx, tx, payload.Travels)
 		if err != nil {
 			return err
 		}
-		err = repository.UpdateSports(ctx, tx, payload.Sports)
+		err = uc.repo.UpdateSports(ctx, tx, payload.Sports)
 		if err != nil {
 			return err
 		}
@@ -91,9 +90,9 @@ func UpdateInterest(ctx context.Context, requestId string, payload entities.Upda
 	})
 }
 
-func DeleteInterest(ctx context.Context, requestId string, payload entities.DeleteInterest) error {
+func (uc *User) DeleteInterest(ctx context.Context, requestId string, payload entities.DeleteInterest) error {
 	return pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
-		userDetail, err := repository.GetUserDetailById(ctx, tx, requestId, entities.GetUserDetailOption{
+		userDetail, err := uc.repo.GetUserDetailById(ctx, tx, requestId, entities.GetUserDetailOption{
 			PessimisticLocking: true,
 			WithHobbies:        true,
 			WithMovieSeries:    true,
@@ -109,19 +108,19 @@ func DeleteInterest(ctx context.Context, requestId string, payload entities.Dele
 			return err
 		}
 
-		err = repository.DeleteHobbiesByIds(ctx, tx, payload.HobbieIds)
+		err = uc.repo.DeleteHobbiesByIds(ctx, tx, payload.HobbieIds)
 		if err != nil {
 			return err
 		}
-		err = repository.DeleteMovieSeriesByIds(ctx, tx, payload.MovieSerieIds)
+		err = uc.repo.DeleteMovieSeriesByIds(ctx, tx, payload.MovieSerieIds)
 		if err != nil {
 			return err
 		}
-		err = repository.DeleteTravelingByIds(ctx, tx, payload.TravelIds)
+		err = uc.repo.DeleteTravelingByIds(ctx, tx, payload.TravelIds)
 		if err != nil {
 			return err
 		}
-		err = repository.DeleteSportByIds(ctx, tx, payload.SportIds)
+		err = uc.repo.DeleteSportByIds(ctx, tx, payload.SportIds)
 		if err != nil {
 			return err
 		}

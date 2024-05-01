@@ -7,7 +7,7 @@ import (
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 )
 
-func FindNonMatchClosestUser(ctx context.Context, conn pg.Querier, payload entities.FindClosestUser) ([]string, error) {
+func (User) FindNonMatchClosestUser(ctx context.Context, conn pg.Querier, payload entities.FindClosestUser) ([]string, error) {
 	const findClosestUserById = `
 	SELECT
 		ad.account_id,

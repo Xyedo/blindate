@@ -1,6 +1,6 @@
 module github.com/xyedo/blindate
 
-go 1.21
+go 1.22
 
 require (
 	github.com/BurntSushi/toml v1.3.2
@@ -19,6 +19,7 @@ require (
 	github.com/matoous/go-nanoid/v2 v2.0.0
 	github.com/nicksnyder/go-i18n/v2 v2.2.1
 	github.com/paulmach/go.geo v0.0.0-20180829195134-22b514266d33
+	github.com/pkg/errors v0.9.1
 	golang.org/x/text v0.13.0
 )
 

@@ -4,11 +4,16 @@ import (
 	"context"
 	"errors"
 
+	"github.com/xyedo/blindate/internal/domain/attachment"
 	"github.com/xyedo/blindate/internal/domain/attachment/entities"
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 )
 
-func InsertFile(ctx context.Context, conn pg.Querier, file entities.File) (string, error) {
+type File struct{}
+
+var _ attachment.Repository = &File{}
+
+func (File) InsertFile(ctx context.Context, conn pg.Querier, file entities.File) (string, error) {
 	const insertFile = `
 	INSERT INTO file(id,type,blob_link,created_at,updated_at,version)
 	VALUES($1,$2,$3,$4,$5,$6)
@@ -30,7 +35,7 @@ func InsertFile(ctx context.Context, conn pg.Querier, file entities.File) (strin
 	return returnedUUID, nil
 }
 
-func GetFileByIds(ctx context.Context, conn pg.Querier, ids []string) ([]entities.File, error) {
+func (File) FindFileByIds(ctx context.Context, conn pg.Querier, ids []string) ([]entities.File, error) {
 	const getFileById = `
 	SELECT 
 		id,

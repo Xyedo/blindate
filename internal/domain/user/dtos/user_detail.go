@@ -3,8 +3,8 @@ package dtos
 import (
 	"github.com/invopop/validation"
 	apperror "github.com/xyedo/blindate/internal/common/app-error"
-	"github.com/xyedo/blindate/internal/common/mod"
 	"github.com/xyedo/blindate/internal/domain/user/entities"
+	"github.com/xyedo/blindate/pkg/mod"
 	"github.com/xyedo/blindate/pkg/optional"
 )
 

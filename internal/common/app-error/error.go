@@ -1,7 +1,7 @@
 package apperror
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 )
 
 var (

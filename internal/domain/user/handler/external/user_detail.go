@@ -6,11 +6,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/xyedo/blindate/internal/domain/user/dtos"
 	"github.com/xyedo/blindate/internal/domain/user/entities"
-	"github.com/xyedo/blindate/internal/domain/user/usecase"
 	"github.com/xyedo/blindate/internal/infrastructure/auth"
 )
 
-func postUserDetailHandler(c echo.Context) error {
+func (u *User) postUserDetailHandler(c echo.Context) error {
 	var request dtos.PostUserDetailRequest
 
 	err := c.Bind(&request)
@@ -23,7 +22,7 @@ func postUserDetailHandler(c echo.Context) error {
 		return err
 	}
 
-	returnedId, err := usecase.CreateUserDetail(c.Request().Context(),
+	returnedId, err := u.usecase.CreateUserDetail(c.Request().Context(),
 		c.Param("id"),
 		entities.CreateUserDetail{
 			Alias:            request.Alias,
@@ -54,11 +53,11 @@ func postUserDetailHandler(c echo.Context) error {
 
 }
 
-func getUserDetailByIdHandler(c echo.Context) error {
+func (u *User) getUserDetailByIdHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 	requestId := ctx.Value(auth.RequestId).(string)
 
-	userDetail, err := usecase.GetUserDetail(ctx, requestId, c.Param("id"))
+	userDetail, err := u.usecase.GetUserDetail(ctx, requestId, c.Param("id"))
 	if err != nil {
 		return err
 	}
@@ -68,7 +67,7 @@ func getUserDetailByIdHandler(c echo.Context) error {
 	})
 }
 
-func patchUserDetailByIdHandler(c echo.Context) error {
+func (u *User) patchUserDetailByIdHandler(c echo.Context) error {
 	var request dtos.PatchUserDetailRequest
 
 	err := c.Bind(&request)
@@ -83,6 +82,6 @@ func patchUserDetailByIdHandler(c echo.Context) error {
 	ctx := c.Request().Context()
 	requestId := ctx.Value(auth.RequestId).(string)
 
-	return usecase.UpdateUserDetailById(ctx, requestId, request.ToEntity())
+	return u.usecase.UpdateUserDetailById(ctx, requestId, request.ToEntity())
 
 }

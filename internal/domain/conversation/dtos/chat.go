@@ -10,6 +10,7 @@ import (
 	"github.com/xyedo/blindate/internal/domain/conversation/entities"
 	"github.com/xyedo/blindate/pkg/optional"
 	"github.com/xyedo/blindate/pkg/pagination"
+	"github.com/xyedo/blindate/pkg/pointer"
 )
 
 type IndexChatQueryParams struct {
@@ -139,18 +140,18 @@ func NewIndexChatResponse(payload IndexChatPayload) IndexChatResponse {
 	if len(chats) > 0 {
 		if payload.HasNext {
 			lastChat := chats[len(chats)-1]
-			*next = pagination.NewBase64FromCursor(pagination.Cursor{
+			next = pointer.From(pagination.NewBase64FromCursor(pagination.Cursor{
 				Id:   lastChat.Id,
 				Date: lastChat.SentAt,
-			})
+			}))
 		}
 
 		if payload.HasPrev {
 			firstChat := chats[0]
-			*prev = pagination.NewBase64FromCursor(pagination.Cursor{
+			prev = pointer.From(pagination.NewBase64FromCursor(pagination.Cursor{
 				Id:   firstChat.Id,
 				Date: firstChat.SentAt,
-			})
+			}))
 		}
 	}
 	return IndexChatResponse{

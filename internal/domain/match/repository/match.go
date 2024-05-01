@@ -8,12 +8,17 @@ import (
 	"github.com/jackc/pgx/v5"
 	apperror "github.com/xyedo/blindate/internal/common/app-error"
 	"github.com/xyedo/blindate/internal/common/ids"
+	"github.com/xyedo/blindate/internal/domain/match"
 	matchEntities "github.com/xyedo/blindate/internal/domain/match/entities"
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 	"github.com/xyedo/blindate/pkg/optional"
 )
 
-func CreateCandidateMatchsById(ctx context.Context, conn pg.Querier, userId string, candidateUserIds []string) error {
+type Match struct{}
+
+var _ match.Repository = &Match{}
+
+func (Match) CreateCandidateMatchsById(ctx context.Context, conn pg.Querier, userId string, candidateUserIds []string) error {
 	if len(candidateUserIds) == 0 {
 		return apperror.NotFound(apperror.Payload{
 			Status:  matchEntities.ErrCodeMatchCandidateEmpty,
@@ -61,7 +66,7 @@ func CreateCandidateMatchsById(ctx context.Context, conn pg.Querier, userId stri
 
 // FindMatchsByStatus
 // return match, hasNext, error
-func FindMatchsByStatus(ctx context.Context, conn pg.Querier, payload matchEntities.FindUserMatchByStatus) (matchEntities.Matchs, bool, error) {
+func (Match) FindMatchsByStatus(ctx context.Context, conn pg.Querier, payload matchEntities.FindUserMatchByStatus) (matchEntities.Matchs, bool, error) {
 	const findUserMatchByStatus = `
 	SELECT 
 		m.id,
@@ -144,7 +149,7 @@ func FindMatchsByStatus(ctx context.Context, conn pg.Querier, payload matchEntit
 	return matchs, false, nil
 }
 
-func GetMatchById(ctx context.Context, conn pg.Querier, id string, opts ...matchEntities.GetMatchOption) (matchEntities.Match, error) {
+func (Match) GetMatchById(ctx context.Context, conn pg.Querier, id string, opts ...matchEntities.GetMatchOption) (matchEntities.Match, error) {
 	const getMatchById = `
 	SELECT 
 		id,
@@ -204,7 +209,7 @@ func GetMatchById(ctx context.Context, conn pg.Querier, id string, opts ...match
 	return match, nil
 }
 
-func UpdateMatch(ctx context.Context, conn pg.Querier, match matchEntities.Match) error {
+func (Match) UpdateMatch(ctx context.Context, conn pg.Querier, match matchEntities.Match) error {
 	const updateMatch = `
 	UPDATE match SET
 		request_from = $2,

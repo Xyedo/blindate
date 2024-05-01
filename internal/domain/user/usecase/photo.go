@@ -9,15 +9,12 @@ import (
 	apperror "github.com/xyedo/blindate/internal/common/app-error"
 	"github.com/xyedo/blindate/internal/common/ids"
 	attachmentEntities "github.com/xyedo/blindate/internal/domain/attachment/entities"
-	attachmentRepo "github.com/xyedo/blindate/internal/domain/attachment/repository"
-	"github.com/xyedo/blindate/internal/domain/attachment/s3"
 	"github.com/xyedo/blindate/internal/domain/user/entities"
 	userentities "github.com/xyedo/blindate/internal/domain/user/entities"
-	userRepo "github.com/xyedo/blindate/internal/domain/user/repository"
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 )
 
-func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeader) (string, error) {
+func (uc *User) AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeader) (string, error) {
 	photo, err := header.Open()
 	if err != nil {
 		return "", err
@@ -32,7 +29,7 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 	var photoId string
 	timeNow := time.Now()
 	err = pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
-		userDetail, err := userRepo.GetUserDetailById(ctx, tx, requestId, userentities.GetUserDetailOption{
+		userDetail, err := uc.repo.GetUserDetailById(ctx, tx, requestId, userentities.GetUserDetailOption{
 			PessimisticLocking:  true,
 			WithProfilePictures: true,
 		})
@@ -52,7 +49,7 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 				},
 			})
 		}
-		objectKey, err := s3.Manager.UploadAttachment(ctx, photo, attachmentEntities.Attachment{
+		objectKey, err := uc.attachmentUsecase.UploadAttachment(ctx, attachmentEntities.Attachment{
 			File:        photo,
 			ContentType: contentType.String(),
 			Prefix:      "/user/" + requestId + "/photos",
@@ -62,7 +59,7 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 			return err
 		}
 
-		fileId, err := attachmentRepo.InsertFile(ctx, tx, attachmentEntities.File{
+		fileId, err := uc.attachmentUsecase.InsertFile(ctx, tx, attachmentEntities.File{
 			Id:        ids.File(),
 			FileType:  attachmentEntities.FileTypePhotoProfile,
 			BlobLink:  objectKey,
@@ -74,12 +71,12 @@ func AddPhoto(ctx context.Context, requestId string, header *multipart.FileHeade
 			return err
 		}
 
-		err = userRepo.UpdateProfilePictureSelectedToFalseByUserId(ctx, tx, userDetail.UserId)
+		err = uc.repo.UpdateProfilePictureSelectedToFalseByUserId(ctx, tx, userDetail.UserId)
 		if err != nil {
 			return err
 		}
 
-		returnedProfilePictureId, err := userRepo.InsertProfilePicture(ctx, tx, userentities.ProfilePicture{
+		returnedProfilePictureId, err := uc.repo.InsertProfilePicture(ctx, tx, userentities.ProfilePicture{
 			Id:       ids.ProfilePicture(),
 			UserId:   userDetail.UserId,
 			Selected: true,

@@ -4,10 +4,9 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/xyedo/blindate/internal/domain/user/dtos"
 	"github.com/xyedo/blindate/internal/domain/user/entities"
-	"github.com/xyedo/blindate/internal/domain/user/usecase"
 )
 
-func postInterestHandler(c echo.Context) error {
+func (u *User) postInterestHandler(c echo.Context) error {
 	var request dtos.PostInterestRequest
 	err := c.Bind(&request)
 	if err != nil {
@@ -19,7 +18,7 @@ func postInterestHandler(c echo.Context) error {
 		return err
 	}
 
-	return usecase.CreateInterest(
+	return u.usecase.CreateInterest(
 		c.Request().Context(),
 		c.Param("id"),
 		entities.CreateInterest(request),
@@ -27,7 +26,7 @@ func postInterestHandler(c echo.Context) error {
 
 }
 
-func patchInterestHandler(c echo.Context) error {
+func (u *User) patchInterestHandler(c echo.Context) error {
 	var request dtos.PatchInterestRequest
 	err := c.Bind(&request)
 	if err != nil {
@@ -39,7 +38,7 @@ func patchInterestHandler(c echo.Context) error {
 		return err
 	}
 
-	return usecase.UpdateInterest(
+	return u.usecase.UpdateInterest(
 		c.Request().Context(),
 		c.Param("id"),
 		request.ToEntity(),
@@ -47,7 +46,7 @@ func patchInterestHandler(c echo.Context) error {
 
 }
 
-func postDeleteInterestHandler(c echo.Context) error {
+func (u *User) postDeleteInterestHandler(c echo.Context) error {
 	var request dtos.PostDeleteInterestRequest
 
 	err := c.Bind(&request)
@@ -60,7 +59,7 @@ func postDeleteInterestHandler(c echo.Context) error {
 		return err
 	}
 
-	return usecase.DeleteInterest(
+	return u.usecase.DeleteInterest(
 		c.Request().Context(),
 		c.Param("id"),
 		entities.DeleteInterest(request),

@@ -5,7 +5,7 @@ import (
 	middleware "github.com/xyedo/blindate/internal/infrastructure/httpserver/echo-middleware"
 )
 
-func Route(e *echo.Group) {
+func (u *User) Route(e *echo.Group) {
 	user := e.Group("/users")
-	user.POST("/event", handleEventWebhook, middleware.InternalApiKey)
+	user.POST("/event", u.handleEventWebhook, middleware.InternalApiKey)
 }

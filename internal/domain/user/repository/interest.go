@@ -11,7 +11,7 @@ import (
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 )
 
-func StoreHobbiesByUserId(ctx context.Context, conn pg.Querier, userId string, hobbies []entities.Hobbie) error {
+func (User) StoreHobbiesByUserId(ctx context.Context, conn pg.Querier, userId string, hobbies []entities.Hobbie) error {
 	if len(hobbies) == 0 {
 		return nil
 	}
@@ -43,7 +43,7 @@ func StoreHobbiesByUserId(ctx context.Context, conn pg.Querier, userId string, h
 	return nil
 }
 
-func UpdateHobbies(ctx context.Context, conn pg.Querier, hobbies []entities.UpdateHobbie) error {
+func (User) UpdateHobbies(ctx context.Context, conn pg.Querier, hobbies []entities.UpdateHobbie) error {
 	if len(hobbies) == 0 {
 		return nil
 	}
@@ -74,7 +74,7 @@ func UpdateHobbies(ctx context.Context, conn pg.Querier, hobbies []entities.Upda
 
 }
 
-func DeleteHobbiesByIds(ctx context.Context, conn pg.Querier, ids []string) error {
+func (User) DeleteHobbiesByIds(ctx context.Context, conn pg.Querier, ids []string) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -99,7 +99,7 @@ func DeleteHobbiesByIds(ctx context.Context, conn pg.Querier, ids []string) erro
 	return nil
 }
 
-func StoreMovieSeriesByUserId(ctx context.Context, conn pg.Querier, userId string, movieSeries []entities.MovieSerie) error {
+func (User) StoreMovieSeriesByUserId(ctx context.Context, conn pg.Querier, userId string, movieSeries []entities.MovieSerie) error {
 	if len(movieSeries) == 0 {
 		return nil
 	}
@@ -132,7 +132,7 @@ func StoreMovieSeriesByUserId(ctx context.Context, conn pg.Querier, userId strin
 	return nil
 }
 
-func UpdateMovieSeries(ctx context.Context, conn pg.Querier, movieSeries []entities.UpdateMovieSeries) error {
+func (User) UpdateMovieSeries(ctx context.Context, conn pg.Querier, movieSeries []entities.UpdateMovieSeries) error {
 	if len(movieSeries) == 0 {
 		return nil
 	}
@@ -162,7 +162,7 @@ func UpdateMovieSeries(ctx context.Context, conn pg.Querier, movieSeries []entit
 	return conn.SendBatch(ctx, &batch).Close()
 }
 
-func DeleteMovieSeriesByIds(ctx context.Context, conn pg.Querier, ids []string) error {
+func (User) DeleteMovieSeriesByIds(ctx context.Context, conn pg.Querier, ids []string) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -187,7 +187,7 @@ func DeleteMovieSeriesByIds(ctx context.Context, conn pg.Querier, ids []string) 
 	return nil
 }
 
-func StoreTravelingsByUserId(ctx context.Context, conn pg.Querier, userId string, travels []entities.Travel) error {
+func (User) StoreTravelingsByUserId(ctx context.Context, conn pg.Querier, userId string, travels []entities.Travel) error {
 	if len(travels) == 0 {
 		return nil
 	}
@@ -220,7 +220,7 @@ func StoreTravelingsByUserId(ctx context.Context, conn pg.Querier, userId string
 	return nil
 }
 
-func UpdateTravelings(ctx context.Context, conn pg.Querier, travels []entities.UpdateTravel) error {
+func (User) UpdateTravelings(ctx context.Context, conn pg.Querier, travels []entities.UpdateTravel) error {
 	if len(travels) == 0 {
 		return nil
 	}
@@ -251,7 +251,7 @@ func UpdateTravelings(ctx context.Context, conn pg.Querier, travels []entities.U
 
 }
 
-func DeleteTravelingByIds(ctx context.Context, conn pg.Querier, ids []string) error {
+func (User) DeleteTravelingByIds(ctx context.Context, conn pg.Querier, ids []string) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -276,7 +276,7 @@ func DeleteTravelingByIds(ctx context.Context, conn pg.Querier, ids []string) er
 	return nil
 }
 
-func StoreSportsByUserId(ctx context.Context, conn pg.Querier, userId string, sports []entities.Sport) error {
+func (User) StoreSportsByUserId(ctx context.Context, conn pg.Querier, userId string, sports []entities.Sport) error {
 	if len(sports) == 0 {
 		return nil
 	}
@@ -309,7 +309,7 @@ func StoreSportsByUserId(ctx context.Context, conn pg.Querier, userId string, sp
 	return nil
 }
 
-func UpdateSports(ctx context.Context, conn pg.Querier, sports []entities.UpdateSport) error {
+func (User) UpdateSports(ctx context.Context, conn pg.Querier, sports []entities.UpdateSport) error {
 	if len(sports) == 0 {
 		return nil
 	}
@@ -341,7 +341,7 @@ func UpdateSports(ctx context.Context, conn pg.Querier, sports []entities.Update
 
 }
 
-func DeleteSportByIds(ctx context.Context, conn pg.Querier, ids []string) error {
+func (User) DeleteSportByIds(ctx context.Context, conn pg.Querier, ids []string) error {
 	if len(ids) == 0 {
 		return nil
 	}

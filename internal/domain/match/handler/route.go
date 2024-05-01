@@ -2,12 +2,12 @@ package handler
 
 import "github.com/labstack/echo/v4"
 
-func Route(e *echo.Group) {
+func (h *Match) Route(e *echo.Group) {
 	matchs := e.Group("/matchs")
 
-	matchs.POST("", postCreateNewCandidateMatch)
-	matchs.GET("", getIndexMatchs)
+	matchs.POST("", h.postCreateNewCandidateMatch)
+	matchs.GET("", h.getIndexMatchs)
 
-	matchs.GET("/:matchId", getMatchById)
-	matchs.PUT("/:matchId/request-transition", putTransitionRequestStatus)
+	matchs.GET("/:matchId", h.getMatchById)
+	matchs.PUT("/:matchId/request-transition", h.putTransitionRequestStatus)
 }

@@ -6,11 +6,16 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	apperror "github.com/xyedo/blindate/internal/common/app-error"
+	"github.com/xyedo/blindate/internal/domain/user"
 	"github.com/xyedo/blindate/internal/domain/user/entities"
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 )
 
-func StoreUser(ctx context.Context, conn pg.Querier, id string) error {
+type User struct{}
+
+var _ user.Repository = &User{}
+
+func (User) StoreUser(ctx context.Context, conn pg.Querier, id string) error {
 	const storeUser = `
 	INSERT INTO account(id)
 	VALUES($1)
@@ -30,7 +35,7 @@ func StoreUser(ctx context.Context, conn pg.Querier, id string) error {
 	return nil
 }
 
-func GetUserById(ctx context.Context, conn pg.Querier, id string, opts ...entities.GetUserOption) (entities.User, error) {
+func (User) GetUserById(ctx context.Context, conn pg.Querier, id string, opts ...entities.GetUserOption) (entities.User, error) {
 	const storeUser = `
 	SELECT 
 		id, 
@@ -66,7 +71,7 @@ func GetUserById(ctx context.Context, conn pg.Querier, id string, opts ...entiti
 	return returnedUser, nil
 }
 
-func SoftDeleteUserById(ctx context.Context, conn pg.Querier, id string) error {
+func (User) SoftDeleteUserById(ctx context.Context, conn pg.Querier, id string) error {
 	const deleteUserById = `
 	UPDATE account SET
 		is_deleted = true

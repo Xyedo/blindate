@@ -4,10 +4,9 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/xyedo/blindate/internal/domain/user/usecase"
 )
 
-func handleEventWebhook(c echo.Context) error {
+func (u *User) handleEventWebhook(c echo.Context) error {
 	var request struct {
 		Data struct {
 			Id string `json:"id"`
@@ -21,9 +20,9 @@ func handleEventWebhook(c echo.Context) error {
 	}
 	switch request.Type {
 	case "user.created":
-		return usecase.RegisterUser(c.Request().Context(), request.Data.Id)
+		return u.usecase.RegisterUser(c.Request().Context(), request.Data.Id)
 	case "user.deleted":
-		return usecase.DeleteUser(c.Request().Context(), request.Data.Id)
+		return u.usecase.DeleteUser(c.Request().Context(), request.Data.Id)
 	default:
 		return c.NoContent(http.StatusBadRequest)
 	}

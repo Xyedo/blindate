@@ -6,22 +6,20 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	attachmentRepo "github.com/xyedo/blindate/internal/domain/attachment/repository"
-	"github.com/xyedo/blindate/internal/domain/attachment/s3"
+
 	"github.com/xyedo/blindate/internal/domain/user/entities"
-	userRepo "github.com/xyedo/blindate/internal/domain/user/repository"
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 )
 
-func CreateUserDetail(ctx context.Context, requestId string, payload entities.CreateUserDetail) (string, error) {
+func (uc *User) CreateUserDetail(ctx context.Context, requestId string, payload entities.CreateUserDetail) (string, error) {
 	var returnedId string
 	err := pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
-		_, err := userRepo.GetUserById(ctx, tx, requestId)
+		_, err := uc.repo.GetUserById(ctx, tx, requestId)
 		if err != nil {
 			return err
 		}
 
-		id, err := userRepo.StoreUserDetail(ctx, tx,
+		id, err := uc.repo.StoreUserDetail(ctx, tx,
 			entities.UserDetail{
 				UserId:           requestId,
 				Alias:            payload.Alias,
@@ -59,7 +57,7 @@ func CreateUserDetail(ctx context.Context, requestId string, payload entities.Cr
 	return returnedId, nil
 }
 
-func GetUserDetail(ctx context.Context, requestId, userId string) (entities.UserDetail, error) {
+func (uc *User) GetUserDetail(ctx context.Context, requestId, userId string) (entities.UserDetail, error) {
 	conn, err := pg.GetConnectionPool(ctx)
 	if err != nil {
 		return entities.UserDetail{}, err
@@ -67,58 +65,12 @@ func GetUserDetail(ctx context.Context, requestId, userId string) (entities.User
 
 	defer conn.Release()
 
-	//TODO: can check another userId if match/revealed
-	userDetail, err := userRepo.GetUserDetailById(ctx, conn, requestId, entities.GetUserDetailOption{
-		WithHobbies:         true,
-		WithMovieSeries:     true,
-		WithTravels:         true,
-		WithSports:          true,
-		WithProfilePictures: true,
-	})
-	if err != nil {
-		return entities.UserDetail{}, err
-	}
-
-	if len(userDetail.ProfilePictures) > 0 {
-		fileIds, fileIdToIdx := userDetail.ToFileIds()
-		files, err := attachmentRepo.GetFileByIds(ctx, conn, fileIds)
-		if err != nil {
-			return entities.UserDetail{}, err
-		}
-
-		var wg sync.WaitGroup
-		errs := make([]error, len(files))
-
-		wg.Add(len(files))
-		for i := 0; i < len(files); i++ {
-			go func(i int, wg *sync.WaitGroup) {
-				defer wg.Done()
-				presignedURL, err := s3.Manager.GetPresignedUrl(ctx, files[i].BlobLink, 1*time.Hour)
-				if err != nil {
-					errs[i] = err
-					return
-				}
-
-				if idx, ok := fileIdToIdx[files[i].Id]; ok {
-					userDetail.ProfilePictures[idx].SetPresignedURL(presignedURL)
-				}
-			}(i, &wg)
-		}
-		wg.Wait()
-
-		for _, err := range errs {
-			if err != nil {
-				return entities.UserDetail{}, err
-			}
-		}
-	}
-
-	return userDetail, nil
+	return uc.getUserDetail(ctx, conn, requestId, userId)
 }
 
-func UpdateUserDetailById(ctx context.Context, requestId string, payload entities.UpdateUserDetail) error {
+func (uc *User) UpdateUserDetailById(ctx context.Context, requestId string, payload entities.UpdateUserDetail) error {
 	return pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
-		_, err := userRepo.GetUserDetailById(ctx, tx,
+		_, err := uc.repo.GetUserDetailById(ctx, tx,
 			requestId,
 			entities.GetUserDetailOption{
 				PessimisticLocking: true,
@@ -128,28 +80,20 @@ func UpdateUserDetailById(ctx context.Context, requestId string, payload entitie
 			return err
 		}
 
-		return userRepo.UpdateUserDetailById(ctx, tx, requestId, payload)
+		return uc.repo.UpdateUserDetailById(ctx, tx, requestId, payload)
 	})
 }
 
 // GetUserDetails
-// its For External Domain want to Get User Details
-func GetUserDetails(ctx context.Context, userIds []string) (entities.UserDetails, error) {
-	conn, err := pg.GetConnectionPool(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	defer conn.Release()
-
-	userDetails, err := userRepo.FindUserDetailByIds(ctx, conn, userIds)
+func (uc *User) GetUserDetails(ctx context.Context, conn pg.Querier, userIds []string) (entities.UserDetails, error) {
+	userDetails, err := uc.repo.FindUserDetailByIds(ctx, conn, userIds)
 	if err != nil {
 		return nil, err
 	}
 
 	fileIds, fileIdToIdx := userDetails.ToFileIds()
 	if len(fileIds) > 0 {
-		files, err := attachmentRepo.GetFileByIds(ctx, conn, fileIds)
+		files, err := uc.attachmentUsecase.FindFilesByIds(ctx, conn, fileIds)
 		if err != nil {
 			return nil, err
 		}
@@ -161,7 +105,7 @@ func GetUserDetails(ctx context.Context, userIds []string) (entities.UserDetails
 		for i := 0; i < len(files); i++ {
 			go func(i int, wg *sync.WaitGroup) {
 				defer wg.Done()
-				presignedURL, err := s3.Manager.GetPresignedUrl(ctx, files[i].BlobLink, 1*time.Hour)
+				presignedURL, err := uc.attachmentUsecase.GetAttachmentURL(ctx, files[i].BlobLink, 1*time.Hour)
 				if err != nil {
 					errs[i] = err
 					return
@@ -182,4 +126,58 @@ func GetUserDetails(ctx context.Context, userIds []string) (entities.UserDetails
 	}
 
 	return userDetails, nil
+}
+
+func (uc *User) GetUserDetailByUserId(ctx context.Context, conn pg.Querier, userId string) (entities.UserDetail, error) {
+	return uc.getUserDetail(ctx, conn, userId, userId)
+}
+
+func (uc *User) getUserDetail(ctx context.Context, conn pg.Querier, requestId, userId string) (entities.UserDetail, error) {
+	//TODO: can check another userId if match/revealed
+	userDetail, err := uc.repo.GetUserDetailById(ctx, conn, requestId, entities.GetUserDetailOption{
+		WithHobbies:         true,
+		WithMovieSeries:     true,
+		WithTravels:         true,
+		WithSports:          true,
+		WithProfilePictures: true,
+	})
+	if err != nil {
+		return entities.UserDetail{}, err
+	}
+
+	if len(userDetail.ProfilePictures) > 0 {
+		fileIds, fileIdToIdx := userDetail.ToFileIds()
+		files, err := uc.attachmentUsecase.FindFilesByIds(ctx, conn, fileIds)
+		if err != nil {
+			return entities.UserDetail{}, err
+		}
+
+		var wg sync.WaitGroup
+		errs := make([]error, len(files))
+
+		wg.Add(len(files))
+		for i := 0; i < len(files); i++ {
+			go func(i int, wg *sync.WaitGroup) {
+				defer wg.Done()
+				presignedURL, err := uc.attachmentUsecase.GetAttachmentURL(ctx, files[i].BlobLink, 1*time.Hour)
+				if err != nil {
+					errs[i] = err
+					return
+				}
+
+				if idx, ok := fileIdToIdx[files[i].Id]; ok {
+					userDetail.ProfilePictures[idx].SetPresignedURL(presignedURL)
+				}
+			}(i, &wg)
+		}
+		wg.Wait()
+
+		for _, err := range errs {
+			if err != nil {
+				return entities.UserDetail{}, err
+			}
+		}
+	}
+
+	return userDetail, nil
 }

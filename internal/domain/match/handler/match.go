@@ -6,16 +6,15 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/xyedo/blindate/internal/domain/match/dtos"
 	"github.com/xyedo/blindate/internal/domain/match/entities"
-	"github.com/xyedo/blindate/internal/domain/match/usecase"
 	"github.com/xyedo/blindate/internal/infrastructure/auth"
 	"github.com/xyedo/blindate/pkg/pagination"
 )
 
-func postCreateNewCandidateMatch(c echo.Context) error {
+func (h *Match) postCreateNewCandidateMatch(c echo.Context) error {
 	ctx := c.Request().Context()
 	requestId := ctx.Value(auth.RequestId).(string)
 
-	err := usecase.CreateCandidateMatch(ctx, requestId)
+	err := h.usecase.CreateCandidateMatch(ctx, requestId)
 	if err != nil {
 		return err
 	}
@@ -23,7 +22,7 @@ func postCreateNewCandidateMatch(c echo.Context) error {
 	return c.NoContent(http.StatusCreated)
 }
 
-func getIndexMatchs(c echo.Context) error {
+func (h *Match) getIndexMatchs(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	var queryParams dtos.IndexMatchsQueryParams
@@ -39,7 +38,7 @@ func getIndexMatchs(c echo.Context) error {
 	}
 
 	requestId := ctx.Value(auth.RequestId).(string)
-	matchedUsers, hasNext, err := usecase.IndexMatch(ctx, requestId, entities.IndexMatch{
+	matchedUsers, hasNext, err := h.usecase.IndexMatch(ctx, requestId, entities.IndexMatch{
 		Pagination: pagination.Pagination{
 			Page:  queryParams.Page,
 			Limit: queryParams.Limit,
@@ -62,11 +61,11 @@ func getIndexMatchs(c echo.Context) error {
 	)
 }
 
-func getMatchById(c echo.Context) error {
+func (h *Match) getMatchById(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	requestId := ctx.Value(auth.RequestId).(string)
-	matchUser, err := usecase.GetMatchById(ctx, requestId, c.Param("matchId"))
+	matchUser, err := h.usecase.GetMatchById(ctx, requestId, c.Param("matchId"))
 	if err != nil {
 		return err
 	}
@@ -76,7 +75,7 @@ func getMatchById(c echo.Context) error {
 	})
 }
 
-func putTransitionRequestStatus(c echo.Context) error {
+func (h *Match) putTransitionRequestStatus(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	var request dtos.PutTransitionRequest
@@ -87,7 +86,7 @@ func putTransitionRequestStatus(c echo.Context) error {
 
 	requestId := ctx.Value(auth.RequestId).(string)
 
-	return usecase.TransitionRequestStatus(ctx, requestId,
+	return h.usecase.TransitionRequestStatus(ctx, requestId,
 		c.Param("matchId"),
 		request.Swipe,
 	)

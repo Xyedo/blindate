@@ -7,7 +7,7 @@ import (
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 )
 
-func InsertProfilePicture(ctx context.Context, conn pg.Querier, profilePicture entities.ProfilePicture) (string, error) {
+func (User) InsertProfilePicture(ctx context.Context, conn pg.Querier, profilePicture entities.ProfilePicture) (string, error) {
 	const insertProfilePicture = `
 	INSERT INTO profile_pictures(id, account_id, selected, file_id)
 	VALUES($1,$2,$3,$4)
@@ -27,7 +27,7 @@ func InsertProfilePicture(ctx context.Context, conn pg.Querier, profilePicture e
 	return returnedId, nil
 }
 
-func UpdateProfilePictureSelectedToFalseByUserId(ctx context.Context, conn pg.Querier, id string) error {
+func (User) UpdateProfilePictureSelectedToFalseByUserId(ctx context.Context, conn pg.Querier, id string) error {
 	const query = `
 	UPDATE profile_pictures SET
 	selected = false

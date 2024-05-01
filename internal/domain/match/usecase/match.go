@@ -8,25 +8,37 @@ import (
 	geo "github.com/paulmach/go.geo"
 	apperror "github.com/xyedo/blindate/internal/common/app-error"
 	conversationEntities "github.com/xyedo/blindate/internal/domain/conversation/entities"
-	conversationRepo "github.com/xyedo/blindate/internal/domain/conversation/repository"
+	"github.com/xyedo/blindate/internal/domain/match"
 	"github.com/xyedo/blindate/internal/domain/match/entities"
 	"github.com/xyedo/blindate/internal/domain/match/repository"
-	matchRepo "github.com/xyedo/blindate/internal/domain/match/repository"
 	userEntities "github.com/xyedo/blindate/internal/domain/user/entities"
-	userRepo "github.com/xyedo/blindate/internal/domain/user/repository"
-	userUsecase "github.com/xyedo/blindate/internal/domain/user/usecase"
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 	"github.com/xyedo/blindate/pkg/pagination"
 )
 
-func CreateCandidateMatch(ctx context.Context, requestId string) error {
+func New(repo repository.Match, userUsecase match.UserUsecase) *Match {
+	return &Match{
+		repo:        repo,
+		userUsecase: userUsecase,
+	}
+}
+
+type Match struct {
+	repo                repository.Match
+	userUsecase         match.UserUsecase
+	conversationUsecase match.MatchUsecase
+}
+
+var _ match.Usecase = &Match{}
+
+func (uc *Match) CreateCandidateMatch(ctx context.Context, requestId string) error {
 	return pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
-		user, err := userRepo.GetUserDetailById(ctx, tx, requestId)
+		user, err := uc.userUsecase.GetUserDetailByUserId(ctx, tx, requestId)
 		if err != nil {
 			return err
 		}
 
-		closestUserIds, err := userRepo.FindNonMatchClosestUser(ctx, tx, userEntities.FindClosestUser{
+		closestUserIds, err := uc.userUsecase.FindNonMatchClosestUserIds(ctx, tx, userEntities.FindClosestUser{
 			UserId: user.UserId,
 			Geog:   user.Geog,
 			Pagination: pagination.Pagination{
@@ -39,74 +51,94 @@ func CreateCandidateMatch(ctx context.Context, requestId string) error {
 			return err
 		}
 
-		return repository.CreateCandidateMatchsById(ctx, tx, requestId, closestUserIds)
+		return uc.repo.CreateCandidateMatchsById(ctx, tx, requestId, closestUserIds)
 	})
 }
 
-func IndexMatch(ctx context.Context, requestId string, payload entities.IndexMatch) ([]entities.MatchUser, bool, error) {
-	conn, err := pg.GetConnectionPool(ctx)
-	if err != nil {
-		return nil, false, err
-	}
-	defer conn.Release()
+func (uc *Match) IndexMatch(ctx context.Context, requestId string, payload entities.IndexMatch) ([]entities.MatchUser, bool, error) {
+	var (
+		matchUsers []entities.MatchUser
+		hasNext    bool
+	)
+	err := pg.TransactionWithRetry(ctx,
+		pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly},
+		func(tx pg.Querier) error {
+			requestUser, err := uc.userUsecase.GetUserDetailByUserId(ctx, tx, requestId)
+			if err != nil {
+				return err
+			}
 
-	requestUser, err := userRepo.GetUserDetailById(ctx, conn, requestId)
-	if err != nil {
-		return nil, false, err
-	}
+			matchs, h, err := uc.repo.FindMatchsByStatus(ctx, tx,
+				entities.FindUserMatchByStatus{
+					UserId:     requestUser.UserId,
+					Statuses:   payload.MatchStatuses(),
+					Pagination: payload.Pagination,
+				},
+			)
+			if err != nil {
+				return err
+			}
+			hasNext = h
 
-	matchs, hasNext, err := matchRepo.FindMatchsByStatus(ctx, conn,
-		entities.FindUserMatchByStatus{
-			UserId:     requestUser.UserId,
-			Statuses:   payload.MatchStatuses(),
-			Pagination: payload.Pagination,
+			matchUserIds, matchUserIdToMatchId := matchs.ToUserIds(requestId)
+			userDetails, err := uc.userUsecase.GetUserDetails(ctx, tx, matchUserIds)
+			if err != nil {
+				return err
+			}
+
+			matchUsers = entities.NewMatchUsers(
+				requestUser,
+				userDetails,
+				matchUserIdToMatchId,
+			)
+
+			return nil
 		},
 	)
+
 	if err != nil {
 		return nil, false, err
 	}
+	return matchUsers, hasNext, nil
 
-	matchUserIds, matchUserIdToMatchId := matchs.ToUserIds(requestId)
-	userDetails, err := userUsecase.GetUserDetails(ctx, matchUserIds)
-	if err != nil {
-		return nil, false, err
-	}
-
-	return entities.NewMatchUsers(
-		requestUser,
-		userDetails,
-		matchUserIdToMatchId,
-	), hasNext, nil
 }
 
-func GetMatchById(ctx context.Context, requestId, matchId string) (entities.MatchUser, error) {
-	conn, err := pg.GetConnectionPool(ctx)
-	if err != nil {
-		return entities.MatchUser{}, err
-	}
-	defer conn.Release()
+func (uc *Match) GetMatchById(ctx context.Context, requestId, matchId string) (entities.MatchUser, error) {
+	var (
+		requestUser, recepientUser userEntities.UserDetail
+		match                      entities.Match
+	)
+	err := pg.TransactionWithRetry(ctx, pgx.TxOptions{IsoLevel: pgx.RepeatableRead, AccessMode: pgx.ReadOnly}, func(tx pg.Querier) error {
+		user, err := uc.userUsecase.GetUserDetailByUserId(ctx, tx, requestId)
+		if err != nil {
+			return err
+		}
+		requestUser = user
 
-	requestUser, err := userRepo.GetUserDetailById(ctx, conn, requestId)
-	if err != nil {
-		return entities.MatchUser{}, err
-	}
+		returnedMatch, err := uc.repo.GetMatchById(ctx, tx, matchId)
+		if err != nil {
+			return err
+		}
+		match = returnedMatch
 
-	match, err := matchRepo.GetMatchById(ctx, conn, matchId)
-	if err != nil {
-		return entities.MatchUser{}, err
-	}
+		recepientId, err := match.ValidateResource(requestId)
+		if err != nil {
+			return err
+		}
 
-	recepientId, err := match.ValidateResource(requestId)
-	if err != nil {
-		return entities.MatchUser{}, err
-	}
+		err = match.ValidateShow(requestId)
+		if err != nil {
+			return err
+		}
 
-	err = match.ValidateShow(requestId)
-	if err != nil {
-		return entities.MatchUser{}, err
-	}
+		user, err = uc.userUsecase.GetUserDetailByUserId(ctx, tx, recepientId)
+		if err != nil {
+			return err
+		}
+		recepientUser = user
 
-	recepientUser, err := userUsecase.GetUserDetail(ctx, recepientId, recepientId)
+		return nil
+	})
 	if err != nil {
 		return entities.MatchUser{}, err
 	}
@@ -121,18 +153,17 @@ func GetMatchById(ctx context.Context, requestId, matchId string) (entities.Matc
 			),
 		UserDetail: recepientUser,
 	}, nil
+
 }
 
-func TransitionRequestStatus(ctx context.Context, requestId, matchId string, swipe bool) error {
-	return pg.Transaction(ctx, pgx.TxOptions{}, func(tx pg.Querier) error {
-		requester, err := userRepo.GetUserDetailById(ctx, tx, requestId)
+func (uc *Match) TransitionRequestStatus(ctx context.Context, requestId, matchId string, swipe bool) error {
+	return pg.TransactionWithRetry(ctx, pgx.TxOptions{IsoLevel: pgx.Serializable}, func(tx pg.Querier) error {
+		requester, err := uc.userUsecase.GetUserDetailByUserId(ctx, tx, requestId)
 		if err != nil {
 			return err
 		}
 
-		match, err := matchRepo.GetMatchById(ctx, tx, matchId, entities.GetMatchOption{
-			PessimisticLocking: true,
-		})
+		match, err := uc.repo.GetMatchById(ctx, tx, matchId)
 		if err != nil {
 			return err
 		}
@@ -161,7 +192,7 @@ func TransitionRequestStatus(ctx context.Context, requestId, matchId string, swi
 			if swipe {
 				match.RequestStatus = entities.MatchStatusAccepted
 
-				err = conversationRepo.CreateConversation(ctx, tx, conversationEntities.Conversation{
+				err = uc.conversationUsecase.CreateConversation(ctx, tx, conversationEntities.Conversation{
 					MatchId:   match.Id,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
@@ -183,7 +214,7 @@ func TransitionRequestStatus(ctx context.Context, requestId, matchId string, swi
 		match.UpdatedBy.Set(requester.UserId)
 		match.Version++
 
-		return matchRepo.UpdateMatch(ctx, tx, match)
+		return uc.repo.UpdateMatch(ctx, tx, match)
 	})
 
 }

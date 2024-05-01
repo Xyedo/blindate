@@ -5,12 +5,11 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/xyedo/blindate/internal/domain/conversation/dtos"
-	"github.com/xyedo/blindate/internal/domain/conversation/usecase"
 	"github.com/xyedo/blindate/internal/infrastructure/auth"
 	"github.com/xyedo/blindate/pkg/pagination"
 )
 
-func getIndexConversations(c echo.Context) error {
+func (h *Conversation) getIndexConversations(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	var queryParams dtos.IndexConversationQueryParams
@@ -25,7 +24,7 @@ func getIndexConversations(c echo.Context) error {
 		return err
 	}
 	requestId := ctx.Value(auth.RequestId).(string)
-	convs, hasNext, err := usecase.IndexConversation(ctx, requestId, queryParams.Page, queryParams.Limit)
+	convs, hasNext, err := h.usecase.IndexConversation(ctx, requestId, queryParams.Page, queryParams.Limit)
 	if err != nil {
 		return err
 	}
@@ -39,7 +38,7 @@ func getIndexConversations(c echo.Context) error {
 	)
 }
 
-func getIndexChats(c echo.Context) error {
+func (h *Conversation) getIndexChats(c echo.Context) error {
 	ctx := c.Request().Context()
 
 	var queryParams dtos.IndexChatQueryParams
@@ -53,7 +52,7 @@ func getIndexChats(c echo.Context) error {
 		return err
 	}
 	requestId := ctx.Value(auth.RequestId).(string)
-	convs, hasNext, hasPrev, err := usecase.IndexChatByConversationId(ctx,
+	convs, hasNext, hasPrev, err := h.usecase.IndexChatByConversationId(ctx,
 		queryParams.ToEntity(requestId, c.Param("convId")),
 	)
 	if err != nil {

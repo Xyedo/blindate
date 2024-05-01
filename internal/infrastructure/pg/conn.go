@@ -6,6 +6,8 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/pkg/errors"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -49,6 +51,60 @@ func Transaction(ctx context.Context, option pgx.TxOptions, cb func(tx Querier) 
 	}
 
 	return tx.Commit(ctx)
+}
+
+var ErrMaxRetry = errors.New("retry limit exceeded")
+
+const maxRetry = 5
+
+func TransactionWithRetry(ctx context.Context, txOpt pgx.TxOptions, cb func(tx Querier) error) error {
+	for i := 0; i < maxRetry; i++ {
+		conn, err := GetConnectionPool(ctx)
+		if err != nil {
+			return err
+		}
+
+		tx, err := conn.BeginTx(ctx, txOpt)
+		if err != nil {
+			conn.Release()
+			return err
+		}
+
+		err = cb(tx)
+		if err != nil {
+
+			if rbErr := tx.Rollback(ctx); rbErr != nil {
+				conn.Release()
+				return fmt.Errorf("cannot rollback %w: %w", rbErr, err)
+			}
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "40001" {
+				conn.Release()
+				continue
+
+			}
+			conn.Release()
+			return err
+
+		}
+
+		err = tx.Commit(ctx)
+		if err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "40001" {
+				conn.Release()
+				continue
+			}
+
+			conn.Release()
+			return err
+		}
+
+		conn.Release()
+		return nil
+	}
+
+	return ErrMaxRetry
 
 }
 

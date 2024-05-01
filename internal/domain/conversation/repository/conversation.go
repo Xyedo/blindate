@@ -5,12 +5,17 @@ import (
 	"errors"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/xyedo/blindate/internal/domain/conversation"
 	"github.com/xyedo/blindate/internal/domain/conversation/entities"
 	"github.com/xyedo/blindate/internal/infrastructure/pg"
 	"github.com/xyedo/blindate/pkg/pagination"
 )
 
-func CreateConversation(ctx context.Context, conn pg.Querier, payload entities.Conversation) error {
+type Conversation struct{}
+
+var _ conversation.Repository = &Conversation{}
+
+func (Conversation) CreateConversation(ctx context.Context, conn pg.Querier, payload entities.Conversation) error {
 	const createConversation = `
 		INSERT INTO conversations (
 			match_id,
@@ -46,7 +51,7 @@ func CreateConversation(ctx context.Context, conn pg.Querier, payload entities.C
 
 // FindConversationsByUserId
 // return conversationIndex, hasNext for pagination, error
-func FindConversationsByUserId(ctx context.Context, conn pg.Querier, userId string, pagination pagination.Pagination) (entities.ConversationIndex, bool, error) {
+func (Conversation) FindConversationsByUserId(ctx context.Context, conn pg.Querier, userId string, pagination pagination.Pagination) (entities.ConversationIndex, bool, error) {
 	const findConversationsByUserId = `
 	SELECT
 		conv.match_id,
@@ -149,7 +154,7 @@ func FindConversationsByUserId(ctx context.Context, conn pg.Querier, userId stri
 
 // FindConversationsByUserId
 // return conversation, hasNext, hasPrev for pagination, error
-func FindChatsByConversationId(ctx context.Context, conn pg.Querier, payload entities.IndexChatPayload) (entities.Conversation, bool, bool, error) {
+func (Conversation) FindChatsByConversationId(ctx context.Context, conn pg.Querier, payload entities.IndexChatPayload) (entities.Conversation, bool, bool, error) {
 	const findConverastionById = `
 	SELECT
 		conv.match_id,

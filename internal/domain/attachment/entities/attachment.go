@@ -1,6 +1,8 @@
 package entities
 
-import "io"
+import (
+	"io"
+)
 
 type ReadSeekerAt interface {
 	io.ReadSeeker
@@ -12,5 +14,3 @@ type Attachment struct {
 	Prefix      string
 	Ext         string
 }
-
-
