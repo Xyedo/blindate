@@ -16,17 +16,18 @@ import (
 	"github.com/xyedo/blindate/pkg/pagination"
 )
 
-func New(repo repository.Match, userUsecase match.UserUsecase) *Match {
+func New(repo repository.Match, userUsecase match.UserUsecase, conversationUsecase match.ConversationUsecase) *Match {
 	return &Match{
-		repo:        repo,
-		userUsecase: userUsecase,
+		repo:                repo,
+		userUsecase:         userUsecase,
+		conversationUsecase: conversationUsecase,
 	}
 }
 
 type Match struct {
 	repo                repository.Match
 	userUsecase         match.UserUsecase
-	conversationUsecase match.MatchUsecase
+	conversationUsecase match.ConversationUsecase
 }
 
 var _ match.Usecase = &Match{}

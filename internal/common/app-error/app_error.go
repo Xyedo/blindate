@@ -73,6 +73,7 @@ func Duplicate(payload Payload, indempotent bool) error {
 	if payload.Status == "" {
 		payload.Status = statusErrorDefaultDuplicate
 	}
+	
 	return Sentinel{
 		Err: payloadErr,
 		Payloads: []ErrorPayload{

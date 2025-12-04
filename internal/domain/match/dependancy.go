@@ -15,6 +15,6 @@ type UserUsecase interface {
 	FindNonMatchClosestUserIds(ctx context.Context, conn pg.Querier, payload userEntities.FindClosestUser) ([]string, error)
 }
 
-type MatchUsecase interface {
+type ConversationUsecase interface {
 	CreateConversation(ctx context.Context, conn pg.Querier, payload conversationEntities.Conversation) error
 }

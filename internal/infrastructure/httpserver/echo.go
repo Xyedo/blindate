@@ -50,13 +50,15 @@ func NewEcho() *Server {
 	//usecase
 	attachmentUsecase := usecaseAttachment.New(fileRepo, storage)
 	userUsecase := usecaseUser.New(userRepo, attachmentUsecase)
-	matchUsecase := usecaseMatch.New(matchRepo, userUsecase)
 	conversationUsecase := usecaseConversation.New(
 		conversationRepo,
 		userUsecase,
 		attachmentUsecase,
 	)
+
 	//handler
+	matchUsecase := usecaseMatch.New(matchRepo, userUsecase, conversationUsecase)
+
 	apiv1 := e.Group("/v1")
 	{
 
